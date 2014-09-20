@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+c:/maths/gnfs/vcbin/lsieve 1000000 1133621 2> /dev/null
+c:/maths/gnfs/vcbin/postProcessing.pl -r tst250.relations -ro rels1 -c REMOVE_DUPLICATES
+c:/maths/gnfs/vcbin/postProcessing.pl -r rels1 -ro rels2 -f 10000 -e 5000 -c REMOVE_SINGLETONS
+c:/maths/gnfs/vcbin/postProcessing.pl -r rels2 -ro rels3 -f 10000 -e 5000 -c PRUNE
+c:/maths/gnfs/vcbin/postProcessing.pl -r rels3 -ro rels4 -f 10000 -e 5000 -ml 8 -mp 4 -c MERGE 
+c:/maths/gnfs/vcbin/postProcessing.pl -r rels4 -m mat -c BUILD_MATRIX
+c:/maths/gnfs/vcbin/postProcessing.pl -m mat -d dep -c SOLVE_MATRIX
+c:/maths/gnfs/vcbin/postProcessing.pl -r rels4 -d dep -c PROCESS_DEPENDENCIES

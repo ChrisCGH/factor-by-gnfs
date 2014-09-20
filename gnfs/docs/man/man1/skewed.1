@@ -1,0 +1,152 @@
+.TH SKEWED 1 "04 January 2006" "factor-by-gnfs" ""
+.SH NAME
+skewed \- skewed polynomial selection
+.SH SYNOPSIS
+skewed
+.SH DESCRIPTION
+.LP
+The 
+.I skewed
+program performs polynomial selection for the general number field sieve factorisation algorithm.
+.sp
+The general number field sieve algorithm requires two polynomials, f1 and f2, and an integer m which satisfy fi(m) = 0 (mod N)
+where N is the number to be factored. The skewed program finds f1, f2 and m, with f2 linear (optionally non-monic), and f1 of degree 4 or 5, which are suitable for efficient sieving, by using the methods described in B. Murphy's thesis.
+.sp
+Murphy introduces a metric to measure how good a given non-linear polynomial F will be, called E(F), and the selection procedure aims to find polynomials with E(F) as small as possible. The procedure also calculates a (usually negative) number, alpha, for each non-linear polynomial, which is a measure of how much smaller the polynomial is than a random polynomial satisfying f(m) = 0 mod N
+.sp
+The polynomial selection is driven by a configuration file called skewed.cfg which must be in the working directory of the skewed program. An example configuration file and an explanation of the variables defined in it follows.
+.sp
+.PD 0
+N = 4759994607401039679627481511509324446046544098464723271540378578885802258352413789538451977499169148580592032025254019039859550683
+.P
+DEGREE = 5
+.P
+OUTPUT_FILE = skewed.out
+.P
+MIN_AD = 100000
+.P
+MAX_AD = 100000000
+.P
+C_START = 39330
+.P
+C_RESTART = 0
+.P
+C_FACTOR = 0
+.P
+NON_MONIC = true
+.P
+GOOD_M_CUTOFF = 20.0
+.P
+MAX_FRACTION = 0.50
+.P
+MAX_ALS = 45.5
+.P
+MAX_J0 = 500000
+.P
+MAX_J1 = 20 
+.P
+MAX_SMALL_PRIME = 1000
+.P
+PRINTING_BOUND = 36.8
+.P
+REPEAT_CUTOFF = 36.0
+.P
+ALPHA_CUTOFF = -4
+.PD 1
+.sp
+.B N 
+is the number to be factored. 
+.sp
+.B DEGREE
+is the degree of the non-linear polynomial to be found.
+.sp
+.B OUTPUT_FILE
+is the name of the file to which results are written.
+.sp
+.B MIN_AD
+is the minimum value for the leading coefficient of the non-linear polynomial.
+.sp
+.B MAX_AD
+is the maximum value for the leading coefficient of the non-linear polynomial.
+.sp
+.B C_START
+gives a factor that the leading coefficient of the non-linear polynomial must have. If the leading coefficient is divisible by a number of small primes then the non-linear polynomial has better "root properties" (see Murphy for a full discussion), so C_START should be set to the product of a number of small primes, possibly repeated.
+The skewed program searches for non-linear polynomials with leading coefficient between MIN_AD and MAX_AD, such that the leading coefficient is a multiple of C_START.
+.sp
+.B C_RESTART
+if non-zero, is the initial value to take for the leading coefficient of the non-linear polynomial, allowing the skewed program to be restarted from a given point in the search.
+.sp
+.B C_FACTOR
+if non-zero, then C_START is multiplied by random small primes until C_START * C_FACTOR > MIN_AD. This allows some randomisation in the choice of C_START.
+.sp
+.B NON_MONIC
+if set to false, then a monic linear polynomial is created, X - m, and the algorithm for skewed polynomial selection from Murphy's thesis is used.
+If set to true, then a non-monic linear polynomial is created, a X - b, and the polynomial selection algorithm, while still using the minimization and sieving methods described by Murphy, uses a different method to drive the initial selection of the non-linear polynomials.
+.sp
+.B MAX_ALS
+is the maximum average log size of the non-linear polynomials which are considered. The average log size is calculated by integrating the homogeneous version of the non-linear polynomials over a rectangular region (see Murphy for details).
+.sp
+.B MAX_J0 
+,
+.B MAX_J1 
+and
+.B MAX_SMALL_PRIME
+are parameters used by the final sieving part of Murphy's algorithm (see Murphy for details).
+.sp
+.B PRINTING_BOUND
+is the largest value of E(F) to be accepted - only polynomials with E(F) < PRINTING_BOUND are written to the results file.
+.sp
+.B ALPHA_CUTOFF
+is the largest value of alpha to be accepted during the sieving step (since alpha is usually negative, this means we want alpha to be as negative as possible).
+.sp
+The following parameters are only used when 
+.B NON_MONIC
+is set to false.
+.sp
+.B GOOD_M_CUTOFF
+is used by the algorithm to find promising values for m. If the leading coefficient of the non-linear polynomial is a_d, then we initially want to find an m such that N - a_d m^d is as small as possible; this is done by an iterative process terminating when (N - a_d * m^d) / (d * a_d * m^(d-1)) < GOOD_M_CUTOFF. 
+.sp
+.B MAX_FRACTION
+is used by the algorithm to find promising values for m. Having found an m as above, if (N - a_d * m^d) mod m^(d-1) > m^(d-1) * MAX_FRACTION, then m is rejected and we move on to the next a_d.
+.sp
+.B REPEAT_CUTOFF
+is used to control whether the final adjustment step of the polynomial selection is repeated; if E(F) < REPEAT_CUTOFF then the adjustment step is repeated in the hope of improving the polynomial.
+.sp
+.SH RESULTS FILE FORMAT
+The results file consists of records of the following form:
+.sp
+.PD 0
+.P
+154616327524337864725276316235 - 3560463597434621010863139 X - 779240522741195706182 X^2 + 68866935874172705 X^3 + 839324774511 X^4 + 48887190 X^5
+.P
+m = 1991028265561290371726037518317622099615998629839318543447859493958767861781194107244503675467777711613238660150703083498334732932
+.P
+a = 28261113326641
+.P
+b = 2498516721090337772984384
+.P
+s = 15672
+.P
+alpha = -6.06365
+.P
+E(F) = 36.0001
+.P
+4759994607401039679627481511509324446046544098464723271540378578885802258352413789538451977499169148580592032025254019039859550683
+.P
+
+.P
+==============================================================================
+.PD 1
+.sp
+The first line is the non-linear polynomial f1, the second gives m such that f1(m) = 0 mod N, the next two lines (only generated when NON_MONIC is true) give the coefficients of the linear polynomial, a and b such that f2 = a X - b.
+Then s gives the skew, which defines the shape of the optimum sieving rectangle, followed by the calculated alpha and E(F) for the f1, and finally as a check, the value of N
+.SH HINTS
+It is recommended that NON_MONIC is set to true, since the resulting polynomials are usually better, the linear polynomial in particular having smaller coefficients. A few trial runs should be done to find the best values for MAX_ALS and PRINTING_BOUND, since setting MAX_ALS too high will result in far too many polynomials being considered, which setting it too low will stop any polynomials being found. Similarly setting PRINTING_BOUND too high will result in too many poor polynomials being written to the output file. Once MAX_ALS has been set to a reasonable level, run for a while to find a polynomial with a fairly small E(F), and then restart having set PRINTING_BOUND to be just bigger than this E(F). Do runs with different C_START values to seach different sets of polynomials.
+.SH FILES
+skewed.cfg
+.sp
+.SH TO DO
+Extend skewed to find degree 6 polynomials.
+.sp
+.SH AUTHOR
+Chris Card

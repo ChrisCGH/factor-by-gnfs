@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+while [ 1 ]
+do
+   c:/maths/gnfs/vcbin/lsieve 2>/dev/null
+done

@@ -1,0 +1,118 @@
+.TH FILTER 1 "04 January 2006" "factor-by-gnfs" ""
+.SH NAME
+filter \- filter relations prior to building matrix
+.SH SYNOPSIS
+filter [\-r[elations] relfile]
+.RS
+[\-m[ergelevel] level]
+.RE
+.RS
+[\-f[iltmin] filtmin]
+.RE
+.RS
+[\-e[xcessmin] excessmin
+.RE
+.RS
+[\-[mp|maxpass] maxpass]
+.RE
+.RS
+[\-[ro|relations_output] relations_output_file]
+.RE
+.RS
+[\-[rso|relation_sets_output] relation_sets_output_file]
+.RE
+.SH DESCRIPTION
+.LP
+The 
+.I filter
+program implements the algorithms presented in 
+.B S. Cavallar. 
+.I "Strategies in filtering in the number field sieve"
+in order to process relations produced by sieving into relation sets ready for the 
+.I buildMatrix
+program.
+.sp 1
+Four different types of processing can be performed on the input relations, which are identified by "merge levels":
+.LP
+.B "Merge level 0 \-"
+removing duplicates
+.RS
+.sp 1
+when merge level 0 is specified duplicate relations are removed from the input relations and a new file of (unique) relations is written, e.g.
+.sp 1
+filter -m 0 -r relations -ro unique_relations
+.RE
+.LP
+.B "Merge level 1 \-"
+removing singletons
+.RS
+.sp 1
+A singleton relation is one which contains a prime which is contained in no other relation in the file. Since a singleton 
+relation cannot contribute to the final dependency (in which every prime must appear in an even number of relations), 
+singleton relations are removed, by specifying merge level 1. 
+Note that removing a relation can in turn cause other relations to become singletons, so the process of identifying and removing singletons is continued until no singletons remain, or until all relations have been removed.
+If filtmin is specified, then only primes > filtmin are considered. 
+e.g.
+.sp 1
+filter -m 1 -r relations -f 10000 -ro non_singleton_relations
+.RE
+.LP
+.B "Merge level > 1 \-"
+clique processing (pruning) and optionally merging into relation sets
+.RS
+.sp 1
+In order that a solvable matrix can be produced from the relations, there must be more unique relations than primes, and 
+the excess of relations over primes must be enough to take account of only primes > filtmin being considered. The minimum excess required can be specified as excessmin, but the 
+.I filter
+program will increase the minimum excess if necessary.
+.sp
+A clique of relations is a set of relations which must all be in the final dependency if any are, so that if any one of the 
+set is removed, all must be removed. 
+Cliques are identified and given weights according to the algorithm in Callavar's paper, and then the "heaviest" cliques are removed until the excess of relations over primes has reached excessmin. 
+e.g.
+.sp 1
+filter -m 2 -r relations -ro pruned_relations -f 10000 -e 4000
+.sp
+If maxpass > 0 is specified then merge processing is also performed. Relations which contain the same prime are considered for merging into relation sets, so that the prime is effectively removed, hence reducing the size and the weight of the resulting matrix. In this case a file defining the resulting relation sets is written which must be used in combination with the output relations file to generate the matrix. The merge level specifies the maximum number of relations that should contain a prime in order to be considered for merging, and maxpass specifies the number of times the merge pass is run, each pass running through the set of primes looking for sets of relations to merge.
+e.g.
+.sp 1
+filter -m 8 -r relations -ro merged_relations -rso merged_relation_sets -mp 2 -f 10000 -e 4000
+.RE
+.sp 1
+Note that in order to produce relations and relation sets suitable for building the matrix, it may be necessary to do a number of pruning runs before doing the merge run.
+.SH OPTIONS
+.sp 1
+.TP 0.5i
+.B \-r[elations] relfile
+.sp
+The input file of relations.
+.TP 0.5i
+.B \-m[ergelevel] level
+.sp
+The merge level
+.TP 0.5i
+.B \-f[iltmin] filtmin
+.sp
+Only consider primes > filtmin for merge level > 0
+.TP 0.5i
+.B \-e[xcessmin] excessmin
+.sp
+The minimum excess of relations over primes to retain
+.TP 0.5i
+.B \-[mp|maxpass] maxpass
+.sp
+The number of merge passes to perform (merge level > 1)
+.TP 0.5i
+.B \-[ro|relations_output] relations_output_file
+.sp
+The output file of relations.
+.TP 0.5i
+.B \-[rso|relation_sets_output] relation_sets_output_file
+.sp
+The output file of relation sets.
+.SH "SEE ALSO"
+.sp
+.SH BUGS
+.sp
+.SH AUTHOR
+Chris Card
