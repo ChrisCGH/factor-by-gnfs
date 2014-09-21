@@ -2,10 +2,10 @@
 #define BLOCK_LANCZOS_H
 #include "SparseMatrix.h"
 
-//typedef BitMatrix64 BITMATRIX;
-//typedef BitOperations64 BITOPERATIONS;
-typedef BitMatrix BITMATRIX;
-typedef BitOperations BITOPERATIONS;
+typedef BitMatrix64 BITMATRIX;
+typedef BitOperations64 BITOPERATIONS;
+//typedef BitMatrix BITMATRIX;
+//typedef BitOperations BITOPERATIONS;
 typedef SparseMatrix3 SPARSEMATRIX;
 // class to encapsulate the block Lanczos algorithm,
 // and add extra features like checkpointing
