@@ -19,7 +19,7 @@ void die(const std::string& msg)
 }
 }
 
-BlockLanczos::BlockLanczos(const std::string& matrix_file, const std::string& checkpoint_file, int checkpoint_interval, bool split) : split_(split)
+BlockLanczos::BlockLanczos(const std::string& matrix_file, const std::string& checkpoint_file, int checkpoint_interval, int validation_interval, bool split) : split_(split)
 {
    std::cerr << "Starting ..." << std::endl;
    readMatrix(matrix_file);
@@ -52,6 +52,8 @@ BlockLanczos::BlockLanczos(const std::string& matrix_file, const std::string& ch
    checkpoint_interval_ = checkpoint_interval;
    const long int default_checkpoint_interval = 1000L;
    if (!checkpoint_interval_) checkpoint_interval_ = default_checkpoint_interval;
+   validation_interval_ = validation_interval;
+   if (!validation_interval_) validation_interval_ = 100L;
 }
 
 BlockLanczos::~BlockLanczos()
@@ -209,6 +211,13 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
              std::cerr << "          i   i"                   << std::endl;
          }
 
+         if (!check_A_orthogonal(Si, Sim1, AV, Vim1))
+         {
+             std::cerr << "          t"                         << std::endl;
+             std::cerr << "Problem: W   A W  is not zero" << std::endl;
+             std::cerr << "          i-1   i"                   << std::endl;
+         }
+
          Vim2 = Vim1;
          Vim1 = Vi;
          Vi = newV;
@@ -364,12 +373,6 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
 void BlockLanczos::checkpoint()
 {
    if (iteration_ % checkpoint_interval_ != 0L) return;
-   if (!check_A_invertible(*Sim1_, *VAVim1_))
-   {
-       std::cerr << "          t"                       << std::endl;
-       std::cerr << "Problem: W A W  is not invertible" << std::endl;
-       std::cerr << "          i   i"                   << std::endl;
-   }
    std::string checkpoint_file("blcp_");
    char* t = time_str();
    checkpoint_file += t;
@@ -499,8 +502,12 @@ void BlockLanczos::readCheckpoint(const std::string& checkpoint_file)
    if (strcmp(str.c_str(), "End of Block Lanczos checkpoint file") != 0) die("corrupted checkpoint file trailer");
 }
 
-bool BlockLanczos::check_A_invertible(const BITMATRIX& Si, const BITMATRIX& VAVi)
+bool BlockLanczos::check_A_invertible(const BITMATRIX& Si, const BITMATRIX& VAVi) const
 {
+    if (iteration_ % validation_interval_ != 0L) return true;
+    std::cerr << "               t"                   << std::endl;
+    std::cerr << "Checking that W A W  is invertible" << std::endl;
+    std::cerr << "               i   i"               << std::endl;
     BITMATRIX VAViSi;
     multiply(VAVi, Si, VAViSi);     // Vi^t A Vi Si
     BITMATRIX WAWi;
@@ -508,4 +515,19 @@ bool BlockLanczos::check_A_invertible(const BITMATRIX& Si, const BITMATRIX& VAVi
     BITMATRIX kerWAWi;
     ::kernel(WAWi, kerWAWi);
     return kerWAWi.isZero();
+}
+
+bool BlockLanczos::check_A_orthogonal(const BITMATRIX& Si, const BITMATRIX& Sim1, const BITMATRIX& AVi, const BITMATRIX& Vim1) const
+{
+    if (iteration_ % validation_interval_ != 0L) return true;
+    std::cerr << "               t"               << std::endl;
+    std::cerr << "Checking that W   A W  is zero" << std::endl;
+    std::cerr << "               i-1   i"         << std::endl;
+    BITMATRIX Vim1AVi;
+    innerProduct(Vim1, AVi, Vim1AVi); // Vi-1^t A Vi
+    BITMATRIX VAViSi;
+    multiply(Vim1AVi, Si, VAViSi);     // Vi^t A Vi Si
+    BITMATRIX Wim1AWi;
+    innerProduct(Sim1, VAViSi, Wim1AWi); // Si^t Vi^t A Vi Si = Wi^t A Wi
+    return Wim1AWi.isZero();
 }

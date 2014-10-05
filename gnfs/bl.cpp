@@ -7,7 +7,7 @@ namespace
 {
 void usage()
 {
-   std::cerr << "Usage: bl -m matrix_file [ -c checkpoint_file ] [ -i checkpoint_interval ]" << std::endl;
+   std::cerr << "Usage: bl -m matrix_file [ -c checkpoint_file ] [ -i checkpoint_interval ] [ -v validation_interval ]" << std::endl;
    std::exit(1);
 }
 };
@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
    std::string matrix_file = "";
    std::string checkpoint_file = "";
    int checkpoint_interval = 0;
+   int validation_interval = 0;
    // If set to true, split off the densest rows of the matrix, to process at the end
    bool split = false;
    int arg = 1;
@@ -36,6 +37,11 @@ int main(int argc, char* argv[])
          ++arg;
          checkpoint_interval = std::atoi(argv[arg]);
       }
+      else if (strcmp(argv[arg], "-v") == 0)
+      {
+         ++arg;
+         validation_interval = std::atoi(argv[arg]);
+      }
       else if (strcmp(argv[arg], "-split") == 0)
       {
          split = true;
@@ -48,7 +54,7 @@ int main(int argc, char* argv[])
    }
    if (matrix_file == "") usage();
 
-   BlockLanczos bl(matrix_file, checkpoint_file, checkpoint_interval, split);
+   BlockLanczos bl(matrix_file, checkpoint_file, checkpoint_interval, validation_interval, split);
 
    try
    {
