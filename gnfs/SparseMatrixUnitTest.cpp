@@ -449,7 +449,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
     {
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix());
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix(100, 30));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix(2000, 1000), const char*);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix(2000, 1000), char*);
         std::ostringstream oss;
         oss << "32" << std::endl;       
         oss << "32" << std::endl;       
@@ -503,7 +503,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
     {
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix64());
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix64(100, 30));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix64(2000, 1000), const char*);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix64(2000, 1000), char*);
         std::ostringstream oss;
         oss << "64" << std::endl;       
         oss << "64" << std::endl;       
@@ -582,7 +582,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(bm == bm1);
         BitMatrix64 kerbm;
         kernel(bm, kerbm);
-        CPPUNIT_ASSERT(kerbm.isZero());
+        CPPUNIT_ASSERT(!kerbm.isZero());
     }
 };
 
