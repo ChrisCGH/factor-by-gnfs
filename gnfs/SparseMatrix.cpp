@@ -2162,7 +2162,7 @@ void randomise(BitMatrix64& bm)
 {
     for (size_t i = 0; i < bm.row_.size(); i++)
     {
-        bm.row_[i] = genrand();
+        bm.row_[i] = genrand() + ((unsigned long long int)(genrand()) << 32);
     }
 }
 

@@ -19,6 +19,7 @@ class BlockLanczos
       void kernel(BITMATRIX& kerL, BITMATRIX& kerR);
 
    private:
+      bool check_A_invertible(const BITMATRIX& Si, const BITMATRIX& VAVi);
       void checkpoint();
       void readMatrix(const std::string& matrix_file);
       void readCheckpoint(const std::string& checkpoint_file);
