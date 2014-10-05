@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -51,7 +51,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4675;4258"
+				DisableSpecificWarnings="4675;4258;4996;4244;4200"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -189,6 +189,10 @@
 			</File>
 			<File
 				RelativePath="blockLanczos.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Logger.cpp"
 				>
 			</File>
 			<File
