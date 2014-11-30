@@ -59,7 +59,7 @@ class PrimeFrequencyTable
          if (freq > max_frequency_)
          {
             max_frequency_ = freq;
-            if (max_frequency_ == 0xFFFF)
+            if (max_frequency_ == 0xFFFFF)
             {
                std::cerr << "Look out! : prime = " << prime << ", max_frequency_ = " << max_frequency_ << std::endl;
                throw "frequency overflow";
@@ -115,7 +115,8 @@ class PrimeFrequencyTable
       }
 
    private:
-      typedef unsigned short int freq_type;
+      //typedef unsigned short int freq_type;
+      typedef unsigned int freq_type;
       freq_type* frequency_table_;
       size_t prime_index_;
       size_t prime_count_;

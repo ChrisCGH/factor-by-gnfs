@@ -656,9 +656,9 @@ void calculate_relation_table_size(MemoryMappedFile& relmmfile,
       max_relations = 28000000L;
    }
    max_primes = (double)relations_file_size / bytes_per_prime;
-   if (max_primes > 300000000L)
+   if (max_primes > 400000000L)
    {
-      max_primes = 300000000L;
+      max_primes = 400000000L;
    }
    max_unique_primes = (double)relations_file_size / bytes_per_unique_prime;
 
