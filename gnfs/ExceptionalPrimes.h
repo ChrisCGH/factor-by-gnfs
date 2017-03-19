@@ -40,9 +40,9 @@ class ExceptionalPrimes
 
       bool relationIsInExceptionalPrimePower(const VeryLong& a, const VeryLong& b, PrimeIdeal* pi, int e)
       {
-         if (exceptional_primes_powers_.find(std::make_pair<PrimeIdeal*, int>(pi, e)) ==
+         if (exceptional_primes_powers_.find(std::make_pair(pi, e)) ==
                exceptional_primes_powers_.end()) return false;
-         Matrix<long int> H = exceptional_primes_powers_[std::make_pair<PrimeIdeal*, int>(pi, e)];
+         Matrix<long int> H = exceptional_primes_powers_[std::make_pair(pi, e)];
          if (b % H(1,1) != 0L) return false;
          VeryLong v = -b / H(1,1);
          VeryLong u = a - v* H(0,1);
@@ -113,7 +113,7 @@ class ExceptionalPrimes
                      tmp = hnf(1,1) / den;
                      H(1,1) = tmp.get_long();
 
-                     exceptional_primes_powers_[std::make_pair<PrimeIdeal*, int>(pi, e)] = H;
+                     exceptional_primes_powers_[std::make_pair(pi, e)] = H;
                      if (e < max_power) prime_power *= *pi;
                   }
                }

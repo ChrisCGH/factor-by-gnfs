@@ -539,7 +539,7 @@ This definition of zaddmulp and zaddmulpsq assumes nothing
 	{ \
 		zaddmulp(lmmpa, *lmmpb, lmmd, &zmmtemp); \
 		lmmpa++; \
-		*lmmpb++; \
+		/* *lmmpb++; */ \
 	} \
 	if (((*lmmpa += zmmtemp) & RADIX) > 0) \
 	{ \

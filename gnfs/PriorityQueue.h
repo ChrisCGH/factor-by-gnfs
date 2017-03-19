@@ -114,7 +114,7 @@ class PriorityQueue
             min_weight_ = weight;
          }
          else if (weight < min_weight_) min_weight_ = weight;
-         pq_.push_back(std::make_pair<T, double>(data, weight));
+         pq_.push_back(std::make_pair(data, weight));
          if (pq_.size() > S*2)
          {
             sort();

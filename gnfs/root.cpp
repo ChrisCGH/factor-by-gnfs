@@ -208,7 +208,7 @@ void addPrimeFactorisation(long int p, long int r, int e_p_r,
    {
 //      cout << "not found (" << p << "," << r << ")" << endl;
       pi = new PrimeIdealRep(p, r);
-      NormalPrimes.insert(NormalPrimesType::value_type(std::make_pair<long int, long int>(p, r), pi));
+      NormalPrimes.insert(NormalPrimesType::value_type(std::make_pair(p, r), pi));
       //NormalPrimes[std::pair<long int, long int>(p, r)] = pi;
    }
    else
@@ -1258,7 +1258,7 @@ void processApproximation(const RelationList& relationNumer,
       AlgebraicNumber an_checkDenom(1L);
 #endif
       //const int max_relations = 100;
-      int relation_count = 0;
+      //int relation_count = 0;
 
       if (i == 0)
          if (dumpfile) *dumpfile << "NUMERATOR_RELATIONS" << std::endl;
@@ -1301,7 +1301,7 @@ void processApproximation(const RelationList& relationNumer,
       // find product of algebraic numbers in relationDenom, modulo p
       AlgebraicNumber_in_O_pO_1 denomProduct(1L);
       AlgebraicNumber_in_O_pO_1 denomDeltaProduct(1L);
-      relation_count = 0;
+      //int relation_count = 0;
 
       if (i == 0)
          if (dumpfile) *dumpfile << "DENOMINATOR_RELATIONS" << std::endl;

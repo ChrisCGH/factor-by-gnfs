@@ -2387,8 +2387,6 @@ void skewed_polynomial_selection()
     };
     int finished = 0;
     long int try_count = 0;
-    time_t start = time(0);
-    time_t end;
     //long int s; // best s for skewed region of integration
     VeryLong s_vl;
     Polynomial<VeryLong> min_poly;
@@ -2504,9 +2502,6 @@ void skewed_polynomial_selection()
                     }
                     else ad = new_ad;
 
-                    end = time(0);
-
-                    //std::cout << try_count << " a_d's tested in " << end - start << " seconds (" << (double)try_count / (double)(end - start) << " per second)" << std::endl;
                     try_count = 0;
                     // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
                     // but only for degree 5 and above.
@@ -2626,7 +2621,6 @@ void skewed_polynomial_selection()
                         }
                         fm = fm + cubic_adjustment;
                     }
-                    start = time(0);
                 }
                 //cout << "c_inc = " << c_inc << std::endl;
                 //cout << "ad = " << ad << std::endl;

@@ -206,7 +206,7 @@ class Graph
                if (w < L[v])
                {
                   L[v] = w;
-                  node_heap[v] = std::make_pair<Node*, double>(u, w);
+                  node_heap[v] = std::make_pair(u, w);
                }
                if (L[v] < min_w)
                {
@@ -406,7 +406,7 @@ class Graph
             }
             std::pair<T, T> operator*()
             {
-               return std::make_pair<T,T>(gi_->first->data_, gi_->second->data_);
+               return std::make_pair(gi_->first->data_, gi_->second->data_);
             }
             int operator==(const connection_iterator& ci) const
             {
