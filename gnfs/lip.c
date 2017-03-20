@@ -539,7 +539,7 @@ This definition of zaddmulp and zaddmulpsq assumes nothing
 	{ \
 		zaddmulp(lmmpa, *lmmpb, lmmd, &zmmtemp); \
 		lmmpa++; \
-		*lmmpb++; \
+		lmmpb++; \
 	} \
 	if (((*lmmpa += zmmtemp) & RADIX) > 0) \
 	{ \
@@ -1109,7 +1109,7 @@ zmulmods(
    return lr;
 }
 
-
+#if 0
 #define MulLo(rres,a,b) \
 { \
    register double _x = ((double) a) * ((double) b); \
@@ -1138,6 +1138,7 @@ zmulmod26(
       p1 -= n;
    return(p1);
 }
+#endif
 
 extern void *calloc();
 

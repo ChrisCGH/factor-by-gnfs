@@ -27,6 +27,7 @@ std::string level_to_string(Logger::level l)
         case Logger::debug:
             return "DEBUG  ";
     }
+    return "NOTICE ";
 }
 }
 
