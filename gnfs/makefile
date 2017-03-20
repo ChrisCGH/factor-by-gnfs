@@ -584,7 +584,7 @@ postProcessing : $(OUTPUTDIR) $(OUTPUTDIR)/postProcessing.pl
 	
 
 $(OUTPUTDIR)/postProcessing.pl : postProcessing.pl
-	sed 's/vcbin/gbin/' < postProcessing.pl > $(OUTPUTDIR)/postProcessing.pl
+	sed -e 's/c:\/maths\/gnfs\/vcbin/..\/..\/gbin/' -e 's/processDependencies"/processDependencies.exe"/' postProcessing.pl > $(OUTPUTDIR)/postProcessing.pl
 	chmod +x $(OUTPUTDIR)/postProcessing.pl
 
 cleanpp:
