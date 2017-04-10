@@ -841,11 +841,8 @@ bool LatticeSiever::is_actually_smooth(FastVeryLong& remaining_quotient,
         {
             std::cerr << "1. done" << std::endl;
         }
-        for (std::vector<long int>::const_iterator it = fac.begin();
-                it != fac.end();
-                ++it)
+        for (auto& f: fac)
         {
-            long int f = *it;
             if (debug)
             {
                 std::cerr << "2. factor.push_back(f=" << f << ")" << std::endl;
@@ -874,11 +871,8 @@ bool LatticeSiever::is_actually_smooth(FastVeryLong& remaining_quotient,
     }
     if (!remaining_quotient.factorise_no_trial(&fac)) return false;
 
-    for (std::vector<long int>::const_iterator it = fac.begin();
-            it != fac.end();
-            ++it)
+    for (auto& f: fac)
     {
-        long int f = *it;
         if (f > L)
         {
             if (debug)

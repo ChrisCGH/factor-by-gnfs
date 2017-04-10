@@ -250,7 +250,7 @@ private:
                 one_[one_size_] = *it;
                 ++one_size_;
             }
-			std::sort(one_, one_ + one_size_);
+            std::sort(one_, one_ + one_size_);
         }
 
         void set_row(const std::vector<size_t>& columns)
@@ -262,14 +262,12 @@ private:
                 one_ = new uint32_t [ one_cap_ ];
             }
             one_size_ = 0;
-            for (std::vector<size_t>::const_iterator it = columns.begin();
-                 it != columns.end();
-                 ++it)
+            for (auto& col: columns)
             {
-                one_[one_size_] = *it;
+                one_[one_size_] = col;
                 ++one_size_;
             }
-			std::sort(one_, one_ + one_size_);
+            std::sort(one_, one_ + one_size_);
         }
 
         ISparseRow::xor_status xor(size_t col)
@@ -864,18 +862,18 @@ class SparseMatrix : public ISparseMatrix
         void set_row(size_t row, const int* first_col, int col_count)
         {
             extend(row + 1);
-			int highest_col = -1;
+            int highest_col = -1;
 #ifdef FILE_BASED_SPARSE_MATRIX
             if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
             {
                 fbsrm_->set_row(row, first_col, col_count);
-				highest_col = fbsrm_->row(row).highest_column();
+                highest_col = fbsrm_->row(row).highest_column();
             }
             else
 #endif
             {
                 sparse_row_[row]->set_row(first_col, col_count);
-				highest_col = sparse_row_[row]->highest_column();
+                highest_col = sparse_row_[row]->highest_column();
             }
 
             if (col_count)
@@ -887,18 +885,18 @@ class SparseMatrix : public ISparseMatrix
         void set_row(size_t row, const std::vector<size_t>& columns)
         {
             extend(row + 1);
-			int highest_col = -1;
+            int highest_col = -1;
 #ifdef FILE_BASED_SPARSE_MATRIX
             if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
             {
                 fbsrm_->set_row(row, columns);
-				highest_col = sparse_row_[row]->highest_column();
+                highest_col = sparse_row_[row]->highest_column();
             }
             else
 #endif
             {
                 sparse_row_[row]->set_row(columns);
-				highest_col = sparse_row_[row]->highest_column();
+                highest_col = sparse_row_[row]->highest_column();
             }
 
             if (!columns.empty())

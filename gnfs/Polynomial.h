@@ -53,11 +53,9 @@ template <class F> class Polynomial
          _coefficients.reserve(100L);
          _coefficients.resize(coefficient.size());
          int i = 0;
-         for (typename std::vector<F>::const_iterator iter = coefficient.begin();
-               iter != coefficient.end();
-               ++iter)
+         for (auto& co: coefficient)
          {
-            _coefficients[i] = *iter;
+            _coefficients[i] = co;
             i++;
          }
          check_degree();
@@ -144,11 +142,9 @@ template <class F> class Polynomial
          if (deg() != p.deg()) return 0;
          if (deg() == -1 && p.deg() == -1) return 1;
          typename std::vector<F>::const_iterator iter_p = p._coefficients.begin();
-         for (typename std::vector<F>::const_iterator iter = _coefficients.begin();
-               iter != _coefficients.end();
-               ++iter)
+         for (auto& co: _coefficients)
          {
-            if (*iter != *iter_p) return 0;
+            if (co != *iter_p) return 0;
             ++iter_p;
          }
          return 1;
@@ -174,18 +170,16 @@ template <class F> class Polynomial
       {
          int at_end = 0;
          typename std::vector<F>::iterator iter = _coefficients.begin();
-         for (typename std::vector<F>::const_iterator iter_p = p._coefficients.begin();
-               iter_p != p._coefficients.end();
-               ++iter_p)
+         for (auto& p_co: p._coefficients)
          {
             if (at_end || (iter == _coefficients.end()))
             {
                at_end = 1;
-               _coefficients.push_back(*iter_p);
+               _coefficients.push_back(p_co);
             }
             else
             {
-               (*iter) += (*iter_p);
+               (*iter) += (p_co);
                ++iter;
             }
          }
@@ -197,19 +191,17 @@ template <class F> class Polynomial
       {
          int at_end = 0;
          typename std::vector<F>::iterator iter = _coefficients.begin();
-         for (typename std::vector<F>::const_iterator iter_p = p._coefficients.begin();
-               iter_p != p._coefficients.end();
-               ++iter_p)
+         for (auto& p_co: p._coefficients)
          {
             if (at_end || (iter == _coefficients.end()))
             {
                at_end = 1;
-               F value = 0L - (*iter_p);
+               F value = 0L - p_co;
                _coefficients.push_back(value);
             }
             else
             {
-               (*iter) -= (*iter_p);
+               (*iter) -= p_co;
                ++iter;
             }
          }
@@ -230,16 +222,12 @@ template <class F> class Polynomial
          int i = 0;
          int j = 0;
 
-         for (typename std::vector<F>::const_iterator iter_p1 = _coefficients.begin();
-               iter_p1 != _coefficients.end();
-               ++iter_p1)
+         for (auto& p1: _coefficients)
          {
             j = 0;
-            for (typename std::vector<F>::const_iterator iter_p2 = p._coefficients.begin();
-                  iter_p2 != p._coefficients.end();
-                  ++iter_p2)
+            for (auto& p2: p._coefficients)
             {
-               F res = *iter_p1 * *iter_p2;
+               F res = p1 * p2;
                pp._coefficients[i + j] = pp._coefficients[i + j] + res;
                j++;
             }
@@ -260,18 +248,16 @@ template <class F> class Polynomial
          int at_end = 0;
 
          typename std::vector<F>::iterator iter = p._coefficients.begin();
-         for (typename std::vector<F>::const_iterator iter_p2 = p2._coefficients.begin();
-               iter_p2 != p2._coefficients.end();
-               ++iter_p2)
+         for (auto& co_p2: p2._coefficients)
          {
             if (at_end || (iter == p._coefficients.end()))
             {
                at_end = 1;
-               p._coefficients.push_back(*iter_p2);
+               p._coefficients.push_back(co_p2);
             }
             else
             {
-               (*iter) = (*iter) + (*iter_p2);
+               (*iter) = (*iter) + co_p2;
                ++iter;
             }
 
@@ -286,18 +272,16 @@ template <class F> class Polynomial
          int at_end = 0;
 
          typename std::vector<F>::iterator iter = p._coefficients.begin();
-         for (typename std::vector<F>::const_iterator iter_p2 = p2._coefficients.begin();
-               iter_p2 != p2._coefficients.end();
-               ++iter_p2)
+         for (auto& co_p2: p2._coefficients)
          {
             if (at_end || (iter == p._coefficients.end()))
             {
                at_end = 1;
-               p._coefficients.push_back(F(0L)-(*iter_p2));
+               p._coefficients.push_back(F(0L)-co_p2);
             }
             else
             {
-               *iter = *iter - *iter_p2;
+               *iter = *iter - co_p2;
                ++iter;
             }
 
@@ -355,16 +339,12 @@ template <class F> class Polynomial
          int i = 0;
          int j = 0;
 
-         for (typename std::vector<F>::const_iterator iter_p1 = p1._coefficients.begin();
-               iter_p1 != p1._coefficients.end();
-               ++iter_p1)
+         for (auto& co_p1: p1._coefficients)
          {
             j = 0;
-            for (typename std::vector<F>::const_iterator iter_p2 = p2._coefficients.begin();
-                  iter_p2 != p2._coefficients.end();
-                  ++iter_p2)
+            for (auto& co_p2: p2._coefficients)
             {
-               F res = *iter_p1 * *iter_p2;
+               F res = co_p1 * co_p2;
                p._coefficients[i + j] = p._coefficients[i + j] + res;
                j++;
             }
@@ -379,11 +359,9 @@ template <class F> class Polynomial
          Polynomial p = p1;
          if (p.deg() < 0) return p;
 
-         for (typename std::vector<F>::iterator iter = p._coefficients.begin();
-               iter != p._coefficients.end();
-               ++iter)
+         for (auto& co: p._coefficients)
          {
-            *iter /= value;
+            co /= value;
          }
          p.check_degree();
          return p;
@@ -660,7 +638,7 @@ template <class F> class Polynomial
          if (i > deg())
          {
              return F(0L);
-	 }
+         }
          return _coefficients[i];
       }
 
@@ -668,11 +646,9 @@ template <class F> class Polynomial
       {
          int i = 0;
          const long zero = 0;
-         for (typename std::vector<F>::const_iterator iter = p._coefficients.begin();
-               iter != p._coefficients.end();
-               ++iter)
+         for (auto& co: p._coefficients)
          {
-            F value = *iter;
+            F value = co;
             int sign = 1;
             if (value < F((const long)zero))
             {
@@ -715,12 +691,10 @@ template <class F> class Polynomial
          // corresponding to f(X) at (a,b)
          F result = 0L;
          F temp = 1L;
-         for (typename std::vector<F>::const_iterator iter = _coefficients.begin();
-               iter != _coefficients.end();
-               ++iter)
+         for (auto& co: _coefficients)
          {
             result *= b;
-            result += temp * (*iter);
+            result += temp * co;
             temp *= a;
          }
          return result;

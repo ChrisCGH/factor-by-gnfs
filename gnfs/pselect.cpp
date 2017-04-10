@@ -1495,11 +1495,9 @@ void PolynomialPairCalculator::XYZ::make_flists()
     if (ppc_.debug_)
     {
         std::cout << "flist1 : " << std::endl;
-        for (flist_collection::const_iterator it1 = flist1_.begin();
-                it1 != flist1_.end();
-                ++it1)
+        for (auto& i1: flist1_)
         {
-            it1->display(ppc_.d_, flist1_mu_length_);
+            i1.display(ppc_.d_, flist1_mu_length_);
         }
     }
     flist2_mu_length_ = primes_to_combine_ - u;
@@ -1527,11 +1525,9 @@ void PolynomialPairCalculator::XYZ::find_good_mu()
         std::cout << "epsilon  = " << epsilon << std::endl;
     }
 
-    for (flist_collection::const_iterator it1 = flist1_.begin();
-            it1 != flist1_.end();
-            ++it1)
+    for (auto& i1: flist1_)
     {
-        flist2_.check_for_match(ppc_.d_, *it1, epsilon, flist1_mu_length_, flist2_mu_length_, good_mu_, ppc_.debug_);
+        flist2_.check_for_match(ppc_.d_, i1, epsilon, flist1_mu_length_, flist2_mu_length_, good_mu_, ppc_.debug_);
     }
 }
 

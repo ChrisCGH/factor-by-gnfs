@@ -86,11 +86,8 @@ void findLeadingCoefficientValuations()
    Ideal::integralPart(I_c_d, lcm, AA);
 
    std::vector<long int> sp_list = SpecialPrimes->getListOfExceptionalPrimes();
-   for (std::vector<long int>::iterator it = sp_list.begin();
-         it != sp_list.end();
-         ++it)
+   for (auto& p: sp_list)
    {
-      long int p = *it;
       for (std::vector<PrimeIdealRep*>::const_iterator piit = SpecialPrimes->begin(p);
             piit != SpecialPrimes->end(p);
             ++piit)
@@ -259,13 +256,11 @@ void addRelationFactorisation(const Relation& rel, int sign,
    {
       std::cout << "addRelationFactorisation: (a,b) = (" << a << "," << b << ")" << std::endl;
    }
-   for (Relation::primelist::const_iterator primeIter = rel.primes_.begin();
-         primeIter != rel.primes_.end();
-         ++primeIter)
+   for (auto& pr: rel.primes_)
    {
-      long int p = (*primeIter).first;
+      long int p = pr.first;
       VeryLong p_vl(p);
-      int e_p_r = (*primeIter).second;
+      int e_p_r = pr.second;
 //      cout << "p = " << p << ", e_p_r = " << e_p_r << endl;
 
       if (isSpecial(p))
@@ -293,12 +288,10 @@ void printPrimeIdealProduct(const PrimeIdealDecomposition& primeIdealProduct)
    //if (Debug)
    {
       std::fstream file("primeIdealProduct.dmp", std::ios::out);
-      for (PrimeIdealDecomposition::const_iterator iter = primeIdealProduct.begin();
-            iter != primeIdealProduct.end();
-            ++iter)
+      for (auto& pi: primeIdealProduct)
       {
-         PrimeIdealRep* pir = iter->first;
-         int v = iter->second;
+         PrimeIdealRep* pir = pi.first;
+         int v = pi.second;
          file << "v = <" << v << ">, ";
 		 file << *pir << std::endl;
       }
@@ -338,21 +331,17 @@ void producePrimeDecomposition(const RelationList& relationNumer,
 {
    std::cout << "producing prime decomposition ..." << std::endl;
    //int firstTime = 1;
-   for (RelationList::const_iterator relationIter = relationNumer.begin();
-         relationIter != relationNumer.end();
-         ++relationIter)
+   for (auto& rn: relationNumer)
    {
-      Relation* rel = *relationIter;
+      Relation* rel = rn;
       //cout << "Adding (" << rel->a << "," << rel->b << ")" << endl;
       addRelationFactorisation(*rel, 1, primeIdealProduct);
    }
    if (relationDenom.size() > 0)
    {
-      for (RelationList::const_iterator relationIter = relationDenom.begin();
-            relationIter != relationDenom.end();
-            ++relationIter)
+      for (auto& rd: relationDenom)
       {
-         Relation* rel = *relationIter;
+         Relation* rel = rd;
          addRelationFactorisation(*rel, -1, primeIdealProduct);
       }
    }
@@ -400,17 +389,12 @@ double complexity(const RelationList& relations,
    const VeryLong zero(0L);
    FactorBase& fb = nf->factorBase();
    int i = 0;
-   for (RelationList::const_iterator relIter = relations.begin();
-         relIter != relations.end();
-         ++relIter)
+   for (auto& rel: relations)
    {
-      Relation* rel = *relIter;
-      for (Relation::primelist::iterator primeIter = rel->primes_.begin();
-            primeIter != rel->primes_.end();
-            ++primeIter)
+      for (auto& p1: rel->primes_)
       {
-         long int p = (*primeIter).first;
-         long int v = (*primeIter).second;
+         long int p = p1.first;
+         long int v = p1.second;
          LongModular::set_default_modulus(p);
          VeryLong pp(p);
          for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
@@ -429,12 +413,10 @@ double complexity(const RelationList& relations,
    }
 
    double C = 0.0;
-   for (std::map<std::pair<long int, long int>, int>::iterator S_iter = S.begin();
-         S_iter != S.end();
-         ++S_iter)
+   for (auto& s1: S)
    {
-      long int p = ((*S_iter).first).first;
-      C += ln(p) * fabs((double)(*S_iter).second);
+      long int p = (s1.first).first;
+      C += ln(p) * fabs((double)s1.second);
    }
    timing->stop();
    return C;
@@ -457,12 +439,10 @@ double complexity(const RelationList& relations,
    if (j < (int)e.size())
    {
       Relation* rel = relations[j];
-      for (Relation::primelist::iterator primeIter = rel->primes_.begin();
-            primeIter != rel->primes_.end();
-            ++primeIter)
+      for (auto& p1: rel->primes_)
       {
-         long int p = (*primeIter).first;
-         long int v = (*primeIter).second;
+         long int p = p1.first;
+         long int v = p1.second;
          a_pair.first = p;
          LongModular::set_default_modulus(p);
          //VeryLong pp(p);
@@ -494,12 +474,10 @@ double complexity(const RelationList& relations,
    if (k >= 0)
    {
       Relation* rel = relations[k];
-      for (Relation::primelist::iterator primeIter = rel->primes_.begin();
-            primeIter != rel->primes_.end();
-            ++primeIter)
+      for (auto& p1: rel->primes_)
       {
-         long int p = (*primeIter).first;
-         long int v = (*primeIter).second;
+         long int p = p1.first;
+         long int v = p1.second;
          a_pair.first = p;
          LongModular::set_default_modulus(p);
          //VeryLong pp(p);
@@ -594,12 +572,10 @@ int printRelations(const RelationList& relations)
       if (Debug)
       {
          std::cout << "(" << a << "," << b << ") : ";
-         for (Relation::primelist::const_iterator primeIter = rel->primes_.begin();
-               primeIter != rel->primes_.end();
-               ++primeIter)
+         for (auto& p1: rel->primes_)
          {
-            long int p = (*primeIter).first;
-            long int v = (*primeIter).second;
+            long int p = p1.first;
+            long int v = p1.second;
             if (v > 1)
                std::cout << p << "^" << v << " ";
             else if (v == 1)
@@ -705,11 +681,8 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
             //std::cerr << "Factorising remainder of F(" << aa << "," << bb << ") = " << f << std::endl;
             f.factorise(&factors);
          }
-         for (std::vector<VeryLong>::const_iterator factorIter = factors.begin();
-               factorIter != factors.end();
-               ++factorIter)
+         for (auto& pp: factors)
          {
-            VeryLong pp = *factorIter;
             if (pp > LONG_MAX_VL)
             {
                smooth = false;
@@ -722,21 +695,16 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
          }
          if (smooth)
          {
-            for (std::vector<VeryLong>::const_iterator factorIter = factors.begin();
-                  factorIter != factors.end();
-                  ++factorIter)
+            for (auto& pp: factors)
             {
-               VeryLong pp = *factorIter;
                long int p = pp.get_long();
                primes[p]++;
                fb.queue_extra(p);
             }
             // now look at the primes which divide c_d
-            for (std::map<long int, int>::const_iterator projIter = ProjectivePrimes.begin();
-                  projIter != ProjectivePrimes.end();
-                  ++projIter)
+            for (auto& pp: ProjectivePrimes)
             {
-               long int p = (*projIter).first;
+               long int p = pp.first;
                // for projective primes which aren't already in rel->primes set
                // value to -1
                if (primes.find(p) == primes.end())
@@ -746,11 +714,9 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
             }
             // copy primes into Relation pointed to by rel
             rel->primes_.reserve(primes.size());
-            for (std::map<long int, int>::const_iterator it = primes.begin();
-                  it != primes.end();
-                  ++it)
+            for (auto& p1: primes)
             {
-               rel->primes_.push_back(PrimeValuation(it->first, it->second));
+               rel->primes_.push_back(PrimeValuation(p1.first, p1.second));
             }
             if (numeratorRelation)
             {
@@ -1263,11 +1229,8 @@ void processApproximation(const RelationList& relationNumer,
       if (i == 0)
          if (dumpfile) *dumpfile << "NUMERATOR_RELATIONS" << std::endl;
 
-      for (RelationList::const_iterator numIter = relationNumer.begin();
-            numIter != relationNumer.end();
-            ++numIter)
+      for (auto& rel: relationNumer)
       {
-         Relation* rel = *numIter;
          AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
          if (i == 0)
          {
@@ -1306,11 +1269,8 @@ void processApproximation(const RelationList& relationNumer,
       if (i == 0)
          if (dumpfile) *dumpfile << "DENOMINATOR_RELATIONS" << std::endl;
 
-      for (RelationList::const_iterator denIter = relationDenom.begin();
-            denIter != relationDenom.end();
-            ++denIter)
+      for (auto& rel: relationDenom)
       {
-         Relation* rel = *denIter;
          AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
          if (i == 0)
          {
@@ -1659,12 +1619,10 @@ void approximateSquareRoot(const RelationList& relationNumer,
    Ideal I;
    // Initialise variables
    // G is set to the square root of primeIdealProduct, i.e. divide each valuation by 2:
-   for (PrimeIdealDecomposition::const_iterator pip_iter = primeIdealProduct.begin();
-         pip_iter != primeIdealProduct.end();
-         ++pip_iter)
+   for (auto& pip: primeIdealProduct)
    {
-      PrimeIdealRep* pir = (*pip_iter).first;
-      int val = (*pip_iter).second;
+      PrimeIdealRep* pir = pip.first;
+      int val = pip.second;
       if (val % 2 != 0)
       {
          std::cerr << "Problem: prime valuation " << val << " not even : " << *pir << std::endl;
@@ -1682,15 +1640,12 @@ void approximateSquareRoot(const RelationList& relationNumer,
    // or, taking logs, ln(N(gamma)) = sum(ln(sig_j(gamma)))
    std::vector<long double> sigma;
    sigma.resize(degree);
-      for (int j = 0; j < degree; j++)
-      {
-         sigma[j] = 0.0;
-      }
-   for (RelationList::const_iterator r_iter = relationNumer.begin();
-         r_iter != relationNumer.end();
-         ++r_iter)
+   for (int j = 0; j < degree; j++)
    {
-      Relation* rel = *r_iter;
+      sigma[j] = 0.0;
+   }
+   for (auto& rel: relationNumer)
+   {
       VeryLong a = rel->a;
       VeryLong b = rel->b;
       for (int j = 0; j < degree; j++)
@@ -1698,11 +1653,8 @@ void approximateSquareRoot(const RelationList& relationNumer,
          sigma[j] += nf->ln_sigma(j, a, b);
       }
    }
-   for (RelationList::const_iterator r_iter = relationDenom.begin();
-         r_iter != relationDenom.end();
-         ++r_iter)
+   for (auto& rel: relationDenom)
    {
-      Relation* rel = *r_iter;
       VeryLong a = rel->a;
       VeryLong b = rel->b;
       for (int j = 0; j < degree; j++)
@@ -1751,11 +1703,9 @@ void approximateSquareRoot(const RelationList& relationNumer,
       Ideal I = selectIdeal(s_l, G, G_index, pos_iter, neg_iter, H, H_norm, contributingPrimes);
 #ifdef CHECKNORM
 	  std::cerr << "l = " << l << " [";
-	  for (std::vector<PrimeIdealRep*>::const_iterator pIter = contributingPrimes.begin();
-		   pIter != contributingPrimes.end();
-		   ++pIter)
+      for (auto& cp: contributingPrimes)
 	  {
-		  std::cerr << *(*pIter) << ",";
+		  std::cerr << *cp << ",";
 	  }
 	  std::cerr << "], N(I) = " << I.norm() << std::endl;
 #endif
@@ -1823,11 +1773,8 @@ void approximateSquareRoot(const RelationList& relationNumer,
       Ideal check1 = I / H;
       Ideal check2(an_one);
       double ln_norm = 0.0;
-      for (std::vector<PrimeIdealRep*>::const_iterator it = contributingPrimes.begin();
-            it != contributingPrimes.end();
-            ++it)
+      for (auto& pir: contributingPrimes)
       {
-         PrimeIdealRep* pir = *it;
          check2 *= *pir;
          VeryLong norm = pir->norm();
          if (norm < 0L) norm = -norm;
@@ -1847,11 +1794,8 @@ void approximateSquareRoot(const RelationList& relationNumer,
       if (!Dump_file.empty())
       {
          double ln_norm = 0.0;
-         for (std::vector<PrimeIdealRep*>::const_iterator it = contributingPrimes.begin();
-               it != contributingPrimes.end();
-               ++it)
+         for (auto& pir: contributingPrimes)
          {
-            PrimeIdealRep* pir = *it;
             VeryLong norm = pir->norm();
             if (norm < 0L) norm = -norm;
             ln_norm += ln(norm);
@@ -1894,12 +1838,10 @@ void approximateSquareRoot(const RelationList& relationNumer,
          /*
          * double check that G = <1>
          */
-         for (PrimeIdealDecomposition::const_iterator it = G.begin();
-               it != G.end();
-               ++it)
+         for (auto& pid: G)
          {
-            PrimeIdealRep* pir = it->first;
-            int v = it->second;
+            PrimeIdealRep* pir = pid.first;
+            int v = pid.second;
             if (v != 0)
             {
                std::cerr << "Problem: G[pir] is non-zero (" << v << "), for pir = " << *pir << std::endl;
@@ -1981,19 +1923,17 @@ void approximateSquareRoot(const RelationList& relationNumer,
          {
             Quotient<VeryLong> unfactored_quotient(1L);
 	         std::cerr << "Contents of unfactored_norm_delta : " << std::endl;
-	         for (std::map<long int, VeryLong>::const_iterator it = unfactored_norm_delta.begin();
-                  it != unfactored_norm_delta.end();
-		         ++it)
+             for (auto& und: unfactored_norm_delta)
 	         {
-               if (it->first % 2L == 0L)
+               if (und.first % 2L == 0L)
                {
-                  unfactored_quotient *= it->second;
+                  unfactored_quotient *= und.second;
                }
                else
                {
-                  unfactored_quotient /= it->second;
+                  unfactored_quotient /= und.second;
                }
-		         std::cerr << "l = " << it->first << ", unfactored part of N(delta_" << it->first << ") = " << it->second << std::endl;
+		         std::cerr << "l = " << und.first << ", unfactored part of N(delta_" << und.first << ") = " << und.second << std::endl;
 	         }
             std::cerr << "unfactored_quotient = " << unfactored_quotient << std::endl;
          }
@@ -2003,12 +1943,10 @@ void approximateSquareRoot(const RelationList& relationNumer,
 		   }
          // check that the primes in check_norm_prime_decomposition have positive even valuations
 		   std::cerr << "contents of check_norm_prime_decomposition" << std::endl;
-         for (std::map<VeryLong, long int>::const_iterator iter = check_norm_prime_decomposition.begin();
-               iter != check_norm_prime_decomposition.end();
-               ++iter)
+         for (auto& pd: check_norm_prime_decomposition)
          {
-            VeryLong p = iter->first;
-            long int v = iter->second;
+            VeryLong p = pd.first;
+            long int v = pd.second;
             if (v % 2)
             {
                std::cerr << "Problem!: valuation of prime " << p << " in norm(gamma_L) is not even : " << v << std::endl;

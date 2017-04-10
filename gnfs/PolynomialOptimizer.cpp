@@ -117,11 +117,9 @@ namespace
         }
         else
         {
-            for (std::vector<VeryLong>::const_iterator iter = F_sample.begin();
-                    iter != F_sample.end();
-                    ++iter)
+            for (auto& i1: F_sample)
             {
-                VeryLong value = *iter;
+                VeryLong value = i1;
                 while (value % p == 0L)
                 {
                     value /= p;

@@ -350,11 +350,9 @@ class VeryLongTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(v23.factorise_trial_division(&factors, &v77));
         CPPUNIT_ASSERT(factors.size() == 12);
         VeryLong v78(v77);
-        for (std::vector<VeryLong>::const_iterator it = factors.begin();
-              it != factors.end();
-              ++it)
+        for (auto& f: factors)
         {
-           v78 *= *it;
+           v78 *= f; 
         }
         CPPUNIT_ASSERT(v78 == v23);
      
@@ -364,11 +362,9 @@ class VeryLongTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(ifactors.size() == 12);
      
         VeryLong v80(v79);
-        for (std::vector<long int>::const_iterator it = ifactors.begin();
-              it != ifactors.end();
-              ++it)
+        for (auto& f: ifactors)
         {
-           v80 *= *it;
+           v80 *= f;
         }
         CPPUNIT_ASSERT(v80 == v23);
      
@@ -378,11 +374,9 @@ class VeryLongTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(iifactors.size() == 10);
      
         VeryLong v82(v81);
-        for (std::vector<long int>::const_iterator it = iifactors.begin();
-              it != iifactors.end();
-              ++it)
+        for (auto& iif: iifactors)
         {
-           v82 *= *it;
+           v82 *= iif;
         }
         CPPUNIT_ASSERT(v82 == v23);
      
@@ -405,11 +399,9 @@ class VeryLongTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(v23.factorise(&factors89));
         CPPUNIT_ASSERT(factors89.size() == 13);
         VeryLong v90(1L);
-        for (std::vector<VeryLong>::const_iterator it = factors89.begin();
-              it != factors89.end();
-              ++it)
+        for (auto& f: factors89)
         {
-           v90 *= *it;
+           v90 *= f;
         }
         CPPUNIT_ASSERT(v90 == v23);
      
@@ -694,11 +686,9 @@ int main()
    t.check(v23.factorise_trial_division(&factors, &v77), "factorise_trial_division should succeed");
    t.check(factors.size() == 12, "factors.size() should be 12");
    VeryLong v78(v77);
-   for (std::vector<VeryLong>::const_iterator it = factors.begin();
-         it != factors.end();
-         ++it)
+   for (auto& f: factors)
    {
-      v78 *= *it;
+      v78 *= f;
    }
    t.check(v78 == v23, "v78 should equal v23");
 
@@ -708,11 +698,9 @@ int main()
    t.check(ifactors.size() == 12, "ifactors.size() should be 12");
 
    VeryLong v80(v79);
-   for (std::vector<long int>::const_iterator it = ifactors.begin();
-         it != ifactors.end();
-         ++it)
+   for (auto& f: ifactors)
    {
-      v80 *= *it;
+      v80 *= f;
    }
    t.check(v80 == v23, "v80 should equal v23");
 
@@ -722,11 +710,9 @@ int main()
    t.check(iifactors.size() == 10, "iifactors.size() should be 10");
 
    VeryLong v82(v81);
-   for (std::vector<long int>::const_iterator it = iifactors.begin();
-         it != iifactors.end();
-         ++it)
+   for (auto& iif: iifactors)
    {
-      v82 *= *it;
+      v82 *= iif;
    }
    t.check(v82 == v23, "v82 should equal v23");
 
@@ -749,11 +735,9 @@ int main()
    t.check(v23.factorise(&factors89), "factorise should succeed");
    t.check(factors89.size() == 13, "factors89.size() should be 13");
    VeryLong v90(1L);
-   for (std::vector<VeryLong>::const_iterator it = factors89.begin();
-         it != factors89.end();
-         ++it)
+   for (auto& f: factors89)
    {
-      v90 *= *it;
+      v90 *= f;
    }
    t.check(v90 == v23, "v90 should equal v23");
 

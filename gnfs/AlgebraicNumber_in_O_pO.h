@@ -84,10 +84,10 @@ template <class INTEGER, class INTEGER2, class MODULAR_INTEGER> class AlgebraicN
 
       AlgebraicNumber_in_O_pO_(long long int a, long int b)
       {
-	 if (!optimisation_ok_)
+         if (!optimisation_ok_)
          { 
-	    throw std::string("Problem: can't use optimisation to create AlgebraicNumber_in_O_pO_");
-	 }
+             throw std::string("Problem: can't use optimisation to create AlgebraicNumber_in_O_pO_");
+         }
          // corresponding to a - b alpha
          Fp_basis_[0] = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_;
          Fp_basis_[1] = MODULAR_INTEGER(-b) * w11_;
@@ -301,22 +301,16 @@ template <class INTEGER, class INTEGER2, class MODULAR_INTEGER> class AlgebraicN
          if (V.rows() != d || V.columns() != d*d) V.set_size(d, d * d);
          int ij = 0;
          AlgebraicNumber x;
-         for (std::vector<AlgebraicNumber>::const_iterator i_iter = omega.begin();
-               i_iter != omega.end();
-               ++i_iter)
+         for (auto& i: omega)
          {
-            for (std::vector<AlgebraicNumber>::const_iterator j_iter = omega.begin();
-                  j_iter != omega.end();
-                  ++j_iter)
+            for (auto& j: omega)
             {
-               x = (*i_iter) * (*j_iter);
+               x = i * j;
                // get coefficients in terms of theta
                int m = 0;
-               for (std::vector<Quotient<VeryLong> >::const_iterator m_iter = x.coefficients().begin();
-                     m_iter != x.coefficients().end();
-                     ++m_iter)
+               for (auto& x_co: x.coefficients())
                {
-                  V(m,ij) = (*m_iter);
+                  V(m,ij) = x_co;
                   m++;
                }
                ij++;
@@ -342,18 +336,18 @@ template <class INTEGER, class INTEGER2, class MODULAR_INTEGER> class AlgebraicN
          MODULAR_INTEGER w01d = AlgebraicNumber::nf().winv()(0,1).denominator() % p_;
          MODULAR_INTEGER w11n = AlgebraicNumber::nf().winv()(1,1).numerator() % p_;
          MODULAR_INTEGER w11d = AlgebraicNumber::nf().winv()(1,1).denominator() % p_;
-	 // If p_ doesn't divide the denominator if winv()(0,1) or winv()(1,1) then
-	 // we can pre-calculate some numbers (mod p_) which are used when constructing
-	 // a - b alpha (mod p_) in O/pO
-	 // In practice, this is only needed when p_ is an inert prime, which will
-	 // always satisfy this condition
+         // If p_ doesn't divide the denominator if winv()(0,1) or winv()(1,1) then
+         // we can pre-calculate some numbers (mod p_) which are used when constructing
+         // a - b alpha (mod p_) in O/pO
+         // In practice, this is only needed when p_ is an inert prime, which will
+         // always satisfy this condition
          optimisation_ok_ = false;
-	 if (w01d != MODULAR_INTEGER(0L) && w11d != MODULAR_INTEGER(0L))
-	 {
+         if (w01d != MODULAR_INTEGER(0L) && w11d != MODULAR_INTEGER(0L))
+         {
             w01_ = w01n / w01d;
             w11_ = w11n / w11d;
-	    optimisation_ok_ = true;
-	 }
+            optimisation_ok_ = true;
+         }
       }
 
       static void set_basis(const Matrix<Quotient<INTEGER2> >& W,

@@ -621,12 +621,10 @@ class FastVeryLong : public VeryLong
             std::vector<VeryLong> f;
             if (VeryLong::factorise_no_trial(&f))
             {
-               for (std::vector<VeryLong>::const_iterator it = f.begin();
-                     it != f.end();
-                     ++it)
+               for (auto& vl: f)
                {
-                  if (*it > VeryLong(max_long_)) return false;
-                  factors->push_back(it->get_long());
+                  if (vl > VeryLong(max_long_)) return false;
+                  factors->push_back(vl.get_long());
                }
                return true;
             }

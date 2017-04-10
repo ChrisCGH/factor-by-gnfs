@@ -223,11 +223,9 @@ class FactorBase
    public:
       void add_extra(int32_t p, std::vector<LongModular>& roots)
       {
-         for (std::vector<LongModular>::iterator iter = roots.begin();
-               iter != roots.end();
-               ++iter)
+         for (auto& r: roots)
          {
-            int32_t root = iter->get_long();
+            int32_t root = r.get_long();
             size_t i = 0;
             while (i < factor_base_overflow_[p].size() && factor_base_overflow_[p][i] != root)
             {

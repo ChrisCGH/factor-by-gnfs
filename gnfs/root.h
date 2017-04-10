@@ -86,11 +86,9 @@ class PrimeList
       }
       static void clear()
       {
-         for (std::vector<iterator>::iterator it = chunks_.begin();
-               it != chunks_.end();
-               ++it)
+         for (auto& chunk: chunks_)
          {
-            delete [] *it;
+            delete [] chunk;
          }
          chunks_.clear();
       }

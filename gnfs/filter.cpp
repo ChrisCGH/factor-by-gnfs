@@ -773,11 +773,8 @@ bool merge_ok(RelationManager& RelationSets, const std::vector<long int>& relati
    int k = relation_sets.size();
    int j = 1000;
    int c = 0;
-   for (std::vector<long int>::const_iterator it = relation_sets.begin();
-         it != relation_sets.end();
-         ++it)
+   for (auto& rs: relation_sets)
    {
-      long int rs = *it;
       int w = RelationSets.prime_weight(rs);
       if (w < j)
       {
@@ -827,12 +824,10 @@ void merge_relation_sets(RelationManager& RelationSets, long int prime, const st
 
       // connections from tree give the pairs of relation sets to merge
 
-      for (Graph<long int>::connection_iterator it = tree.begin();
-            it != tree.end();
-            ++it)
+      for (const auto& node: tree)
       {
-         long int rs1 = (*it).first;
-         long int rs2 = (*it).second;
+         long int rs1 = node.first;
+         long int rs2 = node.second;
          if (rs1 < rs2)
          {
             RelationSets.merge(rs1, rs2, prime);
@@ -842,11 +837,9 @@ void merge_relation_sets(RelationManager& RelationSets, long int prime, const st
    }
 
    // remove the original relation sets
-   for (std::vector<long int>::const_iterator it = relation_sets.begin();
-         it != relation_sets.end();
-         ++it)
+   for (auto& rs: relation_sets)
    {
-      RelationSets.remove(*it);
+      RelationSets.remove(rs);
    }
    if (frequencyTable->frequency(prime) != 0)
    {

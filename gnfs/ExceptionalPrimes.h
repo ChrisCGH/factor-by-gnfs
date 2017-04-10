@@ -29,11 +29,9 @@ class ExceptionalPrimes
       std::vector<long int> getListOfExceptionalPrimes()
       {
          std::vector<long int> theList;
-         for (exceptional_primes_iterator it = exceptional_primes_.begin();
-               it != exceptional_primes_.end();
-               ++it)
+         for (auto& p: exceptional_primes_)
          {
-            theList.push_back(it->first);
+            theList.push_back(p.first);
          }
          return theList;
       }

@@ -671,13 +671,11 @@ bool linear_algebra_stage(unsigned long long int N, long int& factor)
       ++bm_count;
    }
    std::vector<BitMatrix> M(bm_count);
-   for (std::vector<BitMatrix>::iterator it = M.begin();
-         it != M.end();
-         ++it)
+   for (auto& bmrow: M)
    {
-      it->row_.resize(row_count);
-      for (size_t i = 0; i < it->row_.size(); ++i) it->row_[i] = 0UL;
-      it->cols_ = N1;
+      bmrow.row_.resize(row_count);
+      for (size_t i = 0; i < bmrow.row_.size(); ++i) bmrow.row_[i] = 0UL;
+      bmrow.cols_ = N1;
    }
    if (column_count % N1 != 0)
    {

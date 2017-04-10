@@ -297,11 +297,9 @@ void Timing::summary()
 {
    Timing_* save = timing_;
    std::multimap<double, std::string> summary_map;
-   for (std::map<std::string, Timing_*>::iterator iter = timing_map_.begin();
-         iter != timing_map_.end();
-         ++iter)
+   for (auto& t: timing_map_)
    {
-      timing_ = iter->second;
+      timing_ = t.second;
       std::stringstream ss;
       double pct = 0.0;
       ss << time_str() << "," << timing_->message_ << ",Total,Real=" << std::setprecision(6)
@@ -325,17 +323,15 @@ void Timing::summary()
    {
       std::cerr << time_str() << "================ Summary ==================" << std::endl;
    }
-   for (std::multimap<double, std::string>::const_iterator iter = summary_map.begin();
-         iter != summary_map.end();
-         ++iter)
+   for (auto& s: summary_map)
    {
       if (timing_file_)
       {
-         *timing_file_ << iter->second << std::endl;
+         *timing_file_ << s.second << std::endl;
       }
       else
       {
-         std::cerr << iter->second << std::endl;
+         std::cerr << s.second << std::endl;
       }
    }
    if (timing_file_)
@@ -351,11 +347,9 @@ void Timing::summary()
 
 void Timing::reset()
 {
-   for (std::map<std::string, Timing_*>::iterator iter = timing_map_.begin();
-         iter != timing_map_.end();
-         ++iter)
+   for (auto& t: timing_map_)
    {
-      timing_ = iter->second;
+      timing_ = t.second;
       delete timing_;
    }
    timing_map_.clear();

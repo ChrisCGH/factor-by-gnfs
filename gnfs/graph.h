@@ -78,34 +78,29 @@ class Graph
       void display()
       {
          //std::cout << "Nodes in graph: " << std::endl;
-         for (node_set_iterator iter = node_set_.begin();
-               iter != node_set_.end();
-               ++iter)
+         for (auto& node: node_set_)
          {
-            std::cout << *(*iter) << std::endl;
+            std::cout << *(node) << std::endl;
          }
 
          //std::cout << "Connections: " << std::endl;
-         for (graph_iterator iter = graph_.begin();
-               iter != graph_.end();
-               ++iter)
+         for (auto& g: graph_)
          {
-            std::cout << *(iter->first) << "->" << *(iter->second) << std::endl;
+            std::cout << *(g.first) << "->" << *(g.second) << std::endl;
          }
       }
       void connected_components()
       {
          size_t component = 0;
-         for (graph_iterator iter = graph_.begin();
-               iter != graph_.end();
-               ++iter)
+         for (auto& g: graph_)
          {
-            if (iter->first->component_ == 0)
+            if (g.first->component_ == 0)
             {
                ++component;
-               set_component(iter->first, component);
+               set_component(g.first, component);
             }
          }
+
          component_count_ = component;
          //node_set_.sort();
       }
@@ -150,11 +145,9 @@ class Graph
       }
       void clear_components()
       {
-         for (graph_iterator iter = graph_.begin();
-               iter != graph_.end();
-               ++iter)
+         for (auto& g: graph_)
          {
-            iter->first.component_ = 0;
+            g.first.component_ = 0;
          }
          component_count_ = 0;
       }
@@ -304,11 +297,9 @@ class Graph
             }
             ~NodeSet()
             {
-               for (typename std::vector<Node*>::iterator it = nodes_.begin();
-                    it != nodes_.end();
-                    ++it)
+               for (auto& node: nodes_)
                {
-                   delete *it;
+                   delete node;
                }
             }
             component_iterator begin(size_t component)

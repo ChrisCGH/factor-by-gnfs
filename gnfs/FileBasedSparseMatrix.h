@@ -113,10 +113,10 @@ class FileBasedSparseRow : public ISparseRow
             return ISparseRow::XOR_ADDED;
         }
 
-		void sort()
-		{
-			std::sort(srwp_->one_, srwp_->one_ + srwp_->one_size_);
-		}
+        void sort()
+        {
+            std::sort(srwp_->one_, srwp_->one_ + srwp_->one_size_);
+        }
 
         void clear() 
         {
@@ -242,11 +242,11 @@ class FileBasedSparseRowManager
                 extend_file(index);
             }
             extend(r, col_count);
-			if (r == 8001489)
-			{
-				int x = 0;
-				++x;
-			}
+            if (r == 8001489)
+            {
+                int x = 0;
+                ++x;
+            }
             FileBasedSparseRow sr(*this, mmf_, r, row_index_[index]);
             for (const int* it = first_col;
                  it != first_col + col_count;
@@ -254,7 +254,7 @@ class FileBasedSparseRowManager
             {
                 sr.add_next(*it);
             }
-			sr.sort();
+            sr.sort();
         }
 
         void set_row(long int r, const std::vector<size_t>& columns)
@@ -279,7 +279,7 @@ class FileBasedSparseRowManager
             {
                 sr.add_next(*it);
             }
-			sr.sort();
+            sr.sort();
         }
 
         FileBasedSparseRow row(long int r)
@@ -554,7 +554,7 @@ inline void FileBasedSparseRow::extend(int inc)
 {
     if (srwp_->one_cap_ <= srwp_->one_size_)
     {
-	size_t new_memory_size = SparseRowWrapper::memory_size(srwp_->one_cap_ + inc);
+        size_t new_memory_size = SparseRowWrapper::memory_size(srwp_->one_cap_ + inc);
         offset_ = fbsrm_.extend(row_, srwp_->one_cap_ + inc);
         srwp_ = reinterpret_cast<SparseRowWrapper*>(mmf_.at_offset(offset_, new_memory_size));
     }

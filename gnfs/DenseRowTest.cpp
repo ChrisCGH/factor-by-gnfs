@@ -12,11 +12,9 @@ int main(int argc, char* argv[])
    {
       DenseRow dr(str);
       std::cout << dr.size();
-      for (DenseRow::const_iterator it = dr.begin();
-            it != dr.end();
-            ++it)
+      for (auto& r: dr)
       {
-         std::cout << " " << *it;
+         std::cout << " " << r;
       }
       std::cout << std::endl;
    }

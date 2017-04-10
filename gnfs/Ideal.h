@@ -284,7 +284,7 @@ class PrimeIdealT : public Ideal
 
          AlgebraicNumber_in_O_pO::set_basis(p);
          Matrix<VeryLongModular> Beta = AlgebraicNumber_in_O_pO::make_beta(q);
-	 //std::cerr << "Beta = " << Beta << std::endl;
+         //std::cerr << "Beta = " << Beta << std::endl;
 
          // Step 3. [Compute K_i]
          if (debug) std::cout << "Step 3 - Compute K_i" << std::endl;

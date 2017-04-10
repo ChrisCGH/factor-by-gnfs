@@ -61,11 +61,11 @@ class Timing
 class Timer
 {
 public:
-	Timer();
-	~Timer();
-	void start();
-	double stop();
-	double total_elapsed() const;
+    Timer();
+    ~Timer();
+    void start();
+    double stop();
+    double total_elapsed() const;
     static void reset();
 private:
     static int clk_tck_;
@@ -78,6 +78,6 @@ private:
     double elapsed_real_;
     double elapsed_user_;
     double elapsed_system_;
-	static time_t creation_time_;
+    static time_t creation_time_;
 };
 #endif

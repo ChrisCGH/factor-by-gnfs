@@ -75,11 +75,9 @@ int readRatRelations(const std::string& filename, RelationList& ratRelations)
                primes[p]++;
             }
          }
-         for (std::map<long int, int>::const_iterator it = primes.begin();
-               it != primes.end();
-               ++it)
+         for (auto& pr: primes)
          {
-            rel->primes_.push_back(PrimeValuation(it->first, it->second));
+            rel->primes_.push_back(PrimeValuation(pr.first, pr.second));
          }
          ratRelations.push_back(rel);
       }
@@ -171,12 +169,10 @@ int main(int argc, char** argv)
       if (numerIter != relationNumer.end() &&
             a == VeryLong((*numerIter)->a) && b == (*numerIter)->b)
       {
-         for (Relation::primelist::iterator pIter = (*ratIter)->primes_.begin();
-               pIter != (*ratIter)->primes_.end();
-               ++pIter)
+         for (auto& p1: (*ratIter)->primes_)
          {
-            long int p = pIter->first;
-            int v = pIter->second;
+            long int p = p1.first;
+            int v = p1.second;
             primes[p] += v;
             while (f % p == 0L)
             {
@@ -197,12 +193,10 @@ int main(int argc, char** argv)
       else if (denomIter != relationDenom.end() &&
                a == VeryLong((*denomIter)->a) && b == (*denomIter)->b)
       {
-         for (Relation::primelist::iterator pIter = (*ratIter)->primes_.begin();
-               pIter != (*ratIter)->primes_.end();
-               ++pIter)
+         for (auto& p1: (*ratIter)->primes_)
          {
-            long int p = pIter->first;
-            int v = pIter->second;
+            long int p = p1.first;
+            int v = p1.second;
             primes[p] -= v;
             while (f % p == 0L)
             {
@@ -227,12 +221,10 @@ int main(int argc, char** argv)
    VeryLongModular c_d(f2.coefficient(f2.deg()));
    long int S = relationNumer.size() - relationDenom.size();
 
-   for (std::map<long int, int>::iterator iter = primes.begin();
-         iter != primes.end();
-         ++iter)
+   for (auto& pr: primes)
    {
-      VeryLong p = (*iter).first;
-      int v = (*iter).second;
+      VeryLong p = pr.first;
+      int v = pr.second;
       //std::cout << "(p,v) = (" << p << "," << v << ")" << std::endl;
       if (v % 2 != 0)
       {

@@ -259,11 +259,9 @@ void FactorBase::write_as_we_generate(const char* filename)
       if (roots.size() > 0)
       {
          file << p;
-         for (std::vector<LongModular>::iterator iter = roots.begin();
-               iter != roots.end();
-               ++iter)
+         for (auto& root1: roots)
          {
-            int32_t root = iter->get_long();
+            int32_t root = root1.get_long();
             size_t i = 0;
             while (i < factor_base.size() && factor_base[i] != root)
             {
@@ -428,18 +426,14 @@ void FactorBase::dump(const char* filename) const
    // write out overflow primes after a separator
    file << "!Overflow!" << std::endl;
 
-   for (fb_overflow::const_iterator iter = factor_base_overflow_.begin();
-         iter != factor_base_overflow_.end();
-         ++iter)
+   for (auto& p1: factor_base_overflow_)
    {
-      int32_t p = iter->first;
+      int32_t p = p1.first;
       file << p;
-      const std::vector<int32_t>& roots = iter->second;
-      for (std::vector<int32_t>::const_iterator root_iter = roots.begin();
-            root_iter != roots.end();
-            ++root_iter)
+      const std::vector<int32_t>& roots = p1.second;
+      for (auto& root: roots)
       {
-         file << " " << *root_iter;
+         file << " " << root;
       }
       file << std::endl;
    }

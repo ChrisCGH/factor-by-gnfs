@@ -79,11 +79,9 @@ LogManager::LogManager()
 
 LogManager::~LogManager()
 {
-    for (std::vector<Logger*>::iterator it = logger_list_.begin();
-         it != logger_list_.end();
-         ++it)
+    for (auto& i: logger_list_)
     {
-        delete *it;
+        delete i;
     }
     logger_list_.clear();
 }

@@ -29,10 +29,10 @@ class VeryLongModular
       int is_zero() const;
       int is_one() const;
       int operator!= (const VeryLongModular& vl) const;
-      /*	  int operator!= (const VeryLong& vl) const
-      	  {
-      		  return !(*this == vl);
-      	  }*/
+      /*  int operator!= (const VeryLong& vl) const
+          {
+             return !(*this == vl);
+          }*/
       int operator< (const VeryLongModular& vl) const
       {
          return (mpz_cmp(vl_, vl.vl_) < 0);

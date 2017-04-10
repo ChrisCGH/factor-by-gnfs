@@ -455,15 +455,13 @@ void RelationManager::remove(long int relation_set)
    //for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
          //it != relation_set_prime_map_.end(relation_set);
          //++it)
-   for (SparseRow::const_iterator it = sr.begin();
-         it != sr.end();
-         ++it)
+   for (const auto& pr: sr)
    {
-      if (prime_relation_set_map_.row_size(*it))
+      if (prime_relation_set_map_.row_size(pr))
       {
-         prime_relation_set_map_.xor(*it, relation_set);
+         prime_relation_set_map_.xor(pr, relation_set);
       }
-      frequency_table_.decrement_prime(*it);
+      frequency_table_.decrement_prime(pr);
    }
    relation_set_prime_map_.clear_row(relation_set);
 }
@@ -700,11 +698,9 @@ void RelationManager::remove_heavy_relation_sets()
       }
    }
    LOG_DEBUG("About to remove " << to_remove.size() << " relation sets");
-   for (std::vector<long int>::const_iterator it = to_remove.begin();
-         it != to_remove.end();
-         ++it)
+   for (auto& tr: to_remove)
    {
-      remove(*it);
+      remove(tr);
    }
    LOG_DEBUG("About to remove singletons");
    remove_singletons();

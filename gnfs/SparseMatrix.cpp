@@ -888,12 +888,10 @@ void kernel(std::vector<BitMatrix>& M, BitMatrix& kerM)
         throw "kernel: empty list of BitMatrix";
     size_t m = M[0].rows();
     size_t n = 0;
-    for (std::vector<BitMatrix>::const_iterator it = M.begin();
-            it != M.end();
-            ++it)
+    for (auto& r: M)
     {
-        if ((*it).rows() != m) throw "kernel: incompatible BitMatrix objects";
-        n += (*it).cols();
+        if (r.rows() != m) throw "kernel: incompatible BitMatrix objects";
+        n += r.cols();
     }
     size_t N = M[0].cols();
     size_t r = 0;
@@ -934,11 +932,9 @@ void kernel(std::vector<BitMatrix>& M, BitMatrix& kerM)
             {
                 if (BitOperations::clearBit(k_, Mu.row_[i]))
                 {
-                    for (std::vector<BitMatrix>::iterator it = M.begin();
-                            it != M.end();
-                            ++it)
+                    for (auto& r: M)
                     {
-                        (*it).xor(i, j);
+                        r.xor(i, j);
                     }
                 }
             }
@@ -946,11 +942,9 @@ void kernel(std::vector<BitMatrix>& M, BitMatrix& kerM)
             {
                 if (BitOperations::clearBit(k_, Mu.row_[i]))
                 {
-                    for (std::vector<BitMatrix>::iterator it = M.begin();
-                            it != M.end();
-                            ++it)
+                    for (auto& r: M)
                     {
-                        (*it).xor(i, j);
+                        r.xor(i, j);
                     }
                 }
             }
@@ -2472,12 +2466,10 @@ void kernel(std::vector<BitMatrix64>& M, BitMatrix64& kerM)
         throw "kernel: empty list of BitMatrix64";
     size_t m = M[0].rows();
     size_t n = 0;
-    for (std::vector<BitMatrix64>::const_iterator it = M.begin();
-            it != M.end();
-            ++it)
+    for (auto& r: M)
     {
-        if ((*it).rows() != m) throw "kernel: incompatible BitMatrix64 objects";
-        n += (*it).cols();
+        if (r.rows() != m) throw "kernel: incompatible BitMatrix64 objects";
+        n += r.cols();
     }
     size_t N = M[0].cols();
     size_t r = 0;
@@ -2513,11 +2505,9 @@ void kernel(std::vector<BitMatrix64>& M, BitMatrix64& kerM)
                     BitOperations64::clearBit(k % N, M[u].row_[i]);
                     if (dd)
                     {
-                        for (std::vector<BitMatrix64>::iterator it = M.begin();
-                                it != M.end();
-                                ++it)
+                        for (auto& r: M)
                         {
-                            (*it).row_[i] ^= (*it).row_[j];
+                            r.row_[i] ^= r.row_[j];
                         }
                     }
                 }

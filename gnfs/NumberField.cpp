@@ -668,11 +668,9 @@ void NumberField::Round2()
                for (int c = 0; c < d; c++)
                {
                   int r = 0;
-                  for (std::vector<Quotient<VeryLong> >::const_iterator rIter = omega[c].coefficients().begin();
-                        rIter != omega[c].coefficients().end();
-                        ++rIter)
+                  for (auto& r1: omega[c].coefficients())
                   {
-                     x = *rIter;
+                     x = r1;
                      W(r,c) = x;
                      r++;
                   }
@@ -756,11 +754,9 @@ void NumberField::Round2()
                      Matrix<Quotient<VeryLong> > Cjk(d, 1);
                      Quotient<VeryLong> x;
                      int i = 0;
-                     for (std::vector<Quotient<VeryLong> >::const_iterator iIter = tmp.coefficients().begin();
-                           iIter != tmp.coefficients().end();
-                           ++iIter)
+                     for (auto& i1: tmp.coefficients())
                      {
-                        x = *iIter;
+                        x = i1;
                         Cjk(i,0) = x;
                         i++;
                      }
@@ -809,11 +805,9 @@ void NumberField::Round2()
                {
                   cf = qone;
                   int r = 0;
-                  for (std::vector<Quotient<VeryLong> >::const_iterator rIter = gamma[i-1].coefficients().begin();
-                        rIter != gamma[i-1].coefficients().end();
-                        ++rIter)
+                  for (auto& r1: gamma[i-1].coefficients())
                   {
-                     x = *rIter;
+                     x = r1;
                      x /= cf;
                      qnu1(r,i-1) = x;
                      y = ::gcd(lcm, x.denominator());
@@ -827,11 +821,9 @@ void NumberField::Round2()
                {
                   cf = qone;
                   int r = 0;
-                  for (std::vector<Quotient<VeryLong> >::const_iterator rIter = omega[j-1].coefficients().begin();
-                        rIter != omega[j-1].coefficients().end();
-                        ++rIter)
+                  for (auto& r1: omega[j-1].coefficients())
                   {
-                     x = *rIter * p;
+                     x = r1 * p;
                      x /= cf;
                      qnu1(r,mm+j-1) = x;
                      y = ::gcd(lcm, x.denominator());

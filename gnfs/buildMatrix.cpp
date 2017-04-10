@@ -304,21 +304,17 @@ void firstPass(std::map<std::string, long int>& alg_base_index,
    }
 
    size_t i = 0;
-   for (std::set<std::string>::iterator iter = alg_base.begin();
-         iter != alg_base.end();
-         ++iter)
+   for (auto& i1: alg_base)
    {
-      alg_base_index[*iter] = i;
+      alg_base_index[i1] = i;
       ++i;
    }
    int alg_base_size = i;
 
    i = 0;
-   for (std::set<std::string>::iterator iter = rat_base.begin();
-         iter != rat_base.end();
-         ++iter)
+   for (auto& i1: rat_base)
    {
-      rat_base_index[*iter] = i;
+      rat_base_index[i1] = i;
       ++i;
    }
    int rat_base_size = i;
@@ -458,11 +454,9 @@ void generateMatrix()
       // find relation set containing relation
       std::vector<long int> rel_sets;
       relation_sets.relation_sets_for_relation(relation_index, rel_sets);
-      for (std::vector<long int>::iterator it = rel_sets.begin();
-            it != rel_sets.end();
-            ++it)
+      for (auto& rel_set: rel_sets)
       {
-         long int rs = *it;
+         long int rs = rel_set;
 
          add_primes(alg_primes, alg_base_index, rs, 0L, smat);
          add_primes(rat_primes, rat_base_index, rs, rat_col_start, smat);

@@ -141,11 +141,9 @@ class PriorityQueue
       void display(std::ostream& os = std::cerr)
       {
          os << "PriorityQueue : allocation = " << S << ", size = " << pq_.size() << std::endl;
-         for (weighted_list_iterator iter = pq_.begin();
-               iter != pq_.end();
-               ++iter)
+         for (auto& wl: pq_)
          {
-            os << iter->second << std::endl;
+            os << wl.second << std::endl;
          }
       }
 

@@ -123,11 +123,9 @@ class AlgebraicNumber
       {
          int i = 0;
          const long int zero = 0L;
-         for (std::vector<Quotient<VeryLong > >::const_iterator iter = a.c_.begin();
-               iter != a.c_.end();
-               ++iter)
+         for (auto& v: a.c_)
          {
-            Quotient<VeryLong> value = *iter;
+            Quotient<VeryLong> value = v;
             int sign = 1;
             if (value < Quotient<VeryLong>(zero))
             {

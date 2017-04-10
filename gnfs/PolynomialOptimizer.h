@@ -383,14 +383,14 @@ namespace PolynomialOptimizer
         I_F_S = log(sqrt(min_value/4.0));
         new_m = m1 + t_vl;
         new_b = b1 + a1 * t_vl;
-	    if (debug)
-	    {
+        if (debug)
+        {
             std::cout << "6. min_poly = " << min_poly << std::endl;
             std::cout << "7. a1 = " << a1 << std::endl;
             std::cout << "8. new_b = " << new_b << std::endl;
             std::cout << "9. new_m = " << new_m << std::endl;
             std::cout << "10. best_s = " << best_s << std::endl;
-	    }
+        }
         return min_poly;
     }
    // b0 - b5 are coefficients of adjusted f(x_t) + (c1*x_t + c0)(x_t - m)

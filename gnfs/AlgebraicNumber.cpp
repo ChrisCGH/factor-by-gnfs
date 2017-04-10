@@ -158,25 +158,19 @@ AlgebraicNumber operator*(const AlgebraicNumber& a1,
    }
    const Quotient<VeryLong> zero(0L);
    Quotient<VeryLong> x;
-   for (std::vector<Quotient<VeryLong> >::iterator i_iter = c.begin();
-         i_iter != c.end();
-         ++i_iter)
+   for (auto& i: c)
    {
-      *i_iter = zero;
+      i = zero;
    }
 
    int i = 0;
-   for (std::vector<Quotient<VeryLong > >::const_iterator i_iter = a1.c_.begin();
-         i_iter != a1.c_.end();
-         ++i_iter)
+   for (auto& i1: a1.c_)
    {
       int j = 0;
-      for (std::vector<Quotient<VeryLong > >::const_iterator j_iter = a2.c_.begin();
-            j_iter != a2.c_.end();
-            ++j_iter)
+      for (auto& j1: a2.c_)
       {
-         x = (*i_iter);
-         x *= (*j_iter);
+         x = i1;
+         x *= j1;
          c[i + j] += x;
          j++;
       }
@@ -195,17 +189,15 @@ AlgebraicNumber operator*(const AlgebraicNumber& a1,
 
    int k = 0;
    std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
-   for (std::vector<Quotient<VeryLong > >::iterator k_iter = z.c_.begin();
-         k_iter != z.c_.end();
-         ++k_iter)
+   for (auto& k1: z.c_)
    {
-      *k_iter = *c_iter;
+      k1 = *c_iter;
       std::vector<Quotient<VeryLong> >::const_iterator cc_iter = c.begin() + d;
       for (int j = 0; j < d - 1; j++)
       {
          x = (*cc_iter);
          x *= AlgebraicNumber::numberField_->structureMatrix()(j + d, k);
-         *k_iter += x;
+         k1 += x;
          ++cc_iter;
       }
       k++;
@@ -245,11 +237,9 @@ AlgebraicNumber& AlgebraicNumber::multiply_by_alpha_minus_r(long int r)
    std::vector<Quotient<VeryLong > > c(csize);
 
    int i = 0;
-   for (std::vector<Quotient<VeryLong > >::const_iterator i_iter = c_.begin();
-         i_iter != c_.end();
-         ++i_iter)
+   for (auto& i1: c_)
    {
-      Quotient<VeryLong> x(*i_iter);
+      Quotient<VeryLong> x(i1);
       x *= AlgebraicNumber::c_d();
       c[i+1] += x;
       x *= r;
@@ -265,24 +255,10 @@ AlgebraicNumber& AlgebraicNumber::multiply_by_alpha_minus_r(long int r)
    {
       M_.set_size(d, d);
    }
-#if 0
-   int k = 0;
-   std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
-   for (std::vector<Quotient<VeryLong > >::iterator k_iter = c_.begin();
-        k_iter != c_.end();
-        ++k_iter, ++c_iter, ++k)
-   {
-      Quotient<VeryLong> x(c[d]);
-      x *= AlgebraicNumber::numberField_->structureMatrix()(d, k);
-      *k_iter = *c_iter;
-      *k_iter += x;
-   }
-#else
    for (size_t k = 0; k < c_.size(); ++k)
    {
       c_[k] = c[k] + c[d] * AlgebraicNumber::numberField_->structureMatrix()(d, k);
    }
-#endif
 
    ibc_defined_ = false;
    return *this;
@@ -296,14 +272,12 @@ AlgebraicNumber& AlgebraicNumber::multiply(const VeryLong& a, const VeryLong& b)
    std::vector<Quotient<VeryLong > > c(csize);
 
    int i = 0;
-   for (std::vector<Quotient<VeryLong > >::const_iterator i_iter = c_.begin();
-         i_iter != c_.end();
-         ++i_iter)
+   for (auto& i1: c_)
    {
-      Quotient<VeryLong> x(*i_iter);
+      Quotient<VeryLong> x(i1);
       x *= a;
       c[i] += x;
-      x = *i_iter;
+      x = i1;
       x *= b;
       c[i+1] -= x;
       i++;
@@ -317,24 +291,10 @@ AlgebraicNumber& AlgebraicNumber::multiply(const VeryLong& a, const VeryLong& b)
    {
       M_.set_size(d, d);
    }
-#if 0
-   int k = 0;
-   std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
-   for (std::vector<Quotient<VeryLong > >::iterator k_iter = c_.begin();
-        k_iter != c_.end();
-        ++k_iter, ++c_iter, ++k)
-   {
-      Quotient<VeryLong> x(c[d]);
-      x *= AlgebraicNumber::numberField_->structureMatrix()(d, k);
-      *k_iter = *c_iter;
-      *k_iter += x;
-   }
-#else
    for (size_t k = 0; k < c_.size(); ++k)
    {
       c_[k] = c[k] + c[d] * AlgebraicNumber::numberField_->structureMatrix()(d, k);
    }
-#endif
 
    ibc_defined_ = false;
    return *this;
@@ -351,25 +311,19 @@ AlgebraicNumber& AlgebraicNumber::operator*=(const AlgebraicNumber& a)
    }
    const Quotient<VeryLong> zero(0L);
    Quotient<VeryLong> x;
-   for (std::vector<Quotient<VeryLong> >::iterator i_iter = c.begin();
-         i_iter != c.end();
-         ++i_iter)
+   for (auto& i1: c)
    {
-      *i_iter = zero;
+      i1 = zero;
    }
 
    int i = 0;
-   for (std::vector<Quotient<VeryLong > >::const_iterator i_iter = c_.begin();
-         i_iter != c_.end();
-         ++i_iter)
+   for (auto& i1: c_)
    {
       int j = 0;
-      for (std::vector<Quotient<VeryLong > >::const_iterator j_iter = a.c_.begin();
-            j_iter != a.c_.end();
-            ++j_iter)
+      for (auto& j1: a.c_)
       {
-         x = (*i_iter);
-         x *= (*j_iter);
+         x = i1;
+         x *= j1;
          //c[i + j] += (*i_iter) * (*j_iter);
          c[i + j] += x;
          j++;
@@ -388,17 +342,15 @@ AlgebraicNumber& AlgebraicNumber::operator*=(const AlgebraicNumber& a)
 
    int k = 0;
    std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
-   for (std::vector<Quotient<VeryLong > >::iterator k_iter = c_.begin();
-         k_iter != c_.end();
-         ++k_iter)
+   for (auto& k1: c_)
    {
-      *k_iter = *c_iter;
+      k1 = *c_iter;
       std::vector<Quotient<VeryLong> >::const_iterator cc_iter = c.begin() + d;
       for (size_t j = 0; j < d - 1; j++)
       {
          x = (*cc_iter);
          x *= AlgebraicNumber::numberField_->structureMatrix()(j + d, k);
-         *k_iter += x;
+         k1 += x;
          ++cc_iter;
       }
       k++;
@@ -420,17 +372,11 @@ AlgebraicNumber operator*(const AlgebraicNumber& a,
 {
    AlgebraicNumber c;
    int d = AlgebraicNumber::degree();
-//   std::vector<Quotient<VeryLong > > c;
-//   c.resize(a.c_.size());
    if ((int)c.c_.size() != d) c.c_.resize(d);
    std::vector<Quotient<VeryLong> >::iterator iter = c.c_.begin();
-   for (std::vector<Quotient<VeryLong > >::const_iterator i_iter = a.c_.begin();
-         i_iter != a.c_.end();
-         ++i_iter)
-      //for (int i = 0; i < c.size(); i++)
+   for (auto& i1: a.c_)
    {
-//      c[i] = a.c_[i] * x;
-      *iter = (*i_iter) * x;
+      *iter = i1 * x;
       ++iter;
    }
    return c;
@@ -446,19 +392,17 @@ AlgebraicNumber operator+(const AlgebraicNumber& a1,
    std::vector<Quotient<VeryLong> >::const_iterator a1_iter = a1.c_.begin();
    std::vector<Quotient<VeryLong> >::const_iterator a2_iter = a2.c_.begin();
    size_t i = 0;
-   for (std::vector<Quotient<VeryLong> >::iterator i_iter = c.c_.begin();
-         i_iter != c.c_.end();
-         ++i_iter)
+   for (auto& i1: c.c_)
    {
-      *i_iter = Quotient<VeryLong>(0L);
+      i1 = Quotient<VeryLong>(0L);
       if (i < a1.c_.size())
       {
-         *i_iter += *a1_iter;
+         i1 += *a1_iter;
          ++a1_iter;
       }
       if (i < a2.c_.size())
       {
-         *i_iter += *a2_iter;
+         i1 += *a2_iter;
          ++a2_iter;
       }
       i++;
@@ -473,13 +417,11 @@ AlgebraicNumber& AlgebraicNumber::operator+=(const AlgebraicNumber& a)
    std::vector<Quotient<VeryLong> >::const_iterator i_iter_end = c_.end();
    int s = a.c_.size();
    int i = 0;
-   for (std::vector<Quotient<VeryLong> >::iterator i_iter = c_.begin();
-         i_iter != i_iter_end;
-         ++i_iter)
+   for (auto& i1: c_)
    {
       if (i < s)
       {
-         *i_iter += *a_iter;
+         i1 += *a_iter;
          ++a_iter;
       }
       i++;
