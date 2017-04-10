@@ -58,7 +58,7 @@ OPT = -O3
 #PROFILE = -pg
 COVERAGE = -fprofile-arcs -ftest-coverage
 COVERAGE_OPT = 
-ARCH = -march=athlon64
+#ARCH = -march=athlon64
 USING_CPPUNIT = -DUSING_CPPUNIT 
 ifeq ($(RUN_GCOV),yes)
 CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)

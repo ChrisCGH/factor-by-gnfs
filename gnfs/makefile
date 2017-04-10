@@ -56,13 +56,13 @@ OPT = -O3
 #PROFILE = -pg
 COVERAGE = -fprofile-arcs -ftest-coverage
 COVERAGE_OPT = 
-ARCH = -march=athlon64
+#ARCH = -march=athlon64
 USING_CPPUNIT = -DUSING_CPPUNIT 
 ifeq ($(RUN_GCOV),yes)
 CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-non-template-friend -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
 CFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH)
 else
-CCFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-non-template-friend -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
+CCFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH) -std=c++14 -fno-operator-names -Wno-non-template-friend -Wno-uninitialized -DUSING_GCC -Dlinux $(USING_CPPUNIT)
 CFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH)
 endif
 CC = g++
