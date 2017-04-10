@@ -1,3 +1,4 @@
+#pragma GCC diagnostic ignored "-Wundefined-var-template"
 #include <iostream>
 #include <iomanip>
 #include <sstream>

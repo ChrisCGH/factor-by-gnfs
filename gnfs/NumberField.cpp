@@ -1,3 +1,4 @@
+#pragma GCC diagnostic ignored "-Wundefined-var-template"
 #include "NumberField.h"
 #include "AlgebraicNumber.h"
 #include "AlgebraicNumber_in_O_pO.h"

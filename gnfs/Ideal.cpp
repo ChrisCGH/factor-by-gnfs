@@ -1,3 +1,4 @@
+#pragma GCC diagnostic ignored "-Wundefined-var-template"
 #include "Ideal.h"
 #include "AlgebraicNumber_in_O_pO.h"
 #include "pow.h"
