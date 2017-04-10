@@ -6,6 +6,19 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/ui/text/TestRunner.h>
 #include <iomanip>
+#include <cstdlib>
+
+namespace
+{
+    bool verbose()
+    {
+        if (std::getenv("GNFS_TEST_VERBOSE"))
+        {
+            return true;
+        }
+        return false;
+    }
+}
 
 class PolynomialOptimizerTest : public CppUnit::TestFixture
 {
@@ -21,7 +34,10 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
     {
         VeryLong N("308268017314015502198864479573232259026111539470765498704205704273225473378735381489745954136566971705214233108249933319714229109554576259335341");
         Polynomial<VeryLong> f1 = Polynomial<VeryLong>::read_polynomial("-16612792256731454888860424973312 + 1498121907742379786368701480 X - 71616325394087869671190 X^2 - 436671758051847283 X^3 + 25011687432982 X^4 + 23794992 X^5");
-        std::cout << "f1 = " << f1 << std::endl;
+        if (verbose())
+        {
+            std::cout << "f1 = " << f1 << std::endl;
+        }
         MPFloat::set_precision(100);
         VeryLong a("11774494093137707");
         VeryLong b("1669121445503958099638459425"); 
@@ -36,14 +52,20 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(check == 0L);
         double alpha = PolynomialOptimizer::alpha_F(f1, 2000, 200);
         double E_F = I_F_S + alpha;
-	    std::cout << "f1 = " << f1 << std::endl;
-	    std::cout << "best_s = " << best_s << std::endl;
-	    std::cout << "alpha = " << alpha << std::endl;
-	    std::cout << "I_F_S = " << std::setprecision(20) << I_F_S << std::endl;
-	    std::cout << "E(F) = " << E_F << std::endl;
+        if (verbose())
+        {
+	        std::cout << "f1 = " << f1 << std::endl;
+	        std::cout << "best_s = " << best_s << std::endl;
+	        std::cout << "alpha = " << alpha << std::endl;
+	        std::cout << "I_F_S = " << std::setprecision(20) << I_F_S << std::endl;
+	        std::cout << "E(F) = " << E_F << std::endl;
+        }
 
         double s1 = PolynomialOptimizer::minimize_I_over_s<double>(Polynomial<VeryLong>::convert_to_double<double>(f1), best_s);
-        std::cout << "s1 = " << s1 << std::endl;
+        if (verbose())
+        {
+            std::cout << "s1 = " << s1 << std::endl;
+        }
 
         VeryLong adjusted_s;
         std::vector<PolynomialOptimizer::Poly_info> poly_list;
@@ -75,15 +97,21 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
         alpha = PolynomialOptimizer::alpha_F(f2, 2000, 200);
         E_F = I_F_S + alpha;
         CPPUNIT_ASSERT(new_I_F_S < I_F_S);
-	    std::cout << "f2 = " << f2 << std::endl;
-	    std::cout << "best_s = " << best_s << std::endl;
-	    std::cout << "I_F_S = " << new_I_F_S << std::endl;
-	    std::cout << "alpha = " << alpha << std::endl;
-	    std::cout << "E(F) = " << E_F << std::endl;
-	    std::cout << "new_b = " << new_b << std::endl;
-	    std::cout << "new_m = " << new_m << std::endl;
+        if (verbose())
+        {
+	        std::cout << "f2 = " << f2 << std::endl;
+	        std::cout << "best_s = " << best_s << std::endl;
+	        std::cout << "I_F_S = " << new_I_F_S << std::endl;
+	        std::cout << "alpha = " << alpha << std::endl;
+	        std::cout << "E(F) = " << E_F << std::endl;
+	        std::cout << "new_b = " << new_b << std::endl;
+	        std::cout << "new_m = " << new_m << std::endl;
+        }
         check = f2.evaluate_homogeneous(new_b, a) % N;
-        std::cout << "check = " << check << std::endl;
+        if (verbose())
+        {
+            std::cout << "check = " << check << std::endl;
+        }
         CPPUNIT_ASSERT(check == 0L);
 
         VeryLong better_b;    
@@ -93,29 +121,41 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
         double translated_I_F_S = PolynomialOptimizer::average_log_size(translated_f2, better_s);
         double translated_E_F = translated_I_F_S + alpha;
         CPPUNIT_ASSERT(translated_E_F < E_F);
-	    std::cout << "translated_f2 = " << translated_f2 << std::endl;
-	    std::cout << "better_s = " << better_s << std::endl;
-	    std::cout << "I_F_S = " << translated_I_F_S << std::endl;
-	    std::cout << "alpha = " << alpha << std::endl;
-	    std::cout << "E(F) = " << translated_E_F << std::endl;
-	    std::cout << "better_b = " << better_b << std::endl;
+        if (verbose())
+        {
+	        std::cout << "translated_f2 = " << translated_f2 << std::endl;
+	        std::cout << "better_s = " << better_s << std::endl;
+	        std::cout << "I_F_S = " << translated_I_F_S << std::endl;
+	        std::cout << "alpha = " << alpha << std::endl;
+	        std::cout << "E(F) = " << translated_E_F << std::endl;
+	        std::cout << "better_b = " << better_b << std::endl;
+        }
         check = translated_f2.evaluate_homogeneous(better_b, a) % N;
-        std::cout << "check = " << check << std::endl;
+        if (verbose())
+        {
+            std::cout << "check = " << check << std::endl;
+        }
         CPPUNIT_ASSERT(check == 0L);
 
         Polynomial<VeryLong> f3 = PolynomialOptimizer::minimize_I<MPFloat>(f1, a, b, m, best_s, I_F_S_mpf, new_b, new_m);
         alpha = PolynomialOptimizer::alpha_F(f3, 2000, 200);
         E_F = I_F_S_mpf + alpha;
         CPPUNIT_ASSERT((double)I_F_S_mpf < I_F_S);
-	    std::cout << "f3 = " << f2 << std::endl;
-	    std::cout << "best_s = " << best_s << std::endl;
-	    std::cout << "I_F_S_mpf = " << I_F_S_mpf << std::endl;
-	    std::cout << "alpha = " << alpha << std::endl;
-	    std::cout << "E(F) = " << E_F << std::endl;
-	    std::cout << "new_b = " << new_b << std::endl;
-	    std::cout << "new_m = " << new_m << std::endl;
+        if (verbose())
+        {
+	        std::cout << "f3 = " << f2 << std::endl;
+	        std::cout << "best_s = " << best_s << std::endl;
+	        std::cout << "I_F_S_mpf = " << I_F_S_mpf << std::endl;
+	        std::cout << "alpha = " << alpha << std::endl;
+	        std::cout << "E(F) = " << E_F << std::endl;
+	        std::cout << "new_b = " << new_b << std::endl;
+	        std::cout << "new_m = " << new_m << std::endl;
+        }
         check = f3.evaluate_homogeneous(new_b, a) % N;
-        std::cout << "check = " << check << std::endl;
+        if (verbose())
+        {
+            std::cout << "check = " << check << std::endl;
+        }
         CPPUNIT_ASSERT(check == 0L);
 
     }

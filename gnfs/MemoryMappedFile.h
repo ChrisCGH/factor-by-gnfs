@@ -34,7 +34,7 @@ class MemoryMappedFile
 
             if (file_handle_ == -1)
             {
-                std::cerr << "Failed to open file [" << filename << "], errno = <" << errno << "> : " << strerror(errno) << std::endl;
+                // std::cerr << "Failed to open file [" << filename << "], errno = <" << errno << "> : " << strerror(errno) << std::endl;
                 throw std::string("MemoryMappedFile: Failed to open file");
             }
 

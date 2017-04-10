@@ -141,7 +141,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 17605408ull);
 
 #else
-        /*std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 20) == " << fbsrm1.extend(210001, 20) << "ull);" << std::endl;
+#if 0        
+        std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 20) == " << fbsrm1.extend(210001, 20) << "ull);" << std::endl;
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 50) == " << fbsrm1.extend(210001, 50) << "ull);" << std::endl;
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 1000) == " << fbsrm1.extend(210001, 1000) << "ull);" << std::endl;
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(110000, 50) == " << fbsrm1.extend(110000, 50) << "ull);" << std::endl;
@@ -158,16 +159,18 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(fbsrm1.extend(109998, 50) == 19205240ull);
         CPPUNIT_ASSERT(fbsrm1.extend(109995, 50) == 19205456ull);
         CPPUNIT_ASSERT(fbsrm1.extend(109997, 50) == 9599712ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 19205672ull);*/
-        CPPUNIT_ASSERT(fbsrm1.extend(210001, 20) == 17600400ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(210001, 50) == 17600776ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(210001, 1000) == 17600984ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(110000, 50) == 8800464ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109999, 50) == 17600776ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109998, 50) == 17604992ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109995, 50) == 17605200ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109997, 50) == 8799736ull);
-        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 17605408ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 19205672ull);
+#endif
+
+        CPPUNIT_ASSERT(fbsrm1.extend(210001, 20) == 19200400ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(210001, 50) == 19200792ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(210001, 1000) == 19201008ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(110000, 50) == 9600488ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109999, 50) == 19200792ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109998, 50) == 19205024ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109995, 50) == 19205240ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109997, 50) == 9599712ull);
+        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 19205456ull);
 #endif
 
         //std::cerr << std::endl << "        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == " << fbsrm1.extend(109996, 50) << "ull);" << std::endl;

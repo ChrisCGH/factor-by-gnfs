@@ -4,11 +4,20 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/ui/text/TestRunner.h>
 #include <iomanip>
+#include <cstdlib>
 
 namespace
 {
-        //LatticeSiever siever(std::string("ut_sieve_fixed.cfg"));
-        LatticeSiever* sieverp = 0;
+    //LatticeSiever siever(std::string("ut_sieve_fixed.cfg"));
+    LatticeSiever* sieverp = 0;
+    bool verbose()
+    {
+        if (std::getenv("GNFS_TEST_VERBOSE"))
+        {
+            return true;
+        }
+        return false;
+    }
 }
 
 class LatticeSieverTest : public CppUnit::TestFixture
@@ -110,12 +119,18 @@ class LatticeSieverTest : public CppUnit::TestFixture
             std::pair<long int, long int> e1(11L, 32L);
             std::pair<long int, long int> e2(-14L, 5L);
             Parallelogram E_region(c_region, e1, e2);
-            c_region.display(std::cerr);
-            E_region.display(std::cerr);
+            if (verbose())
+            {
+                c_region.display(std::cerr);
+                E_region.display(std::cerr);
+            }
             int32_t e_min = static_cast<int32_t>(std::ceil(E_region.min_x()));
             int32_t e_max = static_cast<int32_t>(std::floor(E_region.max_x()));
-            std::cerr << "e_min = " << e_min << std::endl;
-            std::cerr << "e_max = " << e_max << std::endl;
+            if (verbose())
+            {
+                std::cerr << "e_min = " << e_min << std::endl;
+                std::cerr << "e_max = " << e_max << std::endl;
+            }
             int32_t f_min = 0L;
             int32_t f_max = 0L;
             int32_t e(e_min);
@@ -128,15 +143,21 @@ class LatticeSieverTest : public CppUnit::TestFixture
                     long int d1 = e * e1.second + f_min * e2.second;
                     long int c2 = e * e1.first + f_max * e2.first;
                     long int d2 = e * e1.second + f_max * e2.second;
-                    std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    if (verbose())
+                    {
+                        std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    }
     
                     for (long int f = f_min; f <= f_max; ++f)
                     {
                         long int c = e * e1.first + f * e2.first;
                         long int d = e * e1.second + f * e2.second;
-                        if (c < min_c || c > max_c || d < min_d || d > max_d)
+                        if (verbose())
                         {
-                            std::cerr << "(c,d) = (" << c << "," << d << ")" << std::endl;
+                            if (c < min_c || c > max_c || d < min_d || d > max_d)
+                            {
+                                std::cerr << "(c,d) = (" << c << "," << d << ")" << std::endl;
+                            }
                         }
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);
@@ -150,12 +171,18 @@ class LatticeSieverTest : public CppUnit::TestFixture
             std::pair<long int, long int> e1(16L, 25L);
             std::pair<long int, long int> e2(19L, -9L);
             Parallelogram E_region(c_region, e1, e2);
-            c_region.display(std::cerr);
-            E_region.display(std::cerr);
+            if (verbose())
+            {
+                c_region.display(std::cerr);
+                E_region.display(std::cerr);
+            }
             int32_t e_min = static_cast<long int>(std::ceil(E_region.min_x()));
             int32_t e_max = static_cast<long int>(std::floor(E_region.max_x()));
-            std::cerr << "e_min = " << e_min << std::endl;
-            std::cerr << "e_max = " << e_max << std::endl;
+            if (verbose())
+            {
+                std::cerr << "e_min = " << e_min << std::endl;
+                std::cerr << "e_max = " << e_max << std::endl;
+            }
             int32_t f_min = 0L;
             int32_t f_max = 0L;
             int32_t e(e_min);
@@ -168,15 +195,21 @@ class LatticeSieverTest : public CppUnit::TestFixture
                     long int d1 = e * e1.second + f_min * e2.second;
                     long int c2 = e * e1.first + f_max * e2.first;
                     long int d2 = e * e1.second + f_max * e2.second;
-                    std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    if (verbose())
+                    {
+                        std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    }
 
                     for (long int f = f_min; f <= f_max; ++f)
                     {
                         long int c = e * e1.first + f * e2.first;
                         long int d = e * e1.second + f * e2.second;
-                        if (c < min_c || c > max_c || d < min_d || d > max_d)
+                        if (verbose())
                         {
-                            std::cerr << "(e,f) = (" << e << "," << f << "), (c,d) = (" << c << "," << d << ")" << std::endl;
+                            if (c < min_c || c > max_c || d < min_d || d > max_d)
+                            {
+                                std::cerr << "(e,f) = (" << e << "," << f << "), (c,d) = (" << c << "," << d << ")" << std::endl;
+                            }
                         }
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);
@@ -189,12 +222,18 @@ class LatticeSieverTest : public CppUnit::TestFixture
             std::pair<long int, long int> e1(-1943L, -1854L);
             std::pair<long int, long int> e2(1057L, -955L);
             Parallelogram E_region(c_region, e1, e2);
-            c_region.display(std::cerr);
-            E_region.display(std::cerr);
+            if (verbose())
+            {
+                c_region.display(std::cerr);
+                E_region.display(std::cerr);
+            }
             int32_t e_min = static_cast<long int>(std::ceil(E_region.min_x()));
             int32_t e_max = static_cast<long int>(std::floor(E_region.max_x()));
-            std::cerr << "e_min = " << e_min << std::endl;
-            std::cerr << "e_max = " << e_max << std::endl;
+            if (verbose())
+            {
+                std::cerr << "e_min = " << e_min << std::endl;
+                std::cerr << "e_max = " << e_max << std::endl;
+            }
             int32_t f_min = 0L;
             int32_t f_max = 0L;
             int32_t e(e_min);
@@ -207,15 +246,21 @@ class LatticeSieverTest : public CppUnit::TestFixture
                     long int d1 = e * e1.second + f_min * e2.second;
                     long int c2 = e * e1.first + f_max * e2.first;
                     long int d2 = e * e1.second + f_max * e2.second;
-                    std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    if (verbose())
+                    {
+                        std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
+                    }
 
                     for (long int f = f_min; f <= f_max; ++f)
                     {
                         long int c = e * e1.first + f * e2.first;
                         long int d = e * e1.second + f * e2.second;
-                        if (c < min_c || c > max_c || d < min_d || d > max_d)
+                        if (verbose())
                         {
-                            std::cerr << "(e,f) = (" << e << "," << f << "), (c,d) = (" << c << "," << d << ")" << std::endl;
+                            if (c < min_c || c > max_c || d < min_d || d > max_d)
+                            {
+                                std::cerr << "(e,f) = (" << e << "," << f << "), (c,d) = (" << c << "," << d << ")" << std::endl;
+                            }
                         }
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);

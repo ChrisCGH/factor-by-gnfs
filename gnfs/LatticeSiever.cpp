@@ -5,6 +5,7 @@
 #include "lll.h"
 #include <math.h>
 #include <set>
+#include <cstdlib>
 
 //#define RANGE_CHECK 1
 #ifdef RANGE_CHECK
@@ -120,6 +121,14 @@ long int inverse(long int a, long int modulus)
         return (modulus - ps1);
 }
 #endif
+    bool verbose()
+    {
+        if (std::getenv("LATTICE_SIEVER_VERBOSE"))
+        {
+            return true;
+        }
+        return false;
+    }
 }
 //LatticeSiever::IPrimeFactorList* LatticeSiever::SieveCacheItem::pf_list_ = 0;
 LatticeSiever::PrimeFactorList* LatticeSiever::SieveCacheItem::pf_list_ = 0;
@@ -1378,7 +1387,10 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     timer_.start("check interval 1");
     int number_of_potentially_alg_smooth = check_interval1(q);
     timer_.stop();
-    std::cout << number_of_potentially_alg_smooth << " -> " << std::flush;
+    if (verbose())
+    {
+        std::cout << number_of_potentially_alg_smooth << " -> " << std::flush;
+    }
 
     timer_.start("sieve by vectors 2");
     sieve_by_vectors2();
@@ -1394,7 +1406,10 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     timer_.start("eliminate rational");
     eliminate2();
     timer_.stop();
-    std::cout << number_potentially_smooth_ << " -> " << std::flush;
+    if (verbose())
+    {
+        std::cout << number_potentially_smooth_ << " -> " << std::flush;
+    }
 
     if (number_potentially_smooth_ < max_potentially_smooth)
     {
@@ -1412,7 +1427,10 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
         // We should now have the smooth relations which remain
         timer_.start("check relations");
         relations = check_for_remaining_relations();
-        std::cout << relations;
+        if (verbose())
+        {
+            std::cout << relations;
+        }
         timer_.stop();
     }
     double sieving_time = sieving_timer.stop();
@@ -1427,8 +1445,11 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     double running_average_relations_per_day = running_average_relations_per_hour * 24;
     static double prev_running_average_relations_per_day = 0;
     static double prev_total_sieving_time = 0;
-    std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
-    std::cout << " (" << running_average_relations_per_second << "," << (int)running_average_relations_per_hour << "," << (int)running_average_relations_per_day << "),";
+    if (verbose())
+    {
+        std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
+        std::cout << " (" << running_average_relations_per_second << "," << (int)running_average_relations_per_hour << "," << (int)running_average_relations_per_day << "),";
+    }
     if (prev_running_average_relations_per_day > 0 && 
         running_average_relations_per_day / prev_running_average_relations_per_day < 0.5)
     {
@@ -1440,8 +1461,11 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     }
     prev_running_average_relations_per_day = running_average_relations_per_day;
     prev_total_sieving_time = total_sieving_time_;
-    
-    std::cout << std::endl;
+   
+   if (verbose()) 
+   {
+       std::cout << std::endl;
+   }
 }
 
 // Lattice sieving for NFS

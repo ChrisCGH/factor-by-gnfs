@@ -130,6 +130,14 @@ namespace
         }
         return cont;
     }
+    bool verbose()
+    {
+        if (std::getenv("POLYNOMIAL_OPTIMIZER_VERBOSE"))
+        {
+            return true;
+        }
+        return false;
+    }
 }
 
 namespace PolynomialOptimizer
@@ -240,7 +248,10 @@ namespace PolynomialOptimizer
         long int p = zpnextb(2);
         double alpha = 0.0;
         VeryLong disc = discriminant(poly);
-        std::cout << "disc(f) = " << disc << std::endl;
+        if (verbose())
+        {
+            std::cout << "disc(f) = " << disc << std::endl;
+        }
         double cont_p = 0.0;
         sample_F_values(poly, BOUND);
     
@@ -266,12 +277,15 @@ namespace PolynomialOptimizer
                                                 std::vector<Poly_info>& poly_list)
     {
         const VeryLong one(1L);
-        std::cout << "Sieving for best root properties ..." << std::endl;
-        std::cout << "min_poly = " << min_poly << std::endl;
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << b << std::endl;
-        std::cout << "s = " << s << std::endl;
-        std::cout << "average_log_size = " << average_log_size << std::endl;
+        if (verbose())
+        {
+            std::cout << "Sieving for best root properties ..." << std::endl;
+            std::cout << "min_poly = " << min_poly << std::endl;
+            std::cout << "a = " << a << std::endl;
+            std::cout << "b = " << b << std::endl;
+            std::cout << "s = " << s << std::endl;
+            std::cout << "average_log_size = " << average_log_size << std::endl;
+        }
         const long int MAX_J0 = Skewed_config.MAX_J0();
         const long int MAX_J1 = Skewed_config.MAX_J1();
         const long int MAX_SMALL_PRIME = Skewed_config.MAX_SMALL_PRIME();
@@ -282,9 +296,12 @@ namespace PolynomialOptimizer
         {
             alpha_cutoff = Skewed_config.ALPHA_CUTOFF();
         }
-        std::cout << "als = " << average_log_size << std::endl;
-        std::cout << "PRINTING_BOUND = " << target_E_F << std::endl;
-        std::cout << "alpha cutoff = " << alpha_cutoff << std::endl;
+        if (verbose())
+        {
+            std::cout << "als = " << average_log_size << std::endl;
+            std::cout << "PRINTING_BOUND = " << target_E_F << std::endl;
+            std::cout << "alpha cutoff = " << alpha_cutoff << std::endl;
+        }
     
     
         static short* cont_array_data = 0;
@@ -494,7 +511,10 @@ namespace PolynomialOptimizer
             p = zpnext();
         }
         time_t end = time(0);
-        std::cout << "Time for sieving (J0 = " << MAX_J0 << ", J1 = " << MAX_J1 << ") = " << end - start << std::endl;
+        if (verbose())
+        {
+            std::cout << "Time for sieving (J0 = " << MAX_J0 << ", J1 = " << MAX_J1 << ") = " << end - start << std::endl;
+        }
     
         double best = 0.0;
         long int j0_best = 0;
@@ -519,7 +539,10 @@ namespace PolynomialOptimizer
                 }
                 if (j0 == 0 && j1 == 0)
                 {
-                    std::cout << "(j0,j1) = (" << j0 << "," << j1 << "), cont = " << cont << ", alpha_cutoff = " << alpha_cutoff << std::endl;
+                   if (verbose())
+                   {
+                       std::cout << "(j0,j1) = (" << j0 << "," << j1 << "), cont = " << cont << ", alpha_cutoff = " << alpha_cutoff << std::endl;
+                   }
                 }
                 if (cont < alpha_cutoff)
                 {
@@ -553,15 +576,18 @@ namespace PolynomialOptimizer
                             best_F = F;
                             best_E = E;
                             best_s = s.get_double();
-                            std::cout << "j0 = " << j0 << " and j1 = " << j1 << ", cont = " << cont << std::endl;
-                            //cout << F.evaluate(m) << endl;
-                            std::cout << F.evaluate_homogeneous(b, a) << std::endl;
-                            std::cout << "F = " << F << std::endl;
-                            std::cout << "a = " << a << std::endl;
-                            std::cout << "b = " << b << std::endl;
-                            std::cout << "s = " << s << std::endl;
-                            std::cout << "alpha = " << alpha << std::endl;
-                            std::cout << "E(F) = " << E << std::endl;
+                            if (verbose())
+                            {
+                                std::cout << "j0 = " << j0 << " and j1 = " << j1 << ", cont = " << cont << std::endl;
+                                //cout << F.evaluate(m) << endl;
+                                std::cout << F.evaluate_homogeneous(b, a) << std::endl;
+                                std::cout << "F = " << F << std::endl;
+                                std::cout << "a = " << a << std::endl;
+                                std::cout << "b = " << b << std::endl;
+                                std::cout << "s = " << s << std::endl;
+                                std::cout << "alpha = " << alpha << std::endl;
+                                std::cout << "E(F) = " << E << std::endl;
+                            }
                         }
                     }
                 }
@@ -570,7 +596,10 @@ namespace PolynomialOptimizer
     
         if (best_alpha == 0.0)
         {
-            std::cout << "j0 = " << j0_best << " and j1 = " << j1_best << ", cont = " << best << std::endl;
+            if (verbose())
+            {
+                std::cout << "j0 = " << j0_best << " and j1 = " << j1_best << ", cont = " << best << std::endl;
+            }
             std::vector<VeryLong> c;
             c.resize(3);
             //c[0] = j0_best * m;
@@ -580,23 +609,32 @@ namespace PolynomialOptimizer
             c[2] = VeryLong(j1_best) * a;
             Polynomial<VeryLong> F = min_poly + Polynomial<VeryLong>(c);
             //cout << F.evaluate(m) << endl;
-            std::cout << F.evaluate_homogeneous(b, a) << std::endl;
-            std::cout << "F = " << F << std::endl;
+            if (verbose())
+            {
+                std::cout << F.evaluate_homogeneous(b, a) << std::endl;
+                std::cout << "F = " << F << std::endl;
+            }
             double alpha = PolynomialOptimizer::alpha_F(F, 2000, 200);
             if (alpha < best_alpha)
             {
                 best_alpha = alpha;
                 best_F = F;
             }
-            std::cout << "alpha = " << alpha << std::endl;
+            if (verbose())
+            {
+                std::cout << "alpha = " << alpha << std::endl;
+            }
         }
     
         s = PolynomialOptimizer::minimize_I_over_s(Polynomial<VeryLong>::convert_to_double<double>(best_F), best_s);
-        std::cout << "Best F = " << best_F << std::endl;
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << b << std::endl;
-        std::cout << "alpha = " << best_alpha << std::endl;
-        std::cout << "New s = " << s << std::endl;
+        if (verbose())
+        {
+            std::cout << "Best F = " << best_F << std::endl;
+            std::cout << "a = " << a << std::endl;
+            std::cout << "b = " << b << std::endl;
+            std::cout << "alpha = " << best_alpha << std::endl;
+            std::cout << "New s = " << s << std::endl;
+        }
     
         return best_F;
     }

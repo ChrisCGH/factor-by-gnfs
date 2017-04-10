@@ -40,6 +40,14 @@ void complex<MPFloat>::_div(const MPFloat& __z1_r, const MPFloat& __z1_i,
 #define DEBUG_OUTPUT 1
 namespace
 {
+    bool verbose()
+    {
+        if (std::getenv("NUMBER_FIELD_VERBOSE"))
+        {
+            return true;
+        }
+        return false;
+    }
 int isSquareFree(const std::vector<std::pair<VeryLong, int > >& factors, VeryLong ignorePrimeSquare = 0L)
 {
    for (size_t i = 0; i < factors.size(); i++)
@@ -190,25 +198,37 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
    std::vector<complex<MPFloat > > roots(0, complex<MPFloat>(0.0, 0.0));
    find_roots_over_C_q1<MPFloat>(cpoly, roots);
 #ifdef DEBUG_OUTPUT
-   std::cout << "NumberField::NumberField() : min_poly_ = " << min_poly_ << std::endl;
-   std::cout << "NumberField::NumberField() : roots are " << std::endl;
+   if (verbose())
+   {
+       std::cout << "NumberField::NumberField() : min_poly_ = " << min_poly_ << std::endl;
+       std::cout << "NumberField::NumberField() : roots are " << std::endl;
+   }
 #endif
    for (size_t j = 0; j < roots.size(); j++)
    {
 #ifdef DEBUG_OUTPUT
-      std::cout << roots[j] << std::endl;
+      if (verbose())
+      {
+          std::cout << roots[j] << std::endl;
+      }
 #endif
       double a = roots[j].real();
       double b = roots[j].imag();
 #ifdef DEBUG_OUTPUT
-      std::cout << a << " + " << b << "i" << std::endl;
+      if (verbose())
+      {
+          std::cout << a << " + " << b << "i" << std::endl;
+      }
 #endif
       roots_.push_back(complex<long double>((long double)a, (long double)b));
 #ifdef DEBUG_OUTPUT
-      std::cout << std::setprecision(20) << roots_[j] << std::endl;
-      complex<MPFloat> res = cpoly.evaluate(roots[j]);
-      std::cout << "min_poly_(z) = " << res << std::endl;
-      std::cout << "|min_poly_(z)|^2 = " << std::norm(res) << std::endl;
+      if (verbose())
+      {
+          std::cout << std::setprecision(20) << roots_[j] << std::endl;
+          complex<MPFloat> res = cpoly.evaluate(roots[j]);
+          std::cout << "min_poly_(z) = " << res << std::endl;
+          std::cout << "|min_poly_(z)|^2 = " << std::norm(res) << std::endl;
+      }
 #endif
    }
 
@@ -246,7 +266,10 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
 
    discriminant_ = ::discriminant(poly);
 #ifdef DEBUG_OUTPUT
-   std::cout << "Discriminant of " << poly << " is " << discriminant_ << std::endl;
+   if (verbose())
+   {
+       std::cout << "Discriminant of " << poly << " is " << discriminant_ << std::endl;
+   }
 #endif
 
    // calculate factor base
@@ -275,8 +298,11 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
    Round2();
    timing_stop();
 #ifdef DEBUG_OUTPUT
-   std::cout << "integralBasisAlpha_ = " << std::endl << integralBasisAlpha_;
-   std::cout << "integralBasisAlphaInv_ = " << std::endl << integralBasisAlphaInv_;
+   if (verbose())
+   {
+       std::cout << "integralBasisAlpha_ = " << std::endl << integralBasisAlpha_;
+       std::cout << "integralBasisAlphaInv_ = " << std::endl << integralBasisAlphaInv_;
+   }
 #endif
 }
 
@@ -365,7 +391,10 @@ void NumberField::Round2()
    // First find an algebraic integer and its minimal monic polynomial T
    // c_d * alpha is an algebraic integer, so use that:
 #ifdef DEBUG_OUTPUT
-   std::cout << "Round 2 :" << std::endl;
+   if (verbose())
+   {
+       std::cout << "Round 2 :" << std::endl;
+   }
 #endif
    int d = degree();
    VeryLong c_d = NumberField::c_d();
@@ -385,13 +414,19 @@ void NumberField::Round2()
    Polynomial<VeryLong> T(c);
    monic_min_poly_ = T;
 #ifdef DEBUG_OUTPUT
-   std::cout << "Monic minimal polynomial = " << monic_min_poly_ << std::endl;
+   if (verbose())
+   {
+       std::cout << "Monic minimal polynomial = " << monic_min_poly_ << std::endl;
+   }
 #endif
 
    // Step 1. [Factor discriminant of polynomial]
    VeryLong D = ::discriminant(T);
 #ifdef DEBUG_OUTPUT
-   std::cout << "Discriminant of " << T << " is " << D << std::endl;
+   if (verbose())
+   {
+       std::cout << "Discriminant of " << T << " is " << D << std::endl;
+   }
 #endif
    VeryLong D1 = D;
    if (D1 < 0L) D1 *= -1L;
@@ -451,23 +486,32 @@ void NumberField::Round2()
          AlgebraicNumber_in_O_pO_1::set_basis(integralBasisAlpha_, omega);
 
 #ifdef DEBUG_OUTPUT
-         for (int i = 0; i < d; i++)
+         if (verbose())
          {
-            std::cout << "omega[" << i << "] = " << omega[i] << std::endl;
-            std::cout << "N(omega[" << i << "]) = " << omega[i].norm() << std::endl;
+             for (int i = 0; i < d; i++)
+             {
+                std::cout << "omega[" << i << "] = " << omega[i] << std::endl;
+                std::cout << "N(omega[" << i << "]) = " << omega[i].norm() << std::endl;
+             }
          }
 #endif
 
          Quotient<VeryLong> qd = D * G * G;
          fieldDiscriminant_ = qd.numerator();
 #ifdef DEBUG_OUTPUT
-         std::cout << "G = " << G << ", qd = " << qd << ", d = " << fieldDiscriminant_ << std::endl;
+         if (verbose())
+         {
+             std::cout << "G = " << G << ", qd = " << qd << ", d = " << fieldDiscriminant_ << std::endl;
+         }
 #endif
          index_ = G.denominator();
 
 #ifdef DEBUG_OUTPUT
-         std::cout << "integralBasisTheta_ = " << std::endl << integralBasisTheta_;
-         std::cout << "integralBasisThetaInv_ = " << std::endl << integralBasisThetaInv_;
+         if (verbose())
+         {
+             std::cout << "integralBasisTheta_ = " << std::endl << integralBasisTheta_;
+             std::cout << "integralBasisThetaInv_ = " << std::endl << integralBasisThetaInv_;
+         }
 #endif
 
          return;
@@ -492,7 +536,10 @@ void NumberField::Round2()
 //timing_stop();
 //timing_start("Point 2: Factor T mod p");
       VeryLongModular::set_default_modulus(p);
-      std::cout << "p = " << p << std::endl;
+      if (verbose())
+      {
+          std::cout << "p = " << p << std::endl;
+      }
       std::vector<VeryLongModular> cc;
       cc.resize(d + 1);
       for (int jj = 0; jj < d + 1; jj++)
@@ -539,10 +586,16 @@ void NumberField::Round2()
       Polynomial<VeryLongModular> f_ = convert_to_F_p<VeryLong, VeryLong, VeryLongModular>(f, p);
 
       Polynomial<VeryLongModular> Z_ = gcd(f_, g_);
-      std::cout << "Z_ = " << Z_ << std::endl;
-      std::cout << "h_ = " << h_ << std::endl;
+      if (verbose())
+      {
+         std::cout << "Z_ = " << Z_ << std::endl;
+         std::cout << "h_ = " << h_ << std::endl;
+      }
       Z_ = gcd(Z_, h_);
-      std::cout << "Z_ = " << Z_ << std::endl;
+      if (verbose())
+      {
+         std::cout << "Z_ = " << Z_ << std::endl;
+      }
 
       Polynomial<VeryLongModular> U_ = T_ / Z_;
       Polynomial<VeryLong> U = monic_lift<VeryLong, VeryLongModular>(U_);

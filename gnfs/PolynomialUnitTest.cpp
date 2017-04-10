@@ -314,7 +314,7 @@ class PolynomialTest : public CppUnit::TestFixture
         Polynomial<VeryLongModular> p56 = Polynomial<VeryLongModular>::read_polynomial("4 + X");
         Polynomial<VeryLongModular> p57 = Polynomial<VeryLongModular>::read_polynomial("1 + 4 X");
         Polynomial<VeryLongModular> p58 = gcd(p56, p57);
-        std::cout << "p58 = " << p58 << std::endl;
+        //std::cout << "p58 = " << p58 << std::endl;
         CPPUNIT_ASSERT(p58 == p57);
     }
 
