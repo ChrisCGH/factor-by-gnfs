@@ -435,4 +435,5 @@ template <class INTEGER, class INTEGER2, class MODULAR_INTEGER> class AlgebraicN
 };
 typedef AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular> AlgebraicNumber_in_O_pO;
 typedef AlgebraicNumber_in_O_pO_<long int, VeryLong, LongModular> AlgebraicNumber_in_O_pO_1;
+
 #endif

@@ -47,9 +47,9 @@ const int RADIX = (1<<NBITS);
 
 long mpz_sqrts(long n)
 {
-   register long a;
-   register long ndiva;
-   register long newa;
+   long a;
+   long ndiva;
+   long newa;
    mpz_t ln;
    mpz_t rr;
    mpz_t dif;
@@ -109,12 +109,12 @@ static long lastp = 0;
 
 void mpz_pstart()
 {
-   register long i;
-   register long j;
-   register long jstep;
-   register long jstart;
-   register long ibnd;
-   register short int *p;
+   long i;
+   long j;
+   long jstep;
+   long jstart;
+   long ibnd;
+   short int *p;
 
    if (!lowsieve)
    {
@@ -148,13 +148,13 @@ mpz_pstart2()
 static void mpz_pshift()
 {
    /* auxiliary routine for prime generator */
-   register long i;
-   register long j;
-   register long jstep;
-   register long jstart;
-   register long ibound;
-   register short *p;
-   register short *pi;
+   long i;
+   long j;
+   long jstep;
+   long jstart;
+   long ibound;
+   short *p;
+   short *pi;
 
    if (!movesieve)
       movesieve = (short int *)calloc((size_t)PRIM_BND, sizeof(short int));

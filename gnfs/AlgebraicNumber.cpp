@@ -414,7 +414,6 @@ AlgebraicNumber operator+(const AlgebraicNumber& a1,
 AlgebraicNumber& AlgebraicNumber::operator+=(const AlgebraicNumber& a)
 {
    std::vector<Quotient<VeryLong> >::const_iterator a_iter = a.c_.begin();
-   std::vector<Quotient<VeryLong> >::const_iterator i_iter_end = c_.end();
    int s = a.c_.size();
    int i = 0;
    for (auto& i1: c_)

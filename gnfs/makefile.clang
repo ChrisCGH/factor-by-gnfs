@@ -64,7 +64,7 @@ ifeq ($(RUN_GCOV),yes)
 CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
 CFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH)
 else
-CCFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
+CCFLAGS = -Wall -g -std=c++14 $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC $(USING_CPPUNIT)
 CFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH)
 endif
 CC = clang
