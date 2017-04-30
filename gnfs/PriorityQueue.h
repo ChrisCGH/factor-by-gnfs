@@ -6,97 +6,6 @@
 #include <list>
 #include <exception>
 
-#if 0
-template <class T, int S>
-class PriorityQueue
-{
-   public:
-      PriorityQueue() : min_weight_(1e200), next_slot_(0)
-      {}
-      ~PriorityQueue()
-      {}
-      void add(const T& data, double weight)
-      {
-         if (next_slot_ < S)
-         {
-            pq_[next_slot_].first = data;
-            pq_[next_slot_].second = weight;
-            if (weight < min_weight_) min_weight_ = weight;
-            ++next_slot_;
-            if (next_slot_ >= S)
-            {
-               std::sort(pq_, pq_ + size(), less);
-            }
-            return;
-         }
-
-         // pq_ is full
-         // ignore if weight is too small
-         if (weight <= min_weight_) return;
-
-         pq_[0].first = data;
-         pq_[0].second = weight;
-         size_t slot = 1;
-         while (slot < S && weight > pq_[slot].second)
-         {
-            std::swap(pq_[slot - 1], pq_[slot]);
-         }
-         min_weight_ = pq_[0].second;
-      }
-
-   private:
-      static bool less(const std::pair<T, double>& e1, const std::pair<T, double>& e2)
-      {
-         return (e1.second < e2.second);
-      }
-      static bool more(const std::pair<T, double>& e1, const std::pair<T, double>& e2)
-      {
-         return (e1.second > e2.second);
-      }
-   public:
-      void sort()
-      {
-         std::sort(pq_, pq_ + size(), more);
-      }
-
-      size_t size()
-      {
-         return next_slot_;
-      }
-
-      void display(std::ostream& os = std::cerr)
-      {
-         os << "PriorityQueue : allocation = " << S << ", size = " << size() << std::endl;
-         for (weighted_list_iterator iter = pq_;
-               iter != pq_ + size();
-               ++iter)
-         {
-            os << iter->second << std::endl;
-         }
-      }
-
-   private:
-      typedef typename std::pair<T, double>* weighted_list_iterator;
-
-   public:
-      typedef weighted_list_iterator iterator;
-
-      iterator begin()
-      {
-         return pq_;
-      }
-
-      iterator end()
-      {
-         return pq_ + size();
-      }
-
-   private:
-      std::pair<T, double> pq_[S];
-      double min_weight_;
-      size_t next_slot_;
-};
-#else
 template <class T, int S>
 class PriorityQueue
 {
@@ -122,15 +31,10 @@ class PriorityQueue
       }
 
    private:
-      static bool less(const std::pair<T, double>& e1, const std::pair<T, double>& e2)
-      {
-         return (e1.second < e2.second);
-      }
    public:
       void sort()
       {
-         //pq_.sort(less);
-         std::sort(pq_.begin(), pq_.end(), less);
+         std::sort(pq_.begin(), pq_.end(), [](const std::pair<T, double>& e1, const std::pair<T, double>& e2){ return (e1.second < e2.second); });
          if (pq_.size() > S)
          {
             size_t n = pq_.size() - S;
@@ -212,5 +116,4 @@ class PriorityQueue
       weighted_list_type pq_;
       double min_weight_;
 };
-#endif
 #endif

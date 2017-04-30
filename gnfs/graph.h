@@ -62,14 +62,6 @@ class Graph
                os << "Node(" << node.data_ << "," << node.component_ << ")";
                return os;
             }
-#if 0
-            static unsigned long int get_next_node_id()
-            {
-               static unsigned long int next_node_id_ = 0;
-               //std::cerr << typeid << "N+:" << next_node_id_ << std::endl;
-               return next_node_id_++;
-            }
-#endif
       };
 
    public:
@@ -252,10 +244,6 @@ class Graph
       typedef std::multimap<Node*, Node*, Node_less> graph_type;
       typedef typename graph_type::iterator graph_iterator;
       graph_type graph_;
-#if 0
-      typedef std::set<Node*, Node_less_set> node_set_type;
-      typedef typename node_set_type::iterator node_set_iterator;
-#else
       class NodeSet
       {
          public:
@@ -325,16 +313,10 @@ class Graph
             }
             void insert(Node* n)
             {
-#if 0
-               std::pair<typename std::set<Node*, Node_less_set>::iterator, bool> res = nodes_.insert(n);
-               if (res.second)
-               {
-#else
                if (!n->is_in_nodeset())                
                { 
                   n->in_node_set_ = true;
                   nodes_.push_back(n); 
-#endif
                   // a new Node in nodes_
                   size_t component = n->component_;
                   if (component >= heads_.size())
@@ -355,7 +337,6 @@ class Graph
             {
                return nodes_.size();
             }
-            //typedef typename std::set<Node*, Node_less_set>::iterator iterator;
             typedef typename std::vector<Node*>::iterator iterator;
             iterator begin()
             {
@@ -367,7 +348,6 @@ class Graph
             }
          private:
             std::vector<std::pair<Node*, long int> > heads_;
-            //std::set<Node*, Node_less_set> nodes_;
             std::vector<Node*> nodes_;
             static bool greater ( const std::pair<Node*, long int>& elem1, const std::pair<Node*, long int>& elem2 )
             {
@@ -376,14 +356,17 @@ class Graph
          public:
             void sort()
             {
-               std::sort(heads_.begin(), heads_.end(), greater);
+               std::sort(heads_.begin(), heads_.end(), 
+                         [](const std::pair<Node*, long int>& elem1, const std::pair<Node*, long int>& elem2)
+                         {
+                             return (elem1.second > elem2.second);
+                         });
             }
 
       };
       typedef NodeSet node_set_type;
       typedef typename node_set_type::iterator node_set_iterator;
       typedef typename node_set_type::component_iterator node_set_component_iterator;
-#endif
       node_set_type node_set_;
       size_t component_count_;
    public:
@@ -484,14 +467,6 @@ class Graph
             //iter->first = 0;
          }
 
-#if 0
-         for (typename std::set<Node*>::const_iterator iter = all_nodes.begin();
-               iter != all_nodes.end();
-               ++iter)
-         {
-            delete *iter;
-         }
-#endif
       }
 
 };

@@ -169,33 +169,6 @@ void addSpecialPrimeFactorisation(const VeryLong& a,
    }
 }
 
-#if 0
-void addSpecialPrimeFactorisation(const VeryLong& a, const VeryLong& b,
-                                  const Ideal& I,
-                                  const VeryLong& lcm,
-                                  const Matrix<VeryLong>& AA,
-                                  long int p,
-                                  int sign,
-                                  PrimeIdealDecomposition& primeIdealProduct)
-{
-   Quotient<VeryLong> nn(1L);
-   for (std::vector<PrimeIdealRep*>::const_iterator specialPrimeIter = SpecialPrimes->begin(p);
-         specialPrimeIter != SpecialPrimes->end(p);
-         ++specialPrimeIter)
-   {
-      PrimeIdeal* pi = (*specialPrimeIter)->getPrimeIdeal();
-      int val = PrimeIdeal::padicValuation(p, *pi, lcm, AA);
-      val *= sign;
-      if (val)
-      {
-         primeIdealProduct[*specialPrimeIter] += val;
-         //cout << "primeIdealProduct[pi] = " << primeIdealProduct[*specialPrimeIter] << endl;
-      }
-   }
-}
-#endif
-
-
 void addPrimeFactorisation(long int p, long int r, int e_p_r,
                            PrimeIdealDecomposition& primeIdealProduct)
 {
@@ -298,34 +271,9 @@ void printPrimeIdealProduct(const PrimeIdealDecomposition& primeIdealProduct)
       }
    }
 }
-#if 0
-Quotient<VeryLong> norm(const RelationList& relations)
-{
-   int d = nf->degree();
-   Quotient<VeryLong> nn(1L);
-   for (RelationList::const_iterator relationIter = relations.begin();
-         relationIter != relations.end();
-         ++relationIter)
-   {
-      Relation* rel = *relationIter;
-      VeryLong aa(rel->a);
-      VeryLong bb(rel->b);
-      std::vector<Quotient<VeryLong> > vec;
-      vec.resize(d);
-      vec[0] = Quotient<VeryLong>(aa);
-      vec[1] = -Quotient<VeryLong>(bb);
-      AlgebraicNumber tmp(vec);
-      nn *= tmp.norm();
-   }
-   return nn;
-}
-#endif
 
 //----------------------------------------------------------------------------
 // decompose a quotient of products of relations
-#if 0
-Quotient<VeryLong> norm(const PrimeIdealDecomposition& primeIdealProduct);
-#endif
 void producePrimeDecomposition(const RelationList& relationNumer,
                                const RelationList& relationDenom,
                                PrimeIdealDecomposition& primeIdealProduct)
@@ -510,56 +458,6 @@ double complexity(const RelationList& relations,
 
    return C;
 }
-
-//----------------------------------------------------------------------------
-// incremental complexity when e -> e1
-#if 0
-double complexity(const RelationList& relations,
-                  const std::vector<char>& e,
-                  const std::vector<char>& e1)
-{
-   timing->start("complexity e1 e2");
-   double C = 0.0;
-   const VeryLong zero(0L);
-   FactorBase& fb = nf->factorBase();
-   for (size_t j = 0; j < e.size(); j++)
-   {
-      if (e[j] == e1[j]) continue;
-      Relation* rel = relations[j];
-      for (Relation::primelist::iterator primeIter = rel->primes_.begin();
-            primeIter != rel->primes_.end();
-            ++primeIter)
-      {
-         long int p = (*primeIter).first;
-         long int v = (*primeIter).second;
-         LongModular::set_default_modulus(p);
-         VeryLong pp(p);
-         for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
-               rootIter != fb.end(p);
-               ++rootIter)
-         {
-            long int r = *rootIter;
-            S[std::pair<long int, long int>(p, r)] -= 2 * e[j] * e_p_r(*rel, p, v, r);
-         }
-         if (nf->c_d() % pp == zero)
-         {
-            S[std::pair<long int, long int>(p, p)] += 2 * e[j] * ProjectivePrimes[p];
-         }
-      }
-   }
-
-   for (std::map<std::pair<long int, long int>, int>::iterator S_iter = S.begin();
-         S_iter != S.end();
-         ++S_iter)
-   {
-      long int p = ((*S_iter).first).first;
-      C += ln(p) * fabs((double)(*S_iter).second);
-   }
-
-   timing->stop();
-   return C;
-}
-#endif
 
 //----------------------------------------------------------------------------
 // print relations
@@ -1110,72 +1008,6 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
 //----------------------------------------------------------------------------
 // main loop that approximates the square root
 
-struct G_Compare
-{
-   G_Compare(PrimeIdealDecomposition& G) : G_(G)
-   {}
-   PrimeIdealDecomposition& G_;
-   bool operator()(PrimeIdealRep* pir1, PrimeIdealRep* pir2)
-   {
-      VeryLong n1 = pir1->norm();
-      int v1 = G_[pir1];
-      VeryLong n2 = pir2->norm();
-      int v2 = G_[pir2];
-      if (v1 < 0 && v2 > 0) return true;
-      if (v2 < 0 && v1 > 0) return false;
-      n1 *= (long int)v1;
-      n2 *= (long int)v2;
-      return (n1 < n2);
-   }
-};
-#if 0
-Quotient<VeryLong> norm(const PrimeIdealDecomposition& primeIdealProduct)
-{
-   Quotient<VeryLong> n(1L);
-
-   for (PrimeIdealDecomposition::const_iterator pip_iter = primeIdealProduct.begin();
-         pip_iter != primeIdealProduct.end();
-         ++pip_iter)
-   {
-      PrimeIdealRep* pir = (*pip_iter).first;
-      int val = (*pip_iter).second;
-      if (val > 0)
-      {
-         n *= pow<VeryLong, int>(pir->norm(), val);
-      }
-      else if (val < 0)
-      {
-         n /= pow<VeryLong, int>(pir->norm(), -val);
-      }
-   }
-   return n;
-}
-#endif
-
-namespace
-{
-#if 0
-bool operator==(const AlgebraicNumber_in_O_pO_1& an1, const AlgebraicNumber_in_O_pO& an2)
-{
-   int d = AlgebraicNumber::degree();
-   for (int i = 0; i < d; ++i)
-   {
-      LongModular c_lm = an1.coefficient(i);
-      VeryLongModular c_vlm = an2.coefficient(i);
-      if (c_lm.get_long() != c_vlm.get_very_long().get_long())
-      {
-         return false;
-      }
-   }
-   return true;
-}
-bool operator!=(const AlgebraicNumber_in_O_pO_1& an1, const AlgebraicNumber_in_O_pO& an2)
-{
-   return !(an1 == an2);
-}
-#endif
-};
-
 void processApproximation(const RelationList& relationNumer,
                           const RelationList& relationDenom,
                           const std::vector<long int>& good_primes,
@@ -1681,9 +1513,21 @@ void approximateSquareRoot(const RelationList& relationNumer,
    int done = 0;
    int retries = 0;
    int l = 0;
-   G_Compare g_compare(G);
 
-   std::sort(G_index.begin(), G_index.end(), g_compare);
+   std::sort (G_index.begin(), G_index.end(), 
+              [&G](PrimeIdealRep* pir1, PrimeIdealRep* pir2)
+               {
+                   VeryLong n1 = pir1->norm();
+                   int v1 = G[pir1];
+                   VeryLong n2 = pir2->norm();
+                   int v2 = G[pir2];
+                   if (v1 < 0 && v2 > 0) return true;
+                   if (v2 < 0 && v1 > 0) return false;
+                   n1 *= (long int)v1;
+                   n2 *= (long int)v2;
+                   return (n1 < n2);
+               }
+             );
    // G_index is now sorted from large negative valuations to large positive valuations.
    // Maintain two iterators on G_index, pos_iter from the positive valuation end
    // and neg_iter from the negative valuation end

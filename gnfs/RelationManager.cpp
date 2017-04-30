@@ -66,8 +66,6 @@ void RelationSetManager::relation_sets_for_relation(long int relation, std::vect
    relation_sets.clear();
    if (relation_relation_set_map_.row_size(relation))
    {
-      //for (SparseRow::const_iterator it = relation_relation_set_map_.row_ro(relation).begin();
-            //it != relation_relation_set_map_.row_ro(relation).end();
       for (SparseRow::const_iterator it = relation_relation_set_map_.begin(relation);
             it != relation_relation_set_map_.end(relation);
             ++it)
@@ -100,9 +98,6 @@ void RelationSetManager::remove(long int relation_set, bool record_only)
 void RelationSetManager::display(long int relation_set)
 {
    std::cerr << "Relation set #" << relation_set << " :";
-   //const ISparseRow& sr = relation_set_relation_map_.row_ro(relation_set);
-   //for (SparseRow::const_iterator it = sr.begin();
-         //it != sr.end();
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(relation_set);
          it != relation_set_relation_map_.end(relation_set);
          ++it)
@@ -115,10 +110,6 @@ void RelationSetManager::display(long int relation_set)
 bool RelationSetManager::check(long int rs)
 {
    std::set<long int> s;
-   //const ISparseRow& sr = relation_set_relation_map_.row_ro(rs);
-   //for (SparseRow::const_iterator it = sr.begin();
-         //it != sr.end();
-   //const ISparseRow& sr = relation_set_relation_map_.row_ro(rs);
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs);
          it != relation_set_relation_map_.end(rs);
          ++it)
@@ -145,21 +136,12 @@ struct xorer : public std::binary_function<size_t, size_t, ISparseRow::xor_statu
 long int RelationSetManager::merge(long int rs1, long int rs2)
 {
    std::set<long int> s;
-   // create a new relation set from rs1 and rs2
-   //const ISparseRow& sr1 = relation_set_relation_map_.row_ro(rs1);
-   //for (SparseRow::const_iterator it = sr1.begin();
-         //it != sr1.end();
-   //const ISparseRow& sr1 = relation_set_relation_map_.row_ro(rs1);
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs1);
          it != relation_set_relation_map_.end(rs1);
          ++it)
    {
       s.insert(*it);
    }
-   //const ISparseRow& sr2 = relation_set_relation_map_.row_ro(rs2);
-   //for (SparseRow::const_iterator it = sr2.begin();
-         //it != sr2.end();
-   //const ISparseRow& sr2 = relation_set_relation_map_.row_ro(rs2);
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs2);
          it != relation_set_relation_map_.end(rs2);
          ++it)
@@ -184,7 +166,7 @@ long int RelationSetManager::merge(long int rs1, long int rs2)
    {
       ++next_relation_set_;
    }
-   std::for_each(s.begin(), s.end(), std::bind1st(xorer(relation_set_relation_map_), new_rs));
+   std::for_each(s.begin(), s.end(), [this, new_rs](size_t col){ return relation_set_relation_map_.xor(new_rs, col); });
    return new_rs;
 }
 
@@ -351,10 +333,6 @@ RelationManager::RelationManager(size_t relation_set_count, MemoryMappedFile& re
 
    for (size_t relation_set = 0; relation_set < relation_set_prime_map_.rows(); ++relation_set)
    {
-      //const ISparseRow& sr = relation_set_prime_map_.row_ro(relation_set);
-      //for (SparseRow::const_iterator it = sr.begin();
-            //it != sr.end();
-      //const ISparseRow& sr = relation_set_prime_map_.row_ro(relation_set);
       for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
             it != relation_set_prime_map_.end(relation_set);
             ++it)
@@ -381,10 +359,6 @@ RelationManager::RelationManager(MemoryMappedFile& is, RelationTable& relation_t
    LOG_DEBUG("relation_set_relation_map_ has " << relation_set_relation_map_.rows() << " rows and " << relation_set_relation_map_.cols() << " columns");
    for (size_t relation_set = 0; relation_set < relation_set_relation_map_.rows(); ++relation_set)
    {
-      //const ISparseRow& sr = relation_set_relation_map_.row_ro(relation_set);
-      //for (SparseRow::const_iterator it = sr.begin();
-            //it != sr.end();
-      //const ISparseRow& sr = relation_set_relation_map_.row_ro(relation_set);
       for (SparseRow::const_iterator it = relation_set_relation_map_.begin(relation_set);
             it != relation_set_relation_map_.end(relation_set);
             ++it)
@@ -448,13 +422,8 @@ void RelationManager::build_prime_relation_set_map(long int merge_level)
 void RelationManager::remove(long int relation_set)
 {
    RelationSetManager::remove(relation_set);
-   //for (SparseRow::const_iterator it = relation_set_prime_map_.row_ro(relation_set).begin();
-         //it != relation_set_prime_map_.row_ro(relation_set).end();
    SparseRow sr(relation_set_prime_map_.row_size(relation_set)); 
    relation_set_prime_map_.copy_row(relation_set, sr);
-   //for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
-         //it != relation_set_prime_map_.end(relation_set);
-         //++it)
    for (const auto& pr: sr)
    {
       if (prime_relation_set_map_.row_size(pr))
@@ -469,20 +438,12 @@ void RelationManager::remove(long int relation_set)
 long int RelationManager::merge(long int rs1, long int rs2, long int prime)
 {
    long int new_rs = RelationSetManager::merge_record_only(rs1, rs2);
-   //SparseRow::const_iterator it1 = relation_set_prime_map_.row_ro(rs1).begin();
-   //SparseRow::const_iterator it1_end = relation_set_prime_map_.row_ro(rs1).end();
-   //SparseRow::const_iterator it2 = relation_set_prime_map_.row_ro(rs2).begin();
-   //SparseRow::const_iterator it2_end = relation_set_prime_map_.row_ro(rs2).end();
   
    SparseRow sr1(relation_set_prime_map_.row_size(rs1)); 
    relation_set_prime_map_.copy_row(rs1, sr1);
    SparseRow sr2(relation_set_prime_map_.row_size(rs2)); 
    relation_set_prime_map_.copy_row(rs2, sr2);
 
-   //SparseRow::const_iterator it1 = relation_set_prime_map_.begin(rs1);
-   //SparseRow::const_iterator it1_end = relation_set_prime_map_.end(rs1);
-   //SparseRow::const_iterator it2 = relation_set_prime_map_.begin(rs2);
-   //SparseRow::const_iterator it2_end = relation_set_prime_map_.end(rs2);
    SparseRow::const_iterator it1 = sr1.begin();
    SparseRow::const_iterator it1_end = sr1.end();
    SparseRow::const_iterator it2 = sr2.begin();
@@ -556,8 +517,6 @@ size_t RelationManager::sets_including_prime(int prime, std::vector<long int>& r
 {
    relation_sets.clear();
    if (!prime_relation_set_map_.row_size(prime)) return 0;
-   //for (SparseRow::const_iterator it = prime_relation_set_map_.row_ro(prime).begin();
-         //it != prime_relation_set_map_.row_ro(prime).end();
    for (SparseRow::const_iterator it = prime_relation_set_map_.begin(prime);
          it != prime_relation_set_map_.end(prime);
          ++it)
@@ -643,8 +602,6 @@ void RelationManager::remove_singletons()
          if (prime_weight(relation_set) == 0) continue;
          // if relation has a prime with freq == 1 in frequency table
          bool singleton = false;
-         //for (SparseRow::const_iterator it = relation_set_prime_map_.row_ro(relation_set).begin();
-               //!singleton && it != relation_set_prime_map_.row_ro(relation_set).end();
          for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
                !singleton && it != relation_set_prime_map_.end(relation_set);
                ++it)
