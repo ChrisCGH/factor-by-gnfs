@@ -92,11 +92,16 @@ AlgebraicNumber::AlgebraicNumber(const Polynomial<VeryLong>& f, const AlgebraicN
    int d = f.deg();
    const AlgebraicNumber zero(VeryLong(0L));
    *this = zero;
+//   AlgebraicNumber result = zero;
    for (int i = d; i >= 0; --i)
    {
       *this *= a;
       *this += AlgebraicNumber(f.coefficient(i));
+//      result = result * a;
+//      result = result + AlgebraicNumber(f.coefficient(i));
    }
+
+//   *this = result;
 }
 
 AlgebraicNumber::AlgebraicNumber(const Polynomial<Quotient<VeryLong> >& f)
@@ -204,9 +209,10 @@ AlgebraicNumber operator*(const AlgebraicNumber& a1,
 
 AlgebraicNumber& AlgebraicNumber::operator*=(const VeryLong& v)
 {
-   for (auto& cc: c_)
+   int d = AlgebraicNumber::degree();
+   for (int i = 0; i < d; i++)
    {
-      cc *= v;
+      c_[i] *= v;
    }
    ibc_defined_ = false;
    return *this;
@@ -214,9 +220,10 @@ AlgebraicNumber& AlgebraicNumber::operator*=(const VeryLong& v)
 
 AlgebraicNumber& AlgebraicNumber::operator*=(long int p)
 {
-   for (auto& cc: c_)
+   int d = AlgebraicNumber::degree();
+   for (int i = 0; i < d; i++)
    {
-      cc *= p;
+      c_[i] *= p;
    }
    ibc_defined_ = false;
    return *this;
@@ -317,6 +324,7 @@ AlgebraicNumber& AlgebraicNumber::operator*=(const AlgebraicNumber& a)
       {
          x = i1;
          x *= j1;
+         //c[i + j] += (*i_iter) * (*j_iter);
          c[i + j] += x;
          j++;
       }
@@ -546,6 +554,7 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
       throw std::string("AlgebraicNumber::ln_sigma() : numberField_ not set");
    }
    const NumberField& nf = *AlgebraicNumber::numberField_;
+   int degree = nf.degree();
    complex<long double> alpha_j = nf.conjugate(j);
    complex<long double> sigma = (long double)0.0;
    complex<long double> alpha_power = (long double)1.0;
@@ -553,10 +562,10 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
    VeryLong max_coeff(0L);
    try
    {
-      for (auto& cc: c_)
+      for (int i = 0; i < degree; i++)
       {
-         VeryLong n = cc.numerator();
-         VeryLong d = cc.denominator();
+         VeryLong n = c_[i].numerator();
+         VeryLong d = c_[i].denominator();
          long double sign = 1.0;
          if (n < 0L)
          {
@@ -593,10 +602,10 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
       long double log_scale_ld = ln(scale);
       complex<long double> sigma = (long double)0.0;
       complex<long double> alpha_power = (long double)1.0;
-      for (auto& cc: c_)
+      for (int i = 0; i < degree; i++)
       {
-         VeryLong n = cc.numerator();
-         VeryLong d = cc.denominator();
+         VeryLong n = c_[i].numerator();
+         VeryLong d = c_[i].denominator();
          long double sign = 1.0;
          if (n < 0L)
          {
@@ -627,6 +636,7 @@ long double AlgebraicNumber::ln_sigma(int j)
       throw std::string("AlgebraicNumber::ln_sigma() : numberField_ not set");
    }
    const NumberField& nf = *AlgebraicNumber::numberField_;
+   int degree = nf.degree();
    complex<long double> alpha_j = nf.conjugate(j);
    complex<long double> sigma = (long double)0.0;
    complex<long double> alpha_power = (long double)1.0;
@@ -634,10 +644,10 @@ long double AlgebraicNumber::ln_sigma(int j)
    VeryLong max_coeff(0L);
    try
    {
-      for (auto& cc: c_)
+      for (int i = 0; i < degree; i++)
       {
-         VeryLong n = cc.numerator();
-         VeryLong d = cc.denominator();
+         VeryLong n = c_[i].numerator();
+         VeryLong d = c_[i].denominator();
          long double sign = 1.0;
          if (n < 0L)
          {
@@ -669,10 +679,10 @@ long double AlgebraicNumber::ln_sigma(int j)
       long double log_scale_ld = ln(scale);
       complex<long double> sigma = (long double)0.0;
       complex<long double> alpha_power = (long double)1.0;
-      for (auto& cc: c_)
+      for (int i = 0; i < degree; i++)
       {
-         VeryLong n = cc.numerator();
-         VeryLong d = cc.denominator();
+         VeryLong n = c_[i].numerator();
+         VeryLong d = c_[i].denominator();
          long double sign = 1.0;
          if (n < 0L)
          {
@@ -698,12 +708,13 @@ long double AlgebraicNumber::mod_sigma_2(int j) const
       throw std::string("AlgebraicNumber::mod_sigma_2() : numberField_ not set");
    }
    const NumberField& nf = *AlgebraicNumber::numberField_;
+   int degree = nf.degree();
    complex<long double> alpha_j = nf.conjugate(j);
    complex<long double> sigma = (long double)0.0;
    complex<long double> alpha_power = (long double)1.0;
-   for (auto& cc: c_)
+   for (int i = 0; i < degree; i++)
    {
-      long double coeff = cc.numerator().get_long_double() / cc.denominator().get_long_double();
+      long double coeff = c_[i].numerator().get_long_double() / c_[i].denominator().get_long_double();
       sigma += coeff * alpha_power;
       alpha_power *= alpha_j;
    }
