@@ -58,26 +58,30 @@ Ideal::Ideal(const VeryLong& p, const VeryLong& q)
    AlgebraicNumber q_an(c);
    AlgebraicNumber w;
    int col = 0;
-   for (size_t i = 0; i < ib.size(); i++)
+   for (auto& ib1: ib)
    {
-      w = p_an * ib[i];
-      for (int j = 0; j < d; j++)
+      w = p_an * ib1;
+      int j = 0;
+      for (auto& wc: w.coefficients())
       {
-         qbasis(j,col) = w.coefficients()[j];
-         if (w.coefficients()[j].denominator() != VeryLong(1L))
+         qbasis(j,col) = wc;
+         if (wc.denominator() != VeryLong(1L))
          {
-            lcm = lcm * w.coefficients()[j].denominator() / gcd(lcm, w.coefficients()[j].denominator());
+            lcm = lcm * wc.denominator() / gcd(lcm, wc.denominator());
          }
+         j++;
       }
       col++;
-      w = q_an * ib[i];
-      for (int j = 0; j < d; j++)
+      w = q_an * ib1;
+      j = 0;
+      for (auto& wc: w.coefficients())
       {
-         qbasis(j,col) = w.coefficients()[j];
-         if (w.coefficients()[j].denominator() != VeryLong(1L))
+         qbasis(j,col) = wc;
+         if (wc.denominator() != VeryLong(1L))
          {
-            lcm = lcm * w.coefficients()[j].denominator() / gcd(lcm, w.coefficients()[j].denominator());
+            lcm = lcm * wc.denominator() / gcd(lcm, wc.denominator());
          }
+         j++;
       }
       col++;
    }
@@ -122,26 +126,30 @@ Ideal::Ideal(const VeryLong& p, const AlgebraicNumber& beta)
 
    AlgebraicNumber w;
    int col = 0;
-   for (size_t i = 0; i < ib.size(); i++)
+   for (auto& ib1: ib)
    {
-      w = p_an * ib[i];
-      for (int j = 0; j < d; j++)
+      w = p_an * ib1;
+      int j = 0;
+      for (auto& wc: w.coefficients())
       {
-         qbasis(j,col) = w.coefficients()[j];
-         if (w.coefficients()[j].denominator() != VeryLong(1L))
+         qbasis(j,col) = wc;
+         if (wc.denominator() != VeryLong(1L))
          {
-            lcm = lcm * w.coefficients()[j].denominator() / gcd(lcm, w.coefficients()[j].denominator());
+            lcm = lcm * wc.denominator() / gcd(lcm, wc.denominator());
          }
+         j++;
       }
       col++;
-      w = beta * ib[i];
-      for (int j = 0; j < d; j++)
+      w = beta * ib1;
+      j = 0;
+      for (auto& wc: w.coefficients())
       {
-         qbasis(j,col) = w.coefficients()[j];
-         if (w.coefficients()[j].denominator() != VeryLong(1L))
+         qbasis(j,col) = wc;
+         if (wc.denominator() != VeryLong(1L))
          {
-            lcm = lcm * w.coefficients()[j].denominator() / gcd(lcm, w.coefficients()[j].denominator());
+            lcm = lcm * wc.denominator() / gcd(lcm, wc.denominator());
          }
+         j++;
       }
       col++;
    }
@@ -183,16 +191,19 @@ Ideal::Ideal(const AlgebraicNumber& a) : hnf_basis_(1,1), denominator_(1L), isPr
 
    AlgebraicNumber w;
    int col = 0;
-   for (size_t i = 0; i < ib.size(); i++)
+   for (auto& ib1: ib)
    {
-      w = a * ib[i];
+      w = a * ib1;
+      int j = 0;
+      for (auto& wc: w.coefficients())
       for (int j = 0; j < d; j++)
       {
-         qbasis(j,col) = w.coefficients()[j];
-         if (w.coefficients()[j].denominator() != VeryLong(1L))
+         qbasis(j,col) = wc;
+         if (wc.denominator() != VeryLong(1L))
          {
-            lcm = lcm * w.coefficients()[j].denominator() / gcd(lcm, w.coefficients()[j].denominator());
+            lcm = lcm * wc.denominator() / gcd(lcm, wc.denominator());
          }
+         j++;
       }
       col++;
    }
@@ -218,11 +229,11 @@ void Ideal::create(const std::vector<AlgebraicNumber>& generator)
    const std::vector<AlgebraicNumber>& ib = AlgebraicNumber::integralBasis();
    int col = 0;
    VeryLong lcm(1L);
-   for (int i = 0; i < d; i++)
+   for (auto& ib1: ib)
    {
       for (size_t j = 0; j < generator.size(); j++)
       {
-         AlgebraicNumber w = ib[i] * generator[j];
+         AlgebraicNumber w = ib1 * generator[j];
          for (int k = 0; k < d; k++)
          {
             // assuming generator are algebraic integers, this is ok
