@@ -103,30 +103,30 @@ void factorDiscriminant(const VeryLong& D,
    D0 = 1L;
    F = 1L;
    int index = -1;
-   for (auto& f: factors)
+   for (size_t k = 0; k < factors.size(); k++)
    {
-      if (prev != f)
+      if (prev != factors[k])
       {
          index++;
-         collectedFactors.push_back(std::pair<VeryLong, int>(f, 1));
-         F_factors.push_back(std::pair<VeryLong, int>(f, 0));
-         prev = f;
+         collectedFactors.push_back(std::pair<VeryLong, int>(factors[k], 1));
+         F_factors.push_back(std::pair<VeryLong, int>(factors[k], 0));
+         prev = factors[k];
       }
       else
       {
          collectedFactors[index].second = 1 - collectedFactors[index].second;
          if (collectedFactors[index].second == 0)
          {
-            F *= f;
+            F *= factors[k];
             F_factors[index].second += 1;
          }
       }
    }
-   for (auto& cf: collectedFactors)
+   for (size_t l = 0; l < collectedFactors.size(); l++)
    {
-      if (cf.second > 0)
+      if (collectedFactors[l].second > 0)
       {
-         D0 *= cf.first;
+         D0 *= collectedFactors[l].first;
       }
    }
    if (!isFundamentalDiscriminant(collectedFactors, D0))
@@ -143,11 +143,11 @@ void factorDiscriminant(const VeryLong& D,
          }
       }
    }
-   for (auto& ff: F_factors)
+   for (size_t i = 0; i < F_factors.size(); i++)
    {
-      if (ff.second > 0)
+      if (F_factors[i].second > 0)
       {
-         FF_factors.push_back(ff);
+         FF_factors.push_back(F_factors[i]);
       }
    }
 }
@@ -161,6 +161,18 @@ NumberField::NumberField()
       integralBasisTheta_(1,1),
       integralBasisThetaInv_(1,1)
 {}
+#if 0
+NumberField::NumberField(const NumberField& nf)
+      : structureMatrix_(nf.structureMatrix_),
+      min_poly_(nf.min_poly_),
+      roots_(nf.roots_),
+      discriminant_(nf.discriminant_),
+      integralBasisAlpha_(nf.integralBasisAlpha_),
+      integralBasisAlphaInv_(nf.integralBasisAlphaInv_),
+      integralBasisTheta_(nf.integralBasisTheta_),
+      integralBasisThetaInv_(nf.integralBasisThetaInv_)
+{}
+#endif
 NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
       : structureMatrix_(2*poly.deg() - 1, poly.deg()),
       min_poly_(poly),
@@ -297,6 +309,27 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
 
 NumberField::~NumberField()
 {}
+#if 0
+NumberField& NumberField::operator=(const NumberField& nf)
+{
+   if (this != &nf)
+   {
+      min_poly_ = nf.min_poly_;
+      monic_min_poly_ = nf.monic_min_poly_;
+      roots_ = nf.roots_;
+      structureMatrix_ = nf.structureMatrix_;
+      discriminant_ = nf.discriminant_;
+      fieldDiscriminant_ = nf.fieldDiscriminant_;
+      index_ = nf.index_;
+      integralBasisAlpha_ = nf.integralBasisAlpha_;
+      integralBasisAlphaInv_ = nf.integralBasisAlphaInv_;
+      integralBasisTheta_ = nf.integralBasisTheta_;
+      integralBasisThetaInv_ = nf.integralBasisThetaInv_;
+      factorBase_ = nf.factorBase_;
+   }
+   return *this;
+}
+#endif
 
 int NumberField::conjugates() const
 {
@@ -540,9 +573,9 @@ void NumberField::Round2()
       dfactors.push_back(std::pair<Polynomial<VeryLongModular>, int>(prev, multiplicity));
 
       Polynomial<VeryLongModular> g_(1L);
-      for (auto& df: dfactors)
+      for (size_t i = 0; i < dfactors.size(); i++)
       {
-         g_ *= df.first;
+         g_ *= dfactors[i].first;
       }
 
       Polynomial<VeryLongModular> h_ = T_ / g_;
@@ -925,9 +958,9 @@ VeryLong NumberField::idealBound() const
    {
       //long double sum = 0.0;
       double sum = 0.0;
-      for (auto& om: omega)
+      for (int i = 0; i < d; i++)
       {
-         sum += om.mod_sigma_2(j);
+         sum += omega[i].mod_sigma_2(j);
       }
       if (sum > best_sum) best_sum = sum;
    }
