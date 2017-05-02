@@ -327,29 +327,6 @@ void extract_primes(char* str, Relation* r, prime_map_type& prime_map)
       c = d;
    }
 }
-#if 0
-long long strtoll(const char* str)
-{
-   double x = atof(str);
-   return (long long)x;
-}
-#endif
-
-#if 0
-char* buf = 0;
-std::string::size_type buflen = 0;
-void copy_str(const std::string& str)
-{
-   if (str.empty()) return;
-   if (str.size() > buflen)
-   {
-      buflen = str.size();
-      delete [] buf;
-      buf = new char [ buflen + 1 ];
-   }
-   strcpy(buf, str.c_str());
-}
-#endif
 
 void parse(const std::string& str, char*& alg_str, char*& rat_str)
 {
@@ -425,30 +402,21 @@ void do_clique_processing()
    {
       HashTable<int, Relation*, Hasher> twoMergeTable;
       for (auto& rel: *relationTable)
-//      for (Relation* iter = relationTable->begin();
-//            iter != relationTable->end();
-//            ++iter)
       {
          if (rel.is_clear()) continue;
-//         if (iter->is_clear()) continue;
          for (int i = 0; i < rel.prime_count_; ++i)
-         //for (int i = 0; i < iter->prime_count_; ++i)
          {
             // this relation can take part in a 2-merge
             if (frequencyTable->frequency(relationTable->get_prime(rel.primes_index_, i)) == 2)
-           // if (frequencyTable->frequency(relationTable->get_prime(iter->primes_index_, i)) == 2)
             {
                int index = relationTable->get_prime(rel.primes_index_, i);
-               //int index = relationTable->get_prime(iter->primes_index_, i);
                if (twoMergeTable.find(index) == twoMergeTable.end())
                {
                   twoMergeTable[index] = &rel;
-                  //twoMergeTable[index] = iter;
                }
                else
                {
                   Relation* rel1 = twoMergeTable[index];
-                  //Relation* rel2 = iter;
                   Relation* rel2 = &rel;
                   cliqueGraph.connect(rel1, rel2);
                }
@@ -854,24 +822,6 @@ void merge_relation_sets(RelationManager& RelationSets, long int prime, const st
       throw "frequencyTable corruption";
    }
 }
-#if 0
-void check_freqencytable_in_synch(RelationManager* RelationSets, long int prime)
-{
-    if (frequencyTable->frequency(prime) > 0)
-    {
-        std::vector<long int> relation_sets;
-        size_t count = RelationSets->sets_including_prime(prime, relation_sets);
-        if (count > 1)
-        {
-           if (count != frequencyTable->frequency(prime))
-           {
-              std::cerr << "Problem: for prime #" << prime << " RelationSets says count = " << count << " but frequencyTable says " << frequencyTable->frequency(prime) << std::endl;
-              throw "frequencyTable out of synch with RelationSets";
-           }
-        }
-    }
-}
-#endif
 
 void do_merge_processing()
 {
@@ -923,12 +873,6 @@ void do_merge_processing()
       RelationSets->stats();
       for (size_t prime = 0; RelationsMergedInThisPass < CutoffForRelationsMergedInThisPass && !NewHandlerCalled && prime < frequencyTable->capacity(); ++prime)
       {
-#if 0
-         //if (prime % 10000 == 0)
-         {
-            LOG_DEBUG("merging prime " << prime << ", RelationsMergedInThisPass = " << RelationsMergedInThisPass);
-         }
-#endif
          if (frequencyTable->frequency(prime) > 0)
          {
             std::vector<long int> relation_sets;
