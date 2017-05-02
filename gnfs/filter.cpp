@@ -424,25 +424,32 @@ void do_clique_processing()
 
    {
       HashTable<int, Relation*, Hasher> twoMergeTable;
-      for (Relation* iter = relationTable->begin();
-            iter != relationTable->end();
-            ++iter)
+      for (auto& rel: *relationTable)
+//      for (Relation* iter = relationTable->begin();
+//            iter != relationTable->end();
+//            ++iter)
       {
-         if (iter->is_clear()) continue;
-         for (int i = 0; i < iter->prime_count_; ++i)
+         if (rel.is_clear()) continue;
+//         if (iter->is_clear()) continue;
+         for (int i = 0; i < rel.prime_count_; ++i)
+         //for (int i = 0; i < iter->prime_count_; ++i)
          {
             // this relation can take part in a 2-merge
-            if (frequencyTable->frequency(relationTable->get_prime(iter->primes_index_, i)) == 2)
+            if (frequencyTable->frequency(relationTable->get_prime(rel.primes_index_, i)) == 2)
+           // if (frequencyTable->frequency(relationTable->get_prime(iter->primes_index_, i)) == 2)
             {
-               int index = relationTable->get_prime(iter->primes_index_, i);
+               int index = relationTable->get_prime(rel.primes_index_, i);
+               //int index = relationTable->get_prime(iter->primes_index_, i);
                if (twoMergeTable.find(index) == twoMergeTable.end())
                {
-                  twoMergeTable[index] = iter;
+                  twoMergeTable[index] = &rel;
+                  //twoMergeTable[index] = iter;
                }
                else
                {
                   Relation* rel1 = twoMergeTable[index];
-                  Relation* rel2 = iter;
+                  //Relation* rel2 = iter;
+                  Relation* rel2 = &rel;
                   cliqueGraph.connect(rel1, rel2);
                }
             }
