@@ -495,9 +495,8 @@ bool VeryLong::factorise_trial_division(std::vector<VeryLong> * factors,
             d += t[i];
             if (d > B)
             {
-               for (size_t i = 0; i < extraPrimes_.size(); i++)
+               for (auto& factor: extraPrimes_)
                {
-                  VeryLong& factor = extraPrimes_[i];
                   while (*new_N % factor == zero)
                   {
                      *new_N /= factor;
@@ -521,9 +520,8 @@ bool VeryLong::factorise_trial_division(std::vector<VeryLong> * factors,
          d += t[i];
          if (d > B)
          {
-            for (size_t i = 0; i < extraPrimes_.size(); i++)
+            for (auto& factor: extraPrimes_)
             {
-               VeryLong& factor = extraPrimes_[i];
                while (*new_N % factor == zero)
                {
                   *new_N /= factor;
@@ -985,18 +983,18 @@ bool VeryLong::factorise(std::vector<VeryLong> * factors) const
 
    if (composite_factors.size() > 0)
    {
-      for (size_t i = 0; i < factors->size(); i++)
+      for (auto& factor: *factors)
       {
          if (Debug)
-            cout << (*factors)[i] << endl;
+            cout << factor << endl;
       }
       if (Debug)
          cout << "2. we have some unfactored composites, N0 = " << N0 << endl;
-      for (size_t i = 0; i < composite_factors.size(); i++)
+      for (auto& composite_factor: composite_factors)
       {
          if (Debug)
-            cout << composite_factors[i] << endl;
-         factors->push_back(composite_factors[i]);
+            cout << composite_factor << endl;
+         factors->push_back(composite_factor);
       }
    }
 
