@@ -939,9 +939,8 @@ void LatticeSiever::print_relation(long int c, long int d,
         }
         *relfile_ << a << " " << b << " :";
         std::sort(factors1.begin(), factors1.end());
-        for (size_t i = 0; i < factors1.size(); i++)
+        for (auto& p: factors1)
         {
-            long int p = factors1[i];
             if (p >= B1_ && !alg_factor_base_->exists_extra(p))
             {
                 std::vector<LongModular> roots;
@@ -972,9 +971,9 @@ void LatticeSiever::print_relation(long int c, long int d,
         }
         *relfile_ << " :";
         std::sort(factors2.begin(), factors2.end());
-        for (size_t i = 0; i < factors2.size(); i++)
+        for (auto& f2: factors2)
         {
-            *relfile_ << " " << factors2[i];
+            *relfile_ << " " << f2;
         }
         if (factors2.size() == 0) *relfile_ << " 1";
         *relfile_ << " :";
@@ -1269,16 +1268,8 @@ void LatticeSiever::sieve_by_vectors2()
         long int p = iter->get_p();
         if (p < SMALL_PRIME_BOUND2_) continue;
         if (p > B2_) break;
-#if 0
-        for (FactorBase::a_const_root_iterator* root_info_iter = rat_factor_base_->begin(iter);
-                root_info_iter != rat_factor_base_->end(iter);
-                ++root_info_iter)
-        {
-            long int r = root_info_iter->r;
-#else
         {
             long int r = *(rat_factor_base_->begin(iter));
-#endif
             if (p == r) continue;
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
@@ -1492,9 +1483,9 @@ bool LatticeSiever::sieve(long int q)
     find_roots_mod_p<VeryLong, long int, LongModular>(f1_, q, q_roots);
     try
     {
-        for (size_t i = 0; i < q_roots.size(); i++)
+        for (auto& qr: q_roots)
         {
-            long int s = q_roots[i].get_long();
+            long int s = qr.get_long();
             if (debug_)
             {
                 std::cerr << "q = " << q << std::endl;
