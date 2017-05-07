@@ -75,9 +75,9 @@ void FactorBase::write(const char* filename)
 
    // write out inert primes after a separator
    file << "!" << std::endl;
-   for (size_t i = 0; i < inert_primes_.size(); i++)
+   for (auto& ip: inert_primes_)
    {
-      file << inert_primes_[i] << std::endl;
+      file << ip << std::endl;
    }
 }
 
