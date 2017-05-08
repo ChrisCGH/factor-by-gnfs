@@ -178,9 +178,8 @@ void add_primes(std::vector<std::string>& primes,
 {
    std::string prev_prime = "";
    int keep = 0;
-   for (size_t i = 0; i < primes.size(); i++)
+   for (auto& prime: primes)
    {
-      std::string prime = primes[i];
       if (prime != prev_prime)
       {
          if (keep)
