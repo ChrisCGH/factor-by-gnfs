@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <list>
 #include <string>
@@ -12,7 +13,6 @@
 #include "PriorityQueue.h"
 #include "RelationManager.h"
 #include "MemoryMappedFile.h"
-#include "HashTable.h"
 #include "convert.h"
 #include "Logger.h"
 
@@ -91,6 +91,12 @@ struct Prime
       if (p == prime.p && r != prime.r) return true;
       return false;
    }
+   bool operator==(const Prime& prime) const
+   {
+      if (p != prime.p) return false;
+      if (p == prime.p && r != prime.r) return false;
+      return true;
+   }
    Prime(const char* c)
    {
       p = atol(c);
@@ -109,9 +115,13 @@ struct Prime
       {
          return p.p;
       }
+      std::size_t operator()(const Prime& p) const
+      {
+         return p.p;
+      }
    };
 };
-typedef HashTable<Prime, int, Prime::Hasher, 5000011> prime_map_type;
+typedef std::unordered_map<Prime, int, Prime::Hasher> prime_map_type;
 int Excess = 0;
 
 PrimeFrequencyTable* frequencyTable = 0;
@@ -134,6 +144,10 @@ struct RelationHasher
    {
       return hash_relation(r.first, r.second);
    };
+   std::size_t operator()(const std::pair<long long int, long int>& r) const
+   {
+      return hash_relation(r.first, r.second);
+   }
 };
 
 void usage()
@@ -393,6 +407,10 @@ struct Hasher
    {
       return i;
    };
+   std::size_t operator()(int i) const
+   {
+       return i;
+   }
 };
 void do_clique_processing()
 {
@@ -400,7 +418,7 @@ void do_clique_processing()
    int cliqueCount;
 
    {
-      HashTable<int, Relation*, Hasher> twoMergeTable;
+      std::unordered_map<int, Relation*, Hasher> twoMergeTable;
       for (auto& rel: *relationTable)
       {
          if (rel.is_clear()) continue;
@@ -535,7 +553,7 @@ void do_clique_processing()
 
 void remove_duplicates()
 {
-   HashTable<std::pair<long long int, long int>, char, RelationHasher> hashTable;
+   std::unordered_map<std::pair<long long int, long int>, char, RelationHasher> hashTable;
    std::string str;
    long int relations = 0;
    long int unique_relations = 0;
