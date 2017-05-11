@@ -10,6 +10,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <unordered_map>
 #include <limits.h>
 #include <time.h>
 #include "timings.h"
@@ -47,13 +48,12 @@ bool Debug = false;
 Timing* timing = 0;
 std::string Dump_file("");
 ExceptionalPrimes* SpecialPrimes = 0;
-std::map<long int, int> ProjectivePrimes;
+std::unordered_map<long int, int> ProjectivePrimes;
 
 typedef std::map<std::pair<long int, long int>, PrimeIdealRep*> NormalPrimesType;
-//std::map<std::pair<long int, long int>, PrimeIdealRep*> NormalPrimes;
 NormalPrimesType NormalPrimes;
 
-typedef std::map<PrimeIdealRep*, int> PrimeIdealDecomposition;
+typedef std::unordered_map<PrimeIdealRep*, int> PrimeIdealDecomposition;
 const NumberField* nf;
 
 void set_nf()
@@ -70,7 +70,7 @@ void initialiseSpecialPrimes()
    SpecialPrimes = new ExceptionalPrimes(nf);
 }
 
-typedef std::map<PrimeIdeal*, int> valuation_map_type;
+typedef std::unordered_map<PrimeIdeal*, int> valuation_map_type;
 valuation_map_type LeadingCoefficientValuationMap;
 
 void findLeadingCoefficientValuations()
@@ -554,7 +554,7 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
          if (f < VeryLong(0L)) f = -f;
 
          // read factors from file, if any
-         std::map<long int, int> primes;
+         std::unordered_map<long int, int> primes;
          int done1 = 0;
          while (!done1)
          {
