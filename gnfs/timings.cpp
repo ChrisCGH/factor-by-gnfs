@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <unordered_map>
 #ifndef WIN32
 #include <sys/times.h>
 #include <unistd.h>
@@ -296,7 +297,7 @@ void Timing::stop()
 void Timing::summary()
 {
    Timing_* save = timing_;
-   std::multimap<double, std::string> summary_map;
+   std::unordered_multimap<double, std::string> summary_map;
    for (auto& t: timing_map_)
    {
       timing_ = t.second;
@@ -312,7 +313,7 @@ void Timing::summary()
       ss << ",User=" << timing_->total_elapsed_user_/(double)clk_tck_ << " (" << pct << "%),System=";
 #endif
       ss << timing_->total_elapsed_system_/(double)clk_tck_;
-      summary_map.insert(std::multimap<double, std::string>::value_type(pct, ss.str()));
+      summary_map.insert(std::unordered_multimap<double, std::string>::value_type(pct, ss.str()));
    }
 
    if (timing_file_)

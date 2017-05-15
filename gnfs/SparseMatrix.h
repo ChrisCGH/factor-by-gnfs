@@ -7,7 +7,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <memory.h>
 #include <stdint.h>
@@ -1310,7 +1310,7 @@ class SparseMatrix3
         std::vector<SparseMatrix4* > medium_;
         size_t medium_count_;
         size_t number_of_stripes_;
-        std::map<size_t, size_t> stripe_allocated_points_;
+        std::unordered_map<size_t, size_t> stripe_allocated_points_;
 
         // Very dense rows which are to be processed later
         std::fstream* very_dense_file_;

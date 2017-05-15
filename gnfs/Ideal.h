@@ -7,9 +7,6 @@
 #include "FactorBase.h"
 #include "timings.h"
 
-class Ideal;
-typedef std::map<std::pair<long int, long int>, Ideal*> IdealMap;
-
 class Ideal
 {
    public:

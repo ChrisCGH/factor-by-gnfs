@@ -9,7 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 #include <algorithm>
@@ -171,7 +171,7 @@ typedef SparseMatrix SPARSEMATRIX;
 #define SMALL_PRIMES_AS_TRANSPOSE 1
 
 void add_primes(std::vector<std::string>& primes,
-                const std::map<std::string, long int>& base_index,
+                const std::unordered_map<std::string, long int>& base_index,
                 long int row_index,
                 long int colstart,
                 SPARSEMATRIX& smat)
@@ -184,7 +184,7 @@ void add_primes(std::vector<std::string>& primes,
       {
          if (keep)
          {
-            std::map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
+            std::unordered_map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
             if (found != base_index.end())
             {
                long int index = found->second;
@@ -210,7 +210,7 @@ void add_primes(std::vector<std::string>& primes,
    }
    if (keep)
    {
-      std::map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
+      std::unordered_map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
       if (found != base_index.end())
       {
          long int index = found->second;
@@ -269,8 +269,8 @@ bool parse(const std::string& str, VeryLong& a, VeryLong& b, std::string& alg_st
     return true;
 }
 
-void firstPass(std::map<std::string, long int>& alg_base_index,
-               std::map<std::string, long int>& rat_base_index,
+void firstPass(std::unordered_map<std::string, long int>& alg_base_index,
+               std::unordered_map<std::string, long int>& rat_base_index,
                int num_qcs,
                long int& row_length,
                long int& rat_col_start)
@@ -364,8 +364,8 @@ void generateMatrix()
    e.g.
    -982 1 : 3/2 3/3 23/7 9421/8439 16127/15145 65651/64669 : 2 1741 :
    */
-   std::map<std::string, long int> alg_base_index;
-   std::map<std::string, long int> rat_base_index;
+   std::unordered_map<std::string, long int> alg_base_index;
+   std::unordered_map<std::string, long int> rat_base_index;
    int num_qcs = 50;
    long int row_length;
    long int rat_col_start;

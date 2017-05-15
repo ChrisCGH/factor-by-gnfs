@@ -4,7 +4,7 @@
 #include "Polynomial.h"
 #include "LongModular.h"
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <cstdlib>
 #include <string.h>
 
@@ -278,7 +278,7 @@ class FactorBase
          ++factor_base_size_;
       }
 
-      typedef std::map<int32_t, std::vector<int32_t> > fb_overflow;
+      typedef std::unordered_map<int32_t, std::vector<int32_t> > fb_overflow;
       fb_overflow factor_base_overflow_;
       std::vector<int32_t> inert_primes_;
       Polynomial<VeryLong> f_;

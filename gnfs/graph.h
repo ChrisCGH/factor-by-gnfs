@@ -1,6 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 #include <algorithm>
@@ -158,12 +158,12 @@ class Graph
             std::cerr << "Graph::minimum_spanning_tree() : graph is not connected" << std::endl;
             return;
          }
-         typedef std::map<Node*, std::pair<Node*, double> > heap_type;
+         typedef std::unordered_map<Node*, std::pair<Node*, double> > heap_type;
          typedef typename heap_type::iterator heap_type_iterator;
          heap_type node_heap;
 
          // Step 1.
-         std::map<Node*, double> L;
+         std::unordered_map<Node*, double> L;
          size_t i = 0;
          node_set_iterator it = node_set_.begin();
          Node* u = *it;

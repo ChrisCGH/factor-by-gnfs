@@ -1,5 +1,5 @@
 #include "SparseMatrix.h"
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <sstream>
 #include "timings.h"
@@ -2818,7 +2818,7 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols, char* s)
     std::ostringstream oss;
     long int prev_stripe = -1L;
     long int cols_in_stripe = 0L;
-    std::map<size_t, std::string> striped_row;
+    std::unordered_map<size_t, std::string> striped_row;
     while ((s = strtok(0, " ")))
     {
         size_t col = std::atol(s);
@@ -2857,7 +2857,7 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols, char* s)
     extend_dense(prev_stripe);
     for (size_t stripe = 0; stripe < medium_.size(); ++stripe)
     {
-        std::map<size_t, std::string>::const_iterator found = striped_row.find(stripe);
+        std::unordered_map<size_t, std::string>::const_iterator found = striped_row.find(stripe);
         if (found != striped_row.end())
         {
             medium_[stripe]->add_row(0, found->second);

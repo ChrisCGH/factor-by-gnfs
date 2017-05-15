@@ -9,6 +9,7 @@
 #include "root.h"
 #include "RootConfig.h"
 #include <string>
+#include <unordered_map>
 
 namespace
 {
@@ -57,7 +58,7 @@ int readRatRelations(const std::string& filename, RelationList& ratRelations)
          long int b = std::atol(c);
          //Relation* rel = new Relation(aa.get_long_long(), b);
          Relation* rel = new Relation(aa, b);
-         std::map<long int, int> primes;
+         std::unordered_map<long int, int> primes;
          //std::cout << "(aa,b) = (" << aa << "," << b << ")" << std::endl;
          // read factors from file, if any
          int done1 = 0;
@@ -148,7 +149,7 @@ int main(int argc, char** argv)
 
    Polynomial<VeryLong> f2 = config.f2();
    std::vector<VeryLong> factors;
-   std::map<long int, int> primes;
+   std::unordered_map<long int, int> primes;
    RelationList::iterator numerIter = relationNumer.begin();
    RelationList::iterator denomIter = relationDenom.begin();
    RelationList::iterator ratIter = relationRat.begin();

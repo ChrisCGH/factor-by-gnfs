@@ -10,7 +10,7 @@
 #include <string.h>
 #include <fstream>
 #include <string>
-#include <map>
+#include <unordered_map>
 
 extern "C"
 {
@@ -51,7 +51,7 @@ class Timing
          double total_elapsed_system_;
          std::string message_;
       };
-      std::map<std::string, Timing_*> timing_map_;
+      std::unordered_map<std::string, Timing_*> timing_map_;
       Timing_* timing_;
       double grand_total_elapsed_real_;
       double grand_total_elapsed_user_;

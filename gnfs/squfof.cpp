@@ -4,7 +4,7 @@
 #include "mod.h"
 #include "timings.h"
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <iostream>
 #include <iomanip>
 
@@ -600,7 +600,7 @@ struct squfof_info
    long int b_;
    long int L_;
    long int a_;
-   std::map<long int, bool> Q_;
+   std::unordered_map<long int, bool> Q_;
    QuadraticForm f_;
    QuadraticFormL g_;
    long int reductions_;

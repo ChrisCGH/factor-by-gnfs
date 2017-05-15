@@ -11,7 +11,6 @@
 #include <time.h>
 #include <iomanip>
 #include <fstream>
-#include <map>
 #include "timings.h"
 #include "lip.h"
 #include "pselect.h"
