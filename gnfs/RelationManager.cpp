@@ -1,7 +1,7 @@
 #include "RelationManager.h"
 #include "MemoryMappedFile.h"
 #include <ctype.h>
-#include <set>
+#include <unordered_set>
 #include <string>
 #include "Logger.h"
 
@@ -109,7 +109,7 @@ void RelationSetManager::display(long int relation_set)
 
 bool RelationSetManager::check(long int rs)
 {
-   std::set<long int> s;
+   std::unordered_set<long int> s;
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs);
          it != relation_set_relation_map_.end(rs);
          ++it)
@@ -135,7 +135,7 @@ struct xorer : public std::binary_function<size_t, size_t, ISparseRow::xor_statu
 
 long int RelationSetManager::merge(long int rs1, long int rs2)
 {
-   std::set<long int> s;
+   std::unordered_set<long int> s;
    for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs1);
          it != relation_set_relation_map_.end(rs1);
          ++it)

@@ -1,6 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 #include <unordered_map>
+#include <unordered_set>
 #include <set>
 #include <vector>
 #include <algorithm>
@@ -222,6 +223,7 @@ class Graph
             return (*_Left < *_Right);
          }
       };
+#if 0
    struct Node_less_set : public std::binary_function <Node*, Node*, bool>
       {
          bool operator()(const Node* _Left, const Node* _Right) const
@@ -241,6 +243,7 @@ class Graph
             return false;
          }
       };
+#endif
       typedef std::multimap<Node*, Node*, Node_less> graph_type;
       typedef typename graph_type::iterator graph_iterator;
       graph_type graph_;
@@ -457,7 +460,8 @@ class Graph
    public:
       ~Graph()
       {
-         std::set<Node*> all_nodes;
+         std::unordered_set<Node*> all_nodes;
+         //std::set<Node*> all_nodes;
          for (typename graph_type::iterator iter = graph_.begin();
                iter != graph_.end();
                ++iter)

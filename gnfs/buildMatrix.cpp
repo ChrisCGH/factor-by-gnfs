@@ -10,7 +10,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_map>
-#include <set>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <sstream>
@@ -124,7 +124,7 @@ void copy_str(const std::string& str)
    strcpy(buf, str.c_str());
 }
 
-void split1(const std::string& str, std::set<std::string>& base)
+void split1(const std::string& str, std::unordered_set<std::string>& base)
 {
    // str is a set of strings separated by spaces
    if (str.empty()) return;
@@ -280,8 +280,8 @@ void firstPass(std::unordered_map<std::string, long int>& alg_base_index,
    * relation set prime map, since we missed out these primes in the filter stage
     */
    std::cerr << "First pass of relations ..." << std::endl;
-   std::set<std::string> alg_base;
-   std::set<std::string> rat_base;
+   std::unordered_set<std::string> alg_base;
+   std::unordered_set<std::string> rat_base;
    std::string str;
    long int relations = 0;
    while (::getline(*Relmmfile, str))
