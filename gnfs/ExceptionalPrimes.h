@@ -5,6 +5,18 @@
 #include <map>
 #include <unordered_map>
 
+namespace std
+{
+template <> struct hash<std::pair<PrimeIdeal*, int> >
+{
+   size_t operator()(const pair<PrimeIdeal*, int>& pip) const
+   {
+       size_t seed = hash<PrimeIdeal*>()(pip.first);
+       seed ^= hash<int>()(pip.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+       return seed;
+   }
+};
+};
 class ExceptionalPrimes
 {
    public:
@@ -62,7 +74,7 @@ class ExceptionalPrimes
       typedef std::unordered_map<long int, std::vector<PrimeIdealRep*> > exceptional_primes_type;
       typedef exceptional_primes_type::iterator exceptional_primes_iterator;
       exceptional_primes_type exceptional_primes_;
-      typedef std::map<std::pair<PrimeIdeal*, int>, Matrix<long int> > exceptional_primes_powers_type;
+      typedef std::unordered_map<std::pair<PrimeIdeal*, int>, Matrix<long int> > exceptional_primes_powers_type;
       exceptional_primes_powers_type exceptional_primes_powers_;
 
       const NumberField* nf_;

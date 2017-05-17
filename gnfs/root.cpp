@@ -20,6 +20,19 @@
 #ifdef CHECKNORM
 #include "RootConfig.h"
 #endif
+namespace std 
+{
+template<> struct hash<pair<long int, long int> >
+{
+   size_t operator()(const pair<long int, long int>& pli) const
+   {
+       size_t seed = hash<long int>()(pli.first);
+       seed ^= hash<long int>()(pli.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+       return seed;
+   }
+};
+};
+
 
 PrimeList::iterator PrimeList::next_ = 0;
 PrimeList::iterator PrimeList::last_ = 0;
@@ -34,8 +47,8 @@ double ln_norm_H;
 double ln_norm_G;
 #endif
 #ifdef CHECKNORM
-std::map<VeryLong, long int> check_norm_prime_decomposition;
-std::map<long int, VeryLong> unfactored_norm_delta;
+std::unordered_map<VeryLong, long int> check_norm_prime_decomposition;
+std::unordered_map<long int, VeryLong> unfactored_norm_delta;
 #endif
 long long strtoll(const char* str)
 {
@@ -49,7 +62,7 @@ std::string Dump_file("");
 ExceptionalPrimes* SpecialPrimes = 0;
 std::unordered_map<long int, int> ProjectivePrimes;
 
-typedef std::map<std::pair<long int, long int>, PrimeIdealRep*> NormalPrimesType;
+typedef std::unordered_map<std::pair<long int, long int>, PrimeIdealRep*> NormalPrimesType;
 NormalPrimesType NormalPrimes;
 
 typedef std::unordered_map<PrimeIdealRep*, int> PrimeIdealDecomposition;
@@ -320,8 +333,7 @@ int e_p_r(Relation& rel, long int p, long int v, long int r)
    return 0;
 }
 
-std::map<std::pair<long int, long int>, int> S;
-//static std::map<long int, int> V_p;
+std::unordered_map<std::pair<long int, long int>, int> S;
 
 //----------------------------------------------------------------------------
 // Complexity of a given quotient of products of relations
