@@ -150,9 +150,9 @@ int main(int argc, char** argv)
    Polynomial<VeryLong> f2 = config.f2();
    std::vector<VeryLong> factors;
    std::unordered_map<long int, int> primes;
-   RelationList::iterator numerIter = relationNumer.begin();
-   RelationList::iterator denomIter = relationDenom.begin();
-   RelationList::iterator ratIter = relationRat.begin();
+   auto numerIter = relationNumer.begin();
+   auto denomIter = relationDenom.begin();
+   auto ratIter = relationRat.begin();
    // ratRelations is in same order as relationNumer and relationDenom interspersed, e.g.
    //
    // 1 2 3 4 5 6 7 8 ...

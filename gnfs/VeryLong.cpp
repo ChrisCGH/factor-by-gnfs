@@ -305,7 +305,7 @@ bool VeryLong::factorise_p_minus_1(VeryLong* factor, VeryLong* new_N)
    int done = 0;
    long p;
    int i = 0;
-   std::vector<long int>::const_iterator iter = Prime_power.begin();
+   auto iter = Prime_power.begin();
    while (!done)
    {
       p = *iter;
@@ -343,7 +343,7 @@ bool VeryLong::factorise_p_minus_1(VeryLong* factor, VeryLong* new_N)
       yVector.push_back(y);
    }
 
-   std::vector<long int>::iterator iter2 = Prime_power2.begin();
+   auto iter2 = Prime_power2.begin();
    long int p0 = *iter2;
    long int p1 = 0;
    ++iter2;

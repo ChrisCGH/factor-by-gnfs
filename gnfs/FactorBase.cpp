@@ -58,13 +58,13 @@ void FactorBase::write(const char* filename)
    file << B_ << std::endl;
    int32_t p = 0;
    // write out factor base
-   for (a_const_iterator iter = begin();
+   for (auto iter = begin();
          iter != end();
          ++iter)
    {
       p = iter->p;
       file << p;
-      for (a_const_root_iterator root_iter = begin(iter);
+      for (auto root_iter = begin(iter);
             root_iter != end(iter);
             ++root_iter)
       {
@@ -200,13 +200,13 @@ void FactorBase::add_extra_queue()
    std::cerr << "done" << std::endl;
 
    std::cerr << "Removing duplicates from extra_prime_queue_ ... " << std::flush;
-   std::vector<int32_t>::iterator new_end = std::unique(extra_prime_queue_.begin(), extra_prime_queue_.end());
+   auto new_end = std::unique(extra_prime_queue_.begin(), extra_prime_queue_.end());
    size_t unique_primes = new_end - extra_prime_queue_.begin();
    std::cerr << "(size = " << unique_primes << ") done" << std::endl;
 
    std::cerr << "Adding primes to factor base " << std::flush;
    long int count = 0;
-   for (std::vector<int32_t>::iterator extra_iter = extra_prime_queue_.begin();
+   for (auto extra_iter = extra_prime_queue_.begin();
          extra_iter != new_end;
          ++extra_iter)
    {
@@ -354,10 +354,10 @@ FactorBase::a_const_root_iterator FactorBase::begin(int32_t p) const
 {
    if (o_p == p) return o_root_info;
    R_p r_p(p);
-   a_const_iterator iter = std::lower_bound(begin(), end(), r_p);
+   auto iter = std::lower_bound(begin(), end(), r_p);
    if (iter != end()) return begin(iter);
    // look in factor_base_overflow_
-   fb_overflow::const_iterator oiter = factor_base_overflow_.find(p);
+   auto oiter = factor_base_overflow_.find(p);
    if (oiter != factor_base_overflow_.end())
    {
       o_p = p;
@@ -374,9 +374,9 @@ FactorBase::a_const_root_iterator FactorBase::begin(int32_t p) const
 FactorBase::a_const_root_iterator FactorBase::end(int32_t p) const
 {
    R_p r_p(p);
-   a_const_iterator iter = std::lower_bound(begin(), end(), r_p);
+   auto iter = std::lower_bound(begin(), end(), r_p);
    if (iter != end()) return end(iter);
-   a_const_root_iterator root_iter = begin(p);
+   auto root_iter = begin(p);
    if (root_iter) return root_iter + o_count;
    return 0;
 }
@@ -401,13 +401,13 @@ void FactorBase::dump(const char* filename) const
    file << highest_prime() << std::endl;
    int32_t p = 0;
    // write out factor base
-   for (a_const_iterator iter = begin();
+   for (auto iter = begin();
          iter != end();
          ++iter)
    {
       p = iter->p;
       file << p;
-      for (a_const_root_iterator root_iter = begin(iter);
+      for (auto root_iter = begin(iter);
             root_iter != end(iter);
             ++root_iter)
       {

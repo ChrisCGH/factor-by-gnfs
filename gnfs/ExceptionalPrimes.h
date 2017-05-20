@@ -72,7 +72,6 @@ class ExceptionalPrimes
 
    private:
       typedef std::unordered_map<long int, std::vector<PrimeIdealRep*> > exceptional_primes_type;
-      typedef exceptional_primes_type::iterator exceptional_primes_iterator;
       exceptional_primes_type exceptional_primes_;
       typedef std::unordered_map<std::pair<PrimeIdeal*, int>, Matrix<long int> > exceptional_primes_powers_type;
       exceptional_primes_powers_type exceptional_primes_powers_;

@@ -148,7 +148,7 @@ class FileBasedSparseRow : public ISparseRow
         }
         void copy(ISparseRow& copy_of_row)
         {
-            for (const_iterator it = begin();
+            for (auto it = begin();
                  it != end();
                  ++it)
             {
@@ -273,7 +273,7 @@ class FileBasedSparseRowManager
             }
             extend(r, columns.size());
             FileBasedSparseRow sr(*this, mmf_, r, row_index_[index]);
-            for (std::vector<size_t>::const_iterator it = columns.begin();
+            for (auto it = columns.begin();
                  it != columns.end();
                  ++it)
             {
@@ -412,7 +412,7 @@ class FileBasedSparseRowManager
                 free_list_.push_back(std::pair<off_t, size_t>(offset, s));
                 return;
             }
-            free_list_type::iterator it = free_list_.begin();
+            auto it = free_list_.begin();
             free_list_type::iterator prev_it;
             while (it != free_list_.end() && it->first < offset)
             {
@@ -479,7 +479,7 @@ class FileBasedSparseRowManager
             {
                 return 0;
             } 
-            free_list_type::iterator it = free_list_.begin();
+            auto it = free_list_.begin();
             while (it != free_list_.end() &&
                    SparseRowWrapper::capacity(it->second) < cap)
             {
@@ -512,7 +512,7 @@ class FileBasedSparseRowManager
             size_t old_row_count = row_count_;
             row_count_ += to_get;
             row_index_.resize(row_count_);
-            free_list_type::iterator it = free_list_.begin();
+            auto it = free_list_.begin();
             for (size_t i = 0; i < to_get; ++i, ++it)
             {
                 row_index_[old_row_count + i] = it->first;

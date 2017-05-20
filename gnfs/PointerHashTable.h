@@ -13,8 +13,8 @@ class PointerHashTable
       {}
       POINTER find(KEY key)
       {
-         POINTER_LIST& pl = hash_table_[hash(key)].P_list_;
-         POINTER_LIST_ITERATOR found = std::lower_bound(pl.begin(), pl.end(), key, comp_);
+         auto& pl = hash_table_[hash(key)].P_list_;
+         auto found = std::lower_bound(pl.begin(), pl.end(), key, comp_);
          if (found != pl.end() && key_function_(*found) == key) return (*found);
          return 0;
       }
@@ -24,7 +24,7 @@ class PointerHashTable
       }
       void load(POINTER first)
       {
-         for (POINTER iter = first;
+         for (auto iter = first;
                iter;
                iter = iter->next_)
          {
@@ -35,7 +35,6 @@ class PointerHashTable
 
    private:
       typedef std::vector<POINTER> POINTER_LIST;
-      typedef typename POINTER_LIST::iterator POINTER_LIST_ITERATOR;
       struct HashTableEntry
       {
          POINTER_LIST P_list_;

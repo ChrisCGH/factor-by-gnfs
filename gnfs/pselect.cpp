@@ -2279,7 +2279,7 @@ bool PolynomialPairCalculator::generate(long int degree)
         }
 
         size_t examined = 0;
-        for (std::vector<PolynomialOptimizer::Poly_info>::iterator iter = poly_list.begin();
+        for (auto iter = poly_list.begin();
                 examined < max_polys_to_examine && iter != poly_list.end();
                 ++iter)
         {

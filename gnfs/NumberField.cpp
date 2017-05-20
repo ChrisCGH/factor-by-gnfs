@@ -410,7 +410,7 @@ void NumberField::Round2()
    AlgebraicNumber x;
    x = one;
    omega[0] = one;
-   for (std::vector<AlgebraicNumber>::iterator omegaIter = omega.begin() + 1;
+   for (auto omegaIter = omega.begin() + 1;
          omegaIter != omega.end();
          ++omegaIter)
    {
@@ -600,7 +600,7 @@ void NumberField::Round2()
             // terms of alpha, but since omega[1] = theta = c_d * alpha
             // it's easy enough to convert.
             cf = qone;
-            std::vector<Quotient<VeryLong> >::const_iterator tmpIter = tmp.coefficients().begin();
+            auto tmpIter = tmp.coefficients().begin();
             for (int r = 0; r < d; r++)
             {
                x = *tmpIter;
@@ -620,7 +620,7 @@ void NumberField::Round2()
          {
             tmp = omega[i - m] * p;
             cf = qone;
-            std::vector<Quotient<VeryLong> >::const_iterator tmpIter = tmp.coefficients().begin();
+            auto tmpIter = tmp.coefficients().begin();
             Quotient<VeryLong> x;
             for (int r = 0; r < d; r++)
             {

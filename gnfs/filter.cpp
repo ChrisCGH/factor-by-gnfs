@@ -127,7 +127,6 @@ int Excess = 0;
 PrimeFrequencyTable* frequencyTable = 0;
 
 typedef PriorityQueue<int, 50000> clique_queue_type;
-typedef clique_queue_type::iterator clique_queue_iterator;
 
 unsigned long long int hash_relation(long long int a, long long int b)
 {
@@ -477,7 +476,7 @@ void do_clique_processing()
    {
       // add 1 for each relation, to account for the small primes
       double weight = cliqueGraph.component_length(clique);
-      for (Graph<Relation*>::component_iterator ci = cliqueGraph.begin(clique);
+      for (auto ci = cliqueGraph.begin(clique);
             ci != cliqueGraph.end(clique);
             ++ci)
       {
@@ -501,12 +500,12 @@ void do_clique_processing()
 
    size_t relations_removed = 0;
    bool done = false;
-   for (clique_queue_iterator cqi = cliqueQueue.begin();
+   for (auto cqi = cliqueQueue.begin();
          !done && cqi != cliqueQueue.end();
          ++cqi)
    {
       int clique = *cqi;
-      for (Graph<Relation*>::component_iterator ci = cliqueGraph.begin(clique);
+      for (auto ci = cliqueGraph.begin(clique);
             ci != cliqueGraph.end(clique);
             ++ci)
       {
@@ -801,11 +800,11 @@ void merge_relation_sets(RelationManager& RelationSets, long int prime, const st
       // construct a fully connected graph from the relation sets
       // and use minimum spanning tree algorithm
       Graph<long int, RelationSetWeight> g;
-      for (std::vector<long int>::const_iterator it1 = relation_sets.begin();
+      for (auto it1 = relation_sets.begin();
             it1 != relation_sets.end();
             ++it1)
       {
-         std::vector<long int>::const_iterator it2 = it1;
+         auto it2 = it1;
          ++it2;
          for (;it2 != relation_sets.end(); ++it2)
          {

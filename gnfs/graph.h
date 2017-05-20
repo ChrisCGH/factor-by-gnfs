@@ -101,7 +101,7 @@ class Graph
       {
          node->set_component(component);
          node_set_.insert(node);
-         for (graph_iterator iter = graph_.lower_bound(node);
+         for (auto iter = graph_.lower_bound(node);
                iter != graph_.upper_bound(node);
                ++iter)
          {
@@ -116,13 +116,13 @@ class Graph
          //std::cout << "Connect " << *d1 << " <-> " << *d2 << std::endl;
          Node* node1 = new Node(d1);
          Node* node2 = new Node(d2);
-         graph_iterator found1 = graph_.find(node1);
+         auto found1 = graph_.find(node1);
          if (found1 != graph_.end())
          {
              delete node1;
              node1 = found1->first;
          }
-         graph_iterator found2 = graph_.find(node2);
+         auto found2 = graph_.find(node2);
          if (found2 != graph_.end())
          {
             delete node2;
@@ -166,7 +166,7 @@ class Graph
          // Step 1.
          std::unordered_map<Node*, double> L;
          size_t i = 0;
-         node_set_iterator it = node_set_.begin();
+         auto it = node_set_.begin();
          Node* u = *it;
          L[u] = 0.0;
          ++it;
@@ -183,7 +183,7 @@ class Graph
             // Step 2.
             double min_w = 1.0e250;
             heap_type_iterator min_it;
-            for (heap_type_iterator it = node_heap.begin();
+            for (auto it = node_heap.begin();
                   it != node_heap.end();
                   ++it)
             {
@@ -368,7 +368,6 @@ class Graph
 
       };
       typedef NodeSet node_set_type;
-      typedef typename node_set_type::iterator node_set_iterator;
       typedef typename node_set_type::component_iterator node_set_component_iterator;
       node_set_type node_set_;
       size_t component_count_;

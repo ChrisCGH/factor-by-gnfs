@@ -101,7 +101,7 @@ void findLeadingCoefficientValuations()
    std::vector<long int> sp_list = SpecialPrimes->getListOfExceptionalPrimes();
    for (auto& p: sp_list)
    {
-      for (std::vector<PrimeIdealRep*>::const_iterator piit = SpecialPrimes->begin(p);
+      for (auto piit = SpecialPrimes->begin(p);
             piit != SpecialPrimes->end(p);
             ++piit)
       {
@@ -147,7 +147,7 @@ void addSpecialPrimeFactorisation(const VeryLong& a,
                                   PrimeIdealDecomposition& primeIdealProduct)
 {
    VeryLong c_d = nf->c_d();
-   for (std::vector<PrimeIdealRep*>::const_iterator specialPrimeIter = SpecialPrimes->begin(p);
+   for (auto specialPrimeIter = SpecialPrimes->begin(p);
          specialPrimeIter != SpecialPrimes->end(p);
          ++specialPrimeIter)
    {
@@ -186,7 +186,7 @@ void addPrimeFactorisation(long int p, long int r, int e_p_r,
 {
    //std::cerr << "addPrimeFactorisation: p = " << p << ", r = " << r << ", e_p_r = " << e_p_r << std::endl;
    PrimeIdealRep* pi = 0;
-   NormalPrimesType::iterator it = NormalPrimes.find(std::pair<long int, long int>(p, r));
+   auto it = NormalPrimes.find(std::pair<long int, long int>(p, r));
    if (it == NormalPrimes.end())
    {
 //      cout << "not found (" << p << "," << r << ")" << endl;
@@ -215,7 +215,7 @@ void addNormalPrimeFactorisation(const VeryLong& a,
    LongModular::set_default_modulus(p);
    FactorBase& fb = nf->factorBase();
    //fb.add_extra(p);
-   for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
+   for (auto rootIter = fb.begin(p);
          rootIter != fb.end(p);
          ++rootIter)
    {
@@ -357,9 +357,9 @@ double complexity(const RelationList& relations,
          long int v = p1.second;
          LongModular::set_default_modulus(p);
          VeryLong pp(p);
-         for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
-               rootIter != fb.end(p);
-               ++rootIter)
+         for (auto rootIter = fb.begin(p);
+              rootIter != fb.end(p);
+              ++rootIter)
          {
             long int r = *rootIter;
             S[std::pair<long int, long int>(p, r)] += e[i] * e_p_r(*rel, p, v, r);
@@ -405,8 +405,7 @@ double complexity(const RelationList& relations,
          long int v = p1.second;
          a_pair.first = p;
          LongModular::set_default_modulus(p);
-         //VeryLong pp(p);
-         for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
+         for (auto rootIter = fb.begin(p);
                rootIter != fb.end(p);
                ++rootIter)
          {
@@ -441,7 +440,7 @@ double complexity(const RelationList& relations,
          a_pair.first = p;
          LongModular::set_default_modulus(p);
          //VeryLong pp(p);
-         for (FactorBase::a_const_root_iterator rootIter = fb.begin(p);
+         for (auto rootIter = fb.begin(p);
                rootIter != fb.end(p);
                ++rootIter)
          {
@@ -811,7 +810,7 @@ Ideal selectIdeal(int s_l, PrimeIdealDecomposition& G, std::deque<PrimeIdealRep*
       // pick primes from the numerator of G,
       // i.e. from the end of G_index
       //std::deque<PrimeIdealRep*>::reverse_iterator iter = G_index.rbegin();
-      std::deque<PrimeIdealRep*>::reverse_iterator& iter = pos_iter;
+      auto& iter = pos_iter;
       int done = 0;
       while (iter != G_index.rend() && !done)
       {
@@ -847,7 +846,7 @@ Ideal selectIdeal(int s_l, PrimeIdealDecomposition& G, std::deque<PrimeIdealRep*
       // pick primes from the denominator of G,
       // i.e. from the start of G_index
       //std::deque<PrimeIdealRep*>::iterator iter = G_index.begin();
-      std::deque<PrimeIdealRep*>::iterator& iter = neg_iter;
+      auto& iter = neg_iter;
       int done = 0;
       while (iter != G_index.end() && !done)
       {
@@ -1542,8 +1541,8 @@ void approximateSquareRoot(const RelationList& relationNumer,
    // G_index is now sorted from large negative valuations to large positive valuations.
    // Maintain two iterators on G_index, pos_iter from the positive valuation end
    // and neg_iter from the negative valuation end
-   std::deque<PrimeIdealRep*>::reverse_iterator pos_iter = G_index.rbegin();
-   std::deque<PrimeIdealRep*>::iterator neg_iter = G_index.begin();
+   auto pos_iter = G_index.rbegin();
+   auto neg_iter = G_index.begin();
 
    while (!done)
    {
@@ -1750,7 +1749,7 @@ void approximateSquareRoot(const RelationList& relationNumer,
    // the coefficients of gamma_l (when written in terms of
    // powers of theta = c_d * alpha).
    FactorBase& fb = nf->factorBase();
-   std::vector<int32_t>::const_reverse_iterator ip_iter = fb.rbegin_inert();
+   auto ip_iter = fb.rbegin_inert();
    std::vector<long int> good_primes;
    const int GOOD_PRIMES_NEEDED = 10;
    VeryLong product(1L);

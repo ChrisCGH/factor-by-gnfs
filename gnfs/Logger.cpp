@@ -96,7 +96,7 @@ LogManager::log_id_type LogManager::start_logging(const std::string& logfile, bo
 {
     Logger* logger = new Logger(logfile);
     log_id_type log_id = 0;
-    for (std::vector<Logger*>::iterator it = logger_list_.begin();
+    for (auto it = logger_list_.begin();
          it != logger_list_.end();
          ++it, ++log_id)
     {
@@ -128,7 +128,7 @@ void LogManager::stop_logging(LogManager::log_id_type log_id)
     if (current_logger_ == log_id)
     {
         log_id_type id = 0;
-        for (std::vector<Logger*>::iterator it = logger_list_.begin();
+        for (auto it = logger_list_.begin();
              it != logger_list_.end();
              ++it, ++log_id)
         {

@@ -183,11 +183,11 @@ AlgebraicNumber operator*(const AlgebraicNumber& a1,
    }
 
    int k = 0;
-   std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
+   auto c_iter = c.begin();
    for (auto& k1: z.c_)
    {
       k1 = *c_iter;
-      std::vector<Quotient<VeryLong> >::const_iterator cc_iter = c.begin() + d;
+      auto cc_iter = c.begin() + d;
       for (int j = 0; j < d - 1; j++)
       {
          x = (*cc_iter);
@@ -333,11 +333,11 @@ AlgebraicNumber& AlgebraicNumber::operator*=(const AlgebraicNumber& a)
    }
 
    int k = 0;
-   std::vector<Quotient<VeryLong> >::const_iterator c_iter = c.begin();
+   auto c_iter = c.begin();
    for (auto& k1: c_)
    {
       k1 = *c_iter;
-      std::vector<Quotient<VeryLong> >::const_iterator cc_iter = c.begin() + d;
+      auto cc_iter = c.begin() + d;
       for (size_t j = 0; j < d - 1; j++)
       {
          x = (*cc_iter);
@@ -365,7 +365,7 @@ AlgebraicNumber operator*(const AlgebraicNumber& a,
    AlgebraicNumber c;
    int d = AlgebraicNumber::degree();
    if ((int)c.c_.size() != d) c.c_.resize(d);
-   std::vector<Quotient<VeryLong> >::iterator iter = c.c_.begin();
+   auto iter = c.c_.begin();
    for (auto& i1: a.c_)
    {
       *iter = i1 * x;
@@ -381,8 +381,8 @@ AlgebraicNumber operator+(const AlgebraicNumber& a1,
    AlgebraicNumber c;
    if ((int)c.c_.size() != n) c.c_.resize(n);
 
-   std::vector<Quotient<VeryLong> >::const_iterator a1_iter = a1.c_.begin();
-   std::vector<Quotient<VeryLong> >::const_iterator a2_iter = a2.c_.begin();
+   auto a1_iter = a1.c_.begin();
+   auto a2_iter = a2.c_.begin();
    size_t i = 0;
    for (auto& i1: c.c_)
    {
@@ -405,7 +405,7 @@ AlgebraicNumber operator+(const AlgebraicNumber& a1,
 
 AlgebraicNumber& AlgebraicNumber::operator+=(const AlgebraicNumber& a)
 {
-   std::vector<Quotient<VeryLong> >::const_iterator a_iter = a.c_.begin();
+   auto a_iter = a.c_.begin();
    int s = a.c_.size();
    int i = 0;
    for (auto& i1: c_)
