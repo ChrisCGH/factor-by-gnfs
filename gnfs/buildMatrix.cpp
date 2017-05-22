@@ -184,7 +184,7 @@ void add_primes(std::vector<std::string>& primes,
       {
          if (keep)
          {
-            std::unordered_map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
+            auto found = base_index.find(prev_prime);
             if (found != base_index.end())
             {
                long int index = found->second;
@@ -210,7 +210,7 @@ void add_primes(std::vector<std::string>& primes,
    }
    if (keep)
    {
-      std::unordered_map<std::string, long int>::const_iterator found = base_index.find(prev_prime);
+      auto found = base_index.find(prev_prime);
       if (found != base_index.end())
       {
          long int index = found->second;
