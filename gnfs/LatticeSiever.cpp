@@ -948,7 +948,7 @@ void LatticeSiever::print_relation(long int c, long int d,
                 alg_factor_base_->add_extra(p, roots);
             }
             int done = 0;
-            for (FactorBase::a_const_root_iterator iter = alg_factor_base_->begin(p);
+            for (auto iter = alg_factor_base_->begin(p);
                     !done && iter != alg_factor_base_->end(p);
                     ++iter)
             {
@@ -1161,14 +1161,14 @@ void LatticeSiever::sieve_by_vectors1()
 #ifndef RESIEVE1
     SieveCacheItem::set_pf_list(&alg_pf_list_);
 #endif
-    FactorBase::a_iterator iter = alg_factor_base_->begin();
-    FactorBase::a_iterator enditer = alg_factor_base_->end();
+    auto iter = alg_factor_base_->begin();
+    auto enditer = alg_factor_base_->end();
 
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
         if (iter->get_p() > B1_) break;
-        for (FactorBase::a_const_root_iterator root_info_iter = alg_factor_base_->begin(iter);
+        for (auto root_info_iter = alg_factor_base_->begin(iter);
                 root_info_iter != alg_factor_base_->end(iter);
                 ++root_info_iter)
         {
@@ -1213,13 +1213,13 @@ void LatticeSiever::sieve_by_vectors1_again()
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
     }
     SieveCacheItem::set_pf_list(&alg_pf_list_);
-    FactorBase::a_iterator iter = alg_factor_base_->begin();
-    FactorBase::a_iterator enditer = alg_factor_base_->end();
+    auto iter = alg_factor_base_->begin();
+    auto enditer = alg_factor_base_->end();
 
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
-        for (FactorBase::a_const_root_iterator root_info_iter = alg_factor_base_->begin(iter);
+        for (auto root_info_iter = alg_factor_base_->begin(iter);
                 root_info_iter != alg_factor_base_->end(iter);
                 ++root_info_iter)
         {
@@ -1260,8 +1260,8 @@ void LatticeSiever::sieve_by_vectors2()
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
     }
     SieveCacheItem::set_pf_list(&rat_pf_list_);
-    FactorBase::a_iterator iter = rat_factor_base_->begin();
-    FactorBase::a_iterator enditer = rat_factor_base_->end();
+    auto iter = rat_factor_base_->begin();
+    auto enditer = rat_factor_base_->end();
 
     for (; iter != enditer; ++iter)
     {

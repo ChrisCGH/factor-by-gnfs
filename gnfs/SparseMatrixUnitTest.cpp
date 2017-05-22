@@ -40,7 +40,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(row.xor(4) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 10);
         CPPUNIT_ASSERT(row.size() == 5);
-        FileBasedSparseRow::const_iterator it = row.begin();
+        auto it = row.begin();
         CPPUNIT_ASSERT(*it == 2); ++it;
         CPPUNIT_ASSERT(*it == 3); ++it;
         CPPUNIT_ASSERT(*it == 4); ++it;
@@ -62,7 +62,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(row.highest_column() == 1016);
         static size_t expected_row_data[] = { 2, 3, 9, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016 };
         size_t j = 0;
-        for (FileBasedSparseRow::const_iterator it = row.begin();
+        for (auto it = row.begin();
             it != row.end();
             ++it, ++j)
         {
@@ -74,7 +74,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(row.highest_column() == 1017);
         static size_t expected_row_data1[] = { 2, 3, 9, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017 };
         j = 0;
-        for (FileBasedSparseRow::const_iterator it = row.begin();
+        for (auto it = row.begin();
             it != row.end();
             ++it, ++j)
         {
@@ -84,7 +84,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         SparseRow sr(row.size());
         row.copy(sr);
         j = 0;
-        for (ISparseRow::const_iterator it = sr.begin();
+        for (auto it = sr.begin();
             it != sr.end();
             ++it, ++j)
         {
@@ -109,13 +109,13 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", fbsrm1.row(100000));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", fbsrm1.row(100001));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", fbsrm1.row(110001));
-        FileBasedSparseRow row1 = fbsrm1.row(10000);
+        auto row1 = fbsrm1.row(10000);
         check_row_operations(row1);
 
-        FileBasedSparseRow row2 = fbsrm1.row(110000);
+        auto row2 = fbsrm1.row(110000);
         check_row_operations(row2);
 
-        FileBasedSparseRow row3 = fbsrm1.row(210000);
+        auto row3 = fbsrm1.row(210000);
         check_row_operations(row3);
 
 #ifdef WIN32
@@ -174,7 +174,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
 #endif
 
         //std::cerr << std::endl << "        CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == " << fbsrm1.extend(109996, 50) << "ull);" << std::endl;
-        FileBasedSparseRow row4 = fbsrm1.row(109995);
+        auto row4 = fbsrm1.row(109995);
         check_row_operations(row4);
 
         std::vector<size_t> columns;
@@ -187,9 +187,9 @@ class SparseMatrixTest : public CppUnit::TestFixture
         columns.push_back(100000);
 
         fbsrm1.set_row(123456, columns);
-        FileBasedSparseRow row5 = fbsrm1.row(123456);
+        auto row5 = fbsrm1.row(123456);
         CPPUNIT_ASSERT(row5.highest_column() == 100000);
-        FileBasedSparseRow::const_iterator it5 = row5.begin();
+        auto it5 = row5.begin();
         CPPUNIT_ASSERT(*it5 == 1);
         ++it5;
         CPPUNIT_ASSERT(*it5 == 2);
@@ -206,9 +206,9 @@ class SparseMatrixTest : public CppUnit::TestFixture
 
         int columns1[7] = { 1, 4, 10000, 100000, 100, 5, 2 };
         fbsrm1.set_row(123457, columns1, 7);
-        FileBasedSparseRow row6 = fbsrm1.row(123457);
+        auto row6 = fbsrm1.row(123457);
         CPPUNIT_ASSERT(row6.highest_column() == 100000);
-        FileBasedSparseRow::const_iterator it6 = row6.begin();
+        auto it6 = row6.begin();
         CPPUNIT_ASSERT(*it6 == 1);
         ++it6;
         CPPUNIT_ASSERT(*it6 == 2);

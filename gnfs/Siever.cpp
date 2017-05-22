@@ -232,8 +232,8 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
                long int br = 0;
                long int amodp = 0;
                SIEVE_TYPE logp = 0;
-               FactorBase::a_const_iterator enditer = factor_base->end();
-               for (FactorBase::a_const_iterator iter = factor_base->begin();
+               auto enditer = factor_base->end();
+               for (auto iter = factor_base->begin();
                      iter != enditer && p < SMALL_PRIME_BOUND_;
                      ++iter)
                {
@@ -243,7 +243,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
                   if (amodp < 0) amodp += p;
                   if (b % p)
                   {
-                     for (FactorBase::a_const_root_iterator root_info_iter = factor_base->begin(iter);
+                     for (auto root_info_iter = factor_base->begin(iter);
                            root_info_iter != factor_base->end(iter);
                            ++root_info_iter)
                      {
@@ -360,8 +360,8 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
             long int br = 0;
             long int amodp = 0;
             SIEVE_TYPE logp = 0;
-            FactorBase::a_const_iterator enditer = factor_base->end();
-            for (FactorBase::a_const_iterator iter = factor_base->begin();
+            auto enditer = factor_base->end();
+            for (auto iter = factor_base->begin();
                   iter != enditer && p < SMALL_PRIME_BOUND_;
                   ++iter)
             {
@@ -371,7 +371,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
                if (amodp < 0) amodp += p;
                if (b % p)
                {
-                  for (a_const_root_iterator root_iter = factor_base->begin(iter);
+                  for (auto root_iter = factor_base->begin(iter);
                         root_iter != factor_base->end(iter);
                         ++root_iter)
                   {
@@ -486,8 +486,8 @@ int Siever::check_interval(int cutoff, long int a1, long int a2, long int b,
             long int br = 0;
             long int amodp = 0;
             SIEVE_TYPE logp = 0;
-            FactorBase::a_const_iterator enditer = factor_base->end();
-            for (FactorBase::a_const_iterator iter = factor_base->begin();
+            auto enditer = factor_base->end();
+            for (auto iter = factor_base->begin();
                   iter != enditer && p < SMALL_PRIME_BOUND_;
                   ++iter)
             {
@@ -497,7 +497,7 @@ int Siever::check_interval(int cutoff, long int a1, long int a2, long int b,
                if (amodp < 0) amodp += p;
                if (b % p)
                {
-                  for (FactorBase::a_const_root_iterator root_info_iter = factor_base->begin(iter);
+                  for (auto root_info_iter = factor_base->begin(iter);
                         root_info_iter != factor_base->end(iter);
                         ++root_info_iter)
                   {
@@ -596,7 +596,7 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
          sieve_end_ptr = &sieve_array_[last_a - min_A];
 
          FactorBase::a_const_iterator iter = factor_base->begin();
-         FactorBase::a_const_iterator enditer = factor_base->end();
+         auto enditer = factor_base->end();
          if (not_small_prime_start) iter = not_small_prime_start;
          for (;
                iter != enditer;
@@ -612,7 +612,7 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
             pll = p;
             SIEVE_TYPE** next_sieve_ptr = 0;
             long int* a_start_iter = 0;
-            for (FactorBase::a_const_root_iterator root_info_iter = factor_base->begin(iter);
+            for (auto root_info_iter = factor_base->begin(iter);
                   root_info_iter != factor_base->end(iter);
                   ++root_info_iter)
             {
@@ -692,8 +692,8 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
       {
          sieve_end_ptr = &sieve_array_[last_a - min_A];
 
-         FactorBase::a_const_iterator iter = not_small_prime_start;
-         FactorBase::a_const_iterator enditer = factor_base->end();
+         auto iter = not_small_prime_start;
+         auto enditer = factor_base->end();
          for (;
                iter != enditer;
                ++iter)
@@ -704,7 +704,7 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
             logp = iter->get_logp();
             pll = p;
             SIEVE_TYPE** next_sieve_ptr = 0;
-            for (FactorBase::a_const_root_iterator root_info_iter = factor_base->begin(iter);
+            for (auto root_info_iter = factor_base->begin(iter);
                   root_info_iter != factor_base->end(iter);
                   ++root_info_iter)
             {
@@ -792,7 +792,7 @@ void Siever::checkRelations(const char* relfile)
             VeryLong p_vl(p);
             const VeryLong zero(0L);
             int done = 0;
-            for (FactorBase::a_const_root_iterator iter = alg_factor_base_->begin(p);
+            for (auto iter = alg_factor_base_->begin(p);
                   !done && iter != alg_factor_base_->end(p);
                   ++iter)
             {
@@ -1155,7 +1155,7 @@ void Siever::sieve(long int min_A, long int max_A, long int b)
                VeryLong p_vl(p);
                const VeryLong zero(0L);
                int done = 0;
-               for (FactorBase::a_const_root_iterator iter = alg_factor_base_->begin(p);
+               for (auto iter = alg_factor_base_->begin(p);
                      !done && iter != alg_factor_base_->end(p);
                      ++iter)
                {

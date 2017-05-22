@@ -920,7 +920,7 @@ bool SQUFOF(long long int N, long int& factor)
             std::cout << "rho^" << i << "(I) = " << infop->fp0_[i] << std::endl;
          }
 #endif
-         std::vector<QuadraticForm>::reverse_iterator it = infop->fp0_.rbegin();
+         auto it = infop->fp0_.rbegin();
 //	 while (it->distance() >= delta && it != infop->fp0_.rend()) ++it;
          while (it != infop->fp0_.rend() && it->distance() >= delta) ++it;
          if (it == infop->fp0_.rend()) return false;

@@ -117,7 +117,7 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix& sm)
         if (sm.row_size(i))
         {
             os << static_cast<unsigned int>(sm.row_size(i));
-            for (SparseRow::const_iterator it = sm.begin(i);
+            for (auto it = sm.begin(i);
                     it != sm.end(i);
                     ++it)
             {
@@ -163,8 +163,8 @@ void transpose(const SparseMatrix& A, SparseMatrix& transA, long int max_row_siz
     {
         if (A.row_size(i))
         {
-            SparseRow::const_iterator itend = A.end(i);
-            for (SparseRow::const_iterator it = A.begin(i);
+            auto itend = A.end(i);
+            for (auto it = A.begin(i);
                     it != itend;
                     ++it)
             {
@@ -192,8 +192,8 @@ void transpose(const SparseMatrix& A, SparseMatrix& transA, long int max_row_siz
 	}
         if (A.row_size(i))
         {
-            SparseRow::const_iterator itend = A.end(i);
-            for (SparseRow::const_iterator it = A.begin(i);
+            auto itend = A.end(i);
+            for (auto it = A.begin(i);
                     it != itend;
                     ++it)
             {
@@ -2857,7 +2857,7 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols, char* s)
     extend_dense(prev_stripe);
     for (size_t stripe = 0; stripe < medium_.size(); ++stripe)
     {
-        std::unordered_map<size_t, std::string>::const_iterator found = striped_row.find(stripe);
+        auto found = striped_row.find(stripe);
         if (found != striped_row.end())
         {
             medium_[stripe]->add_row(0, found->second);

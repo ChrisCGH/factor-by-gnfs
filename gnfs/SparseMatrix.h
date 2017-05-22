@@ -957,7 +957,7 @@ class SparseMatrix : public ISparseMatrix
 #endif
             if (sparse_row_ && sparse_row_[i])
             {
-                for (ISparseRow::const_iterator it = sparse_row_[i]->begin();
+                for (auto it = sparse_row_[i]->begin();
                      it != sparse_row_[i]->end();
                      ++it)
                 {

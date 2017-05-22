@@ -66,7 +66,7 @@ void RelationSetManager::relation_sets_for_relation(long int relation, std::vect
    relation_sets.clear();
    if (relation_relation_set_map_.row_size(relation))
    {
-      for (SparseRow::const_iterator it = relation_relation_set_map_.begin(relation);
+      for (auto it = relation_relation_set_map_.begin(relation);
             it != relation_relation_set_map_.end(relation);
             ++it)
       {
@@ -98,7 +98,7 @@ void RelationSetManager::remove(long int relation_set, bool record_only)
 void RelationSetManager::display(long int relation_set)
 {
    std::cerr << "Relation set #" << relation_set << " :";
-   for (SparseRow::const_iterator it = relation_set_relation_map_.begin(relation_set);
+   for (auto it = relation_set_relation_map_.begin(relation_set);
          it != relation_set_relation_map_.end(relation_set);
          ++it)
    {
@@ -110,7 +110,7 @@ void RelationSetManager::display(long int relation_set)
 bool RelationSetManager::check(long int rs)
 {
    std::unordered_set<long int> s;
-   for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs);
+   for (auto it = relation_set_relation_map_.begin(rs);
          it != relation_set_relation_map_.end(rs);
          ++it)
    {
@@ -136,13 +136,13 @@ struct xorer : public std::binary_function<size_t, size_t, ISparseRow::xor_statu
 long int RelationSetManager::merge(long int rs1, long int rs2)
 {
    std::unordered_set<long int> s;
-   for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs1);
+   for (auto it = relation_set_relation_map_.begin(rs1);
          it != relation_set_relation_map_.end(rs1);
          ++it)
    {
       s.insert(*it);
    }
-   for (SparseRow::const_iterator it = relation_set_relation_map_.begin(rs2);
+   for (auto it = relation_set_relation_map_.begin(rs2);
          it != relation_set_relation_map_.end(rs2);
          ++it)
    {
@@ -333,7 +333,7 @@ RelationManager::RelationManager(size_t relation_set_count, MemoryMappedFile& re
 
    for (size_t relation_set = 0; relation_set < relation_set_prime_map_.rows(); ++relation_set)
    {
-      for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
+      for (auto it = relation_set_prime_map_.begin(relation_set);
             it != relation_set_prime_map_.end(relation_set);
             ++it)
       {
@@ -359,7 +359,7 @@ RelationManager::RelationManager(MemoryMappedFile& is, RelationTable& relation_t
    LOG_DEBUG("relation_set_relation_map_ has " << relation_set_relation_map_.rows() << " rows and " << relation_set_relation_map_.cols() << " columns");
    for (size_t relation_set = 0; relation_set < relation_set_relation_map_.rows(); ++relation_set)
    {
-      for (SparseRow::const_iterator it = relation_set_relation_map_.begin(relation_set);
+      for (auto it = relation_set_relation_map_.begin(relation_set);
             it != relation_set_relation_map_.end(relation_set);
             ++it)
       {
@@ -444,10 +444,10 @@ long int RelationManager::merge(long int rs1, long int rs2, long int prime)
    SparseRow sr2(relation_set_prime_map_.row_size(rs2)); 
    relation_set_prime_map_.copy_row(rs2, sr2);
 
-   SparseRow::const_iterator it1 = sr1.begin();
-   SparseRow::const_iterator it1_end = sr1.end();
-   SparseRow::const_iterator it2 = sr2.begin();
-   SparseRow::const_iterator it2_end = sr2.end();
+   auto it1 = sr1.begin();
+   auto it1_end = sr1.end();
+   auto it2 = sr2.begin();
+   auto it2_end = sr2.end();
   
    while (it1 != it1_end && it2 != it2_end)
    {
@@ -517,7 +517,7 @@ size_t RelationManager::sets_including_prime(int prime, std::vector<long int>& r
 {
    relation_sets.clear();
    if (!prime_relation_set_map_.row_size(prime)) return 0;
-   for (SparseRow::const_iterator it = prime_relation_set_map_.begin(prime);
+   for (auto it = prime_relation_set_map_.begin(prime);
          it != prime_relation_set_map_.end(prime);
          ++it)
    {
@@ -602,7 +602,7 @@ void RelationManager::remove_singletons()
          if (prime_weight(relation_set) == 0) continue;
          // if relation has a prime with freq == 1 in frequency table
          bool singleton = false;
-         for (SparseRow::const_iterator it = relation_set_prime_map_.begin(relation_set);
+         for (auto it = relation_set_prime_map_.begin(relation_set);
                !singleton && it != relation_set_prime_map_.end(relation_set);
                ++it)
          {
