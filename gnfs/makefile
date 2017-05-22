@@ -87,24 +87,25 @@ endif
        | sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; [ -s $@ ] || rm -f $@
 
 ALL_TESTS = AlgebraicNumberUnitTest BitOperationsUnitTest LongModularUnitTest VeryLongUnitTest VeryLongModularUnitTest MatrixUnitTest PolynomialUnitTest CombinationsUnitTest HashTableUnitTest QuotientUnitTest PolynomialOptimizerUnitTest LatticeSieverUnitTest MemoryMappedFileUnitTest SparseMatrixUnitTest
+ALL_PROGRAMS : skewed lsieve bl calcroot sieve filter buildMatrix processDependenciespl postProcessing DenseRowTest stest testan gen testhnf inv testmmf convert testfactor processDependencies 
 
-all : $(ALL_SRCS) $(OUTPUTDIR) skewed lsieve bl calcroot sieve filter buildMatrix processDependenciespl postProcessing DenseRowTest stest testan gen testhnf inv testmmf convert testfactor processDependencies $(ALL_TESTS)
+all : $(OUTPUTDIR) $(ALL_PROGRAMS) $(ALL_TESTS)
 
 test : $(ALL_TESTS)
-	$(OUTPUTDIR)/AlgebraicNumberUnitTest.exe 
-	$(OUTPUTDIR)/BitOperationsUnitTest.exe
-	$(OUTPUTDIR)/QuotientUnitTest.exe
-	$(OUTPUTDIR)/LongModularUnitTest.exe
-	$(OUTPUTDIR)/VeryLongUnitTest.exe
-	$(OUTPUTDIR)/VeryLongModularUnitTest.exe
-	$(OUTPUTDIR)/MatrixUnitTest.exe
-	$(OUTPUTDIR)/SparseMatrixUnitTest.exe
-	$(OUTPUTDIR)/HashTableUnitTest.exe
-	$(OUTPUTDIR)/CombinationsUnitTest.exe
-	$(OUTPUTDIR)/PolynomialUnitTest.exe
-	$(OUTPUTDIR)/PolynomialOptimizerUnitTest.exe
-	$(OUTPUTDIR)/LatticeSieverUnitTest.exe
-	$(OUTPUTDIR)/MemoryMappedFileUnitTest.exe
+	$(OUTPUTDIR)/AlgebraicNumberUnitTest 
+	$(OUTPUTDIR)/BitOperationsUnitTest
+	$(OUTPUTDIR)/QuotientUnitTest
+	$(OUTPUTDIR)/LongModularUnitTest
+	$(OUTPUTDIR)/VeryLongUnitTest
+	$(OUTPUTDIR)/VeryLongModularUnitTest
+	$(OUTPUTDIR)/MatrixUnitTest
+	$(OUTPUTDIR)/SparseMatrixUnitTest
+	$(OUTPUTDIR)/HashTableUnitTest
+	$(OUTPUTDIR)/CombinationsUnitTest
+	$(OUTPUTDIR)/PolynomialUnitTest
+	$(OUTPUTDIR)/PolynomialOptimizerUnitTest
+	$(OUTPUTDIR)/LatticeSieverUnitTest
+	$(OUTPUTDIR)/MemoryMappedFileUnitTest
 
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
@@ -129,10 +130,10 @@ qs : $(OUTPUTDIR) $(OUTPUTDIR)/qs
 	
 
 $(OUTPUTDIR)/qs : $(QS_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/qs.exe $(QS_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/qs $(QS_OBJS) $(LIBS)
 
 cleanqs: 
-	rm -rf $(OUTPUTDIR)/qs.exe $(QS_OBJS)
+	rm -rf $(OUTPUTDIR)/qs $(QS_OBJS)
 
 TESTHNF_CPP_SRCS = testhnf.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -147,10 +148,10 @@ testhnf : $(OUTPUTDIR) $(OUTPUTDIR)/testhnf
 	
 
 $(OUTPUTDIR)/testhnf : $(TESTHNF_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testhnf.exe $(TESTHNF_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testhnf $(TESTHNF_OBJS) $(LIBS)
 
 cleantesthnf: 
-	rm -rf $(OUTPUTDIR)/testhnf.exe $(TESTHNF_OBJS)
+	rm -rf $(OUTPUTDIR)/testhnf $(TESTHNF_OBJS)
 
 TESTFACTOR_CPP_SRCS = testfactor.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp blockLanczos.cpp Logger.cpp
 
@@ -166,10 +167,10 @@ testfactor : $(OUTPUTDIR) $(OUTPUTDIR)/testfactor
 	
 
 $(OUTPUTDIR)/testfactor : $(TESTFACTOR_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testfactor.exe $(TESTFACTOR_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testfactor $(TESTFACTOR_OBJS) $(LIBS)
 
 cleantestfactor: 
-	rm -rf $(OUTPUTDIR)/testfactor.exe $(TESTFACTOR_OBJS)
+	rm -rf $(OUTPUTDIR)/testfactor $(TESTFACTOR_OBJS)
 
 
 POLYNOMIAL_UT_CPP_SRCS = PolynomialUnitTest.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp Logger.cpp
@@ -182,10 +183,10 @@ PolynomialUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/PolynomialUnitTest
 	
 
 $(OUTPUTDIR)/PolynomialUnitTest : $(POLYNOMIAL_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/PolynomialUnitTest.exe $(POLYNOMIAL_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/PolynomialUnitTest $(POLYNOMIAL_UT_OBJS) $(TEST_LIBS)
 
 cleanpolynomialut: 
-	rm -rf $(OUTPUTDIR)/PolyinomialUnitTest.exe $(POLYNOMIAL_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/PolyinomialUnitTest $(POLYNOMIAL_UT_OBJS)
 
 
 POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS = PolynomialOptimizerUnitTest.cpp PolynomialOptimizer.cpp pselect.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp discriminant.cpp dickman.cpp Logger.cpp
@@ -198,10 +199,10 @@ PolynomialOptimizerUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/PolynomialOptimizerUnitT
 	
 
 $(OUTPUTDIR)/PolynomialOptimizerUnitTest : $(POLYNOMIAL_OPTIMIZER_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/PolynomialOptimizerUnitTest.exe $(POLYNOMIAL_OPTIMIZER_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/PolynomialOptimizerUnitTest $(POLYNOMIAL_OPTIMIZER_UT_OBJS) $(TEST_LIBS)
 
 cleanpolynomialoptimizerut: 
-	rm -rf $(OUTPUTDIR)/PolyinomialOptimizerUnitTest.exe $(POLYNOMIAL_OPTIMIZER_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/PolyinomialOptimizerUnitTest $(POLYNOMIAL_OPTIMIZER_UT_OBJS)
 
 
 LATTICE_SIEVER_UT_CPP_SRCS = LatticeSieverUnitTest.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp SieveUtils.cpp convert.cpp Logger.cpp
@@ -214,10 +215,10 @@ LatticeSieverUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/LatticeSieverUnitTest
 	
 
 $(OUTPUTDIR)/LatticeSieverUnitTest : $(LATTICE_SIEVER_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/LatticeSieverUnitTest.exe $(LATTICE_SIEVER_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/LatticeSieverUnitTest $(LATTICE_SIEVER_UT_OBJS) $(TEST_LIBS)
 
 cleanlatticesieverut: 
-	rm -rf $(OUTPUTDIR)/LatticeSieverUnitTest.exe $(LATTICE_SIEVER_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/LatticeSieverUnitTest $(LATTICE_SIEVER_UT_OBJS)
 
 MATRIX_UT_CPP_SRCS = MatrixUnitTest.cpp 
 
@@ -229,10 +230,10 @@ MatrixUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/MatrixUnitTest
 	
 
 $(OUTPUTDIR)/MatrixUnitTest : $(MATRIX_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/MatrixUnitTest.exe $(MATRIX_UT_OBJS) $(TEST_LIBS_NOGMP)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/MatrixUnitTest $(MATRIX_UT_OBJS) $(TEST_LIBS_NOGMP)
 
 cleanmatrixut: 
-	rm -rf $(OUTPUTDIR)/MatrixUnitTest.exe $(MATRIX_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/MatrixUnitTest $(MATRIX_UT_OBJS)
 
 SPARSE_MATRIX_UT_CPP_SRCS = SparseMatrixUnitTest.cpp SparseMatrix.cpp Logger.cpp
 
@@ -244,10 +245,10 @@ SparseMatrixUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/SparseMatrixUnitTest
 	
 
 $(OUTPUTDIR)/SparseMatrixUnitTest : $(SPARSE_MATRIX_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/SparseMatrixUnitTest.exe $(SPARSE_MATRIX_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/SparseMatrixUnitTest $(SPARSE_MATRIX_UT_OBJS) $(TEST_LIBS)
 
 cleansparsematrixut: 
-	rm -rf $(OUTPUTDIR)/SparseMatrixUnitTest.exe $(SPARSE_MATRIX_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/SparseMatrixUnitTest $(SPARSE_MATRIX_UT_OBJS)
 
 COMBINATIONS_UT_CPP_SRCS = CombinationsUnitTest.cpp 
 
@@ -259,10 +260,10 @@ CombinationsUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/CombinationsUnitTest
 	
 
 $(OUTPUTDIR)/CombinationsUnitTest : $(COMBINATIONS_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/CombinationsUnitTest.exe $(COMBINATIONS_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/CombinationsUnitTest $(COMBINATIONS_UT_OBJS) $(TEST_LIBS)
 
 cleancombinationsut: 
-	rm -rf $(OUTPUTDIR)/CombinationsUnitTest.exe $(COMBINATIONS_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/CombinationsUnitTest $(COMBINATIONS_UT_OBJS)
 
 MMF_UT_CPP_SRCS = MemoryMappedFileUnitTest.cpp 
 
@@ -274,10 +275,10 @@ MemoryMappedFileUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/MemoryMappedFileUnitTest
 	
 
 $(OUTPUTDIR)/MemoryMappedFileUnitTest : $(MMF_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/MemoryMappedFileUnitTest.exe $(MMF_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/MemoryMappedFileUnitTest $(MMF_UT_OBJS) $(TEST_LIBS)
 
 cleanmmfut: 
-	rm -rf $(OUTPUTDIR)/MemoryMappedFileUnitTest.exe $(MMF_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/MemoryMappedFileUnitTest $(MMF_UT_OBJS)
 
 HASHTABLE_UT_CPP_SRCS = HashTableUnitTest.cpp 
 
@@ -289,10 +290,10 @@ HashTableUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/HashTableUnitTest
 	
 
 $(OUTPUTDIR)/HashTableUnitTest : $(HASHTABLE_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/HashTableUnitTest.exe $(HASHTABLE_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/HashTableUnitTest $(HASHTABLE_UT_OBJS) $(TEST_LIBS)
 
 cleanhashtableut: 
-	rm -rf $(OUTPUTDIR)/HashTableUnitTest.exe $(HASHTABLE_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/HashTableUnitTest $(HASHTABLE_UT_OBJS)
 
 QUOTIENT_UT_CPP_SRCS = QuotientUnitTest.cpp 
 
@@ -304,10 +305,10 @@ QuotientUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/QuotientUnitTest
 	
 
 $(OUTPUTDIR)/QuotientUnitTest : $(QUOTIENT_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/QuotientUnitTest.exe $(QUOTIENT_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/QuotientUnitTest $(QUOTIENT_UT_OBJS) $(TEST_LIBS)
 
 cleanquotienteut: 
-	rm -rf $(OUTPUTDIR)/QuotientUnitTest.exe $(QUOTIENT_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/QuotientUnitTest $(QUOTIENT_UT_OBJS)
 
 AN_UT_CPP_SRCS = AlgebraicNumberUnitTest.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp Logger.cpp
 
@@ -319,10 +320,10 @@ AlgebraicNumberUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/AlgebraicNumberUnitTest
 	
 
 $(OUTPUTDIR)/AlgebraicNumberUnitTest : $(AN_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/AlgebraicNumberUnitTest.exe $(AN_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/AlgebraicNumberUnitTest $(AN_UT_OBJS) $(TEST_LIBS)
 
 cleananut: 
-	rm -rf $(OUTPUTDIR)/AlgebraicNumberUnitTest.exe $(AN_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/AlgebraicNumberUnitTest $(AN_UT_OBJS)
 
 BO_UT_CPP_SRCS = BitOperationsUnitTest.cpp 
 
@@ -334,10 +335,10 @@ BitOperationsUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/BitOperationsUnitTest
 	
 
 $(OUTPUTDIR)/BitOperationsUnitTest : $(BO_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/BitOperationsUnitTest.exe $(BO_UT_OBJS) $(TEST_LIBS) 
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/BitOperationsUnitTest $(BO_UT_OBJS) $(TEST_LIBS) 
 
 cleanbout: 
-	rm -rf $(OUTPUTDIR)/BitOperationsUnitTest.exe $(BO_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/BitOperationsUnitTest $(BO_UT_OBJS)
 
 LM_UT_CPP_SRCS = LongModularUnitTest.cpp LongModular.cpp
 
@@ -349,10 +350,10 @@ LongModularUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/LongModularUnitTest
 	
 
 $(OUTPUTDIR)/LongModularUnitTest : $(LM_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/LongModularUnitTest.exe $(LM_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/LongModularUnitTest $(LM_UT_OBJS) $(TEST_LIBS)
 
 cleanlmut: 
-	rm -rf $(OUTPUTDIR)/LongModularUnitTest.exe $(LM_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/LongModularUnitTest $(LM_UT_OBJS)
 
 VL_UT_CPP_SRCS = VeryLongUnitTest.cpp VeryLong.cpp squfof.cpp VeryLongModular.cpp LongModular.cpp qs.cpp timings.cpp SparseMatrix.cpp Logger.cpp
 
@@ -364,10 +365,10 @@ VeryLongUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/VeryLongUnitTest
 	
 
 $(OUTPUTDIR)/VeryLongUnitTest : $(VL_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/VeryLongUnitTest.exe $(VL_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/VeryLongUnitTest $(VL_UT_OBJS) $(TEST_LIBS)
 
 cleanvlut: 
-	rm -rf $(OUTPUTDIR)/VeryLongUnitTest.exe $(VL_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/VeryLongUnitTest $(VL_UT_OBJS)
 
 VLM_UT_CPP_SRCS = VeryLongModularUnitTest.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp squfof.cpp qs.cpp timings.cpp SparseMatrix.cpp Logger.cpp
 
@@ -379,10 +380,10 @@ VeryLongModularUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/VeryLongModularUnitTest
 	
 
 $(OUTPUTDIR)/VeryLongModularUnitTest : $(VLM_UT_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/VeryLongModularUnitTest.exe $(VLM_UT_OBJS) $(TEST_LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/VeryLongModularUnitTest $(VLM_UT_OBJS) $(TEST_LIBS)
 
 cleanvlmut: 
-	rm -rf $(OUTPUTDIR)/VeryLongModularUnitTest.exe $(VLM_UT_OBJS)
+	rm -rf $(OUTPUTDIR)/VeryLongModularUnitTest $(VLM_UT_OBJS)
 
 SKEWED_CPP_SRCS = skewed.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -400,7 +401,7 @@ $(OUTPUTDIR)/skewed : $(SKEWED_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/skewed $(SKEWED_OBJS) $(LIBS)
 
 cleanskewed: 
-	rm -rf $(OUTPUTDIR)/skewed.exe $(SKEWED_OBJS)
+	rm -rf $(OUTPUTDIR)/skewed $(SKEWED_OBJS)
 
 EF_CPP_SRCS = ef.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -418,7 +419,7 @@ $(OUTPUTDIR)/ef : $(EF_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/ef $(EF_OBJS) $(LIBS)
 
 cleanef: 
-	rm -rf $(OUTPUTDIR)/ef.exe $(EF_OBJS)
+	rm -rf $(OUTPUTDIR)/ef $(EF_OBJS)
 
 LSIEVE_CPP_SRCS = lsieve.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -433,7 +434,7 @@ $(OUTPUTDIR)/lsieve : $(LSIEVE_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/lsieve $(LSIEVE_OBJS) $(LIBS)
 
 cleanlsieve: 
-	rm -rf $(OUTPUTDIR)/lsieve.exe $(LSIEVE_OBJS)
+	rm -rf $(OUTPUTDIR)/lsieve $(LSIEVE_OBJS)
 
 BM_CPP_SRCS = buildMatrix.cpp SparseMatrix.cpp timings.cpp RelationManager.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp LongModular.cpp squfof.cpp qs.cpp convert.cpp Logger.cpp
 
@@ -448,7 +449,7 @@ $(OUTPUTDIR)/buildMatrix : $(BM_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/buildMatrix $(BM_OBJS) $(LIBS)
 
 cleanbm:
-	rm -rf $(OUTPUTDIR)/buildMatrix.exe $(BM_OBJS)
+	rm -rf $(OUTPUTDIR)/buildMatrix $(BM_OBJS)
 
 TM_CPP_SRCS = testMatrix.cpp SparseMatrix.cpp timings.cpp  Logger.cpp
 
@@ -459,10 +460,10 @@ include $(TM_CPP_SRCS:.cpp=.d)
 testMatrix : $(OUTPUTDIR) $(OUTPUTDIR)/testMatrix
 	
 $(OUTPUTDIR)/testMatrix : $(TM_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testMatrix.exe $(TM_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testMatrix $(TM_OBJS) $(LIBS)
 
 cleantm:
-	rm -rf $(OUTPUTDIR)/testMatrix.exe $(TM_OBJS)
+	rm -rf $(OUTPUTDIR)/testMatrix $(TM_OBJS)
 
 BL_CPP_SRCS = bl.cpp SparseMatrix.cpp blockLanczos.cpp timings.cpp Logger.cpp
 
@@ -477,7 +478,7 @@ $(OUTPUTDIR)/bl : $(BL_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/bl $(BL_OBJS) $(LIBS)
 
 cleanbl:
-	rm -rf $(OUTPUTDIR)/bl.exe $(BL_OBJS)
+	rm -rf $(OUTPUTDIR)/bl $(BL_OBJS)
 
 CALCROOT_CPP_SRCS = calcroot.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp NumberField.cpp Ideal.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -493,7 +494,7 @@ $(OUTPUTDIR)/calcroot : $(CALCROOT_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/calcroot $(CALCROOT_OBJS) $(LIBS)
 
 cleancalcroot:
-	rm -rf $(OUTPUTDIR)/calcroot.exe $(CALCROOT_OBJS)
+	rm -rf $(OUTPUTDIR)/calcroot $(CALCROOT_OBJS)
 
 TESTAN_CPP_SRCS = testan.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp Logger.cpp
 
@@ -508,7 +509,7 @@ $(OUTPUTDIR)/testan : $(TESTAN_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testan $(TESTAN_OBJS) $(LIBS)
 
 cleantestan :
-	rm -rf $(OUTPUTDIR)/testan.exe $(TESTAN_OBJS)
+	rm -rf $(OUTPUTDIR)/testan $(TESTAN_OBJS)
 
 SIEVE_CPP_SRCS = sieve.cpp Siever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp discriminant.cpp timings.cpp lll.cpp squfof.cpp convert.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
@@ -523,7 +524,7 @@ $(OUTPUTDIR)/sieve : $(SIEVE_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/sieve $(SIEVE_OBJS) $(LIBS)
 
 cleansieve: 
-	rm -rf $(OUTPUTDIR)/sieve.exe $(SIEVE_OBJS)
+	rm -rf $(OUTPUTDIR)/sieve $(SIEVE_OBJS)
 
 FILTER_CPP_SRCS = filter.cpp RelationManager.cpp SparseMatrix.cpp timings.cpp convert.cpp Logger.cpp
 
@@ -538,7 +539,7 @@ $(OUTPUTDIR)/filter : $(FILTER_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/filter $(FILTER_OBJS) $(LIBS)
 
 cleanfilter: 
-	rm -rf $(OUTPUTDIR)/filter.exe $(FILTER_OBJS)
+	rm -rf $(OUTPUTDIR)/filter $(FILTER_OBJS)
 
 PD_CPP_SRCS = processDependencies.cpp SparseMatrix.cpp timings.cpp convert.cpp Logger.cpp
 
@@ -550,10 +551,10 @@ processDependencies : $(OUTPUTDIR) $(OUTPUTDIR)/processDependencies
 	
 
 $(OUTPUTDIR)/processDependencies : $(PD_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/processDependencies.exe $(PD_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/processDependencies $(PD_OBJS) $(LIBS)
 
 cleanpd:
-	rm -rf $(OUTPUTDIR)/processDependencies.exe $(PD_OBJS)
+	rm -rf $(OUTPUTDIR)/processDependencies $(PD_OBJS)
 
 CONVERT_CPP_SRCS = convertmain.cpp convert.cpp
 
@@ -568,7 +569,7 @@ $(OUTPUTDIR)/convert : $(CONVERT_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/convert $(CONVERT_OBJS) $(LIBSNOGMP)
 
 cleanconvert: 
-	rm -rf $(OUTPUTDIR)/convert.exe $(CONVERT_OBJS)
+	rm -rf $(OUTPUTDIR)/convert $(CONVERT_OBJS)
 
 processDependenciespl : $(OUTPUTDIR) $(OUTPUTDIR)/processDependencies.pl
 	
@@ -584,7 +585,7 @@ postProcessing : $(OUTPUTDIR) $(OUTPUTDIR)/postProcessing.pl
 	
 
 $(OUTPUTDIR)/postProcessing.pl : postProcessing.pl
-	sed -e 's/c:\/maths\/gnfs\/vcbin/..\/..\/gbin/' -e 's/processDependencies"/processDependencies.exe"/' postProcessing.pl > $(OUTPUTDIR)/postProcessing.pl
+	sed -e 's/c:\/maths\/gnfs\/vcbin/..\/..\/gbin/' -e 's/processDependencies"/processDependencies"/' postProcessing.pl > $(OUTPUTDIR)/postProcessing.pl
 	chmod +x $(OUTPUTDIR)/postProcessing.pl
 
 cleanpp:
@@ -602,7 +603,7 @@ $(OUTPUTDIR)/DenseRowTest : $(DRT_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/DenseRowTest $(DRT_OBJS) $(LIBS)
 
 cleandrt:
-	rm -rf $(OUTPUTDIR)/DenseRowTest.exe $(DRT_OBJS)
+	rm -rf $(OUTPUTDIR)/DenseRowTest $(DRT_OBJS)
 
 GEN_CPP_SRCS = gen.cpp timings.cpp
 
@@ -613,10 +614,10 @@ include $(GEN_CPP_SRCS:.cpp=.d)
 gen : $(OUTPUTDIR) $(OUTPUTDIR)/gen
 	
 $(OUTPUTDIR)/gen : $(GEN_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/gen.exe $(GEN_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/gen $(GEN_OBJS) $(LIBS)
 
 cleangen:
-	rm -rf $(OUTPUTDIR)/gen.exe $(GEN_OBJS)
+	rm -rf $(OUTPUTDIR)/gen $(GEN_OBJS)
 
 INV_CPP_SRCS = inv.cpp timings.cpp
 
@@ -627,10 +628,10 @@ include $(INV_CPP_SRCS:.cpp=.d)
 inv : $(OUTPUTDIR) $(OUTPUTDIR)/inv
 	
 $(OUTPUTDIR)/inv : $(INV_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/inv.exe $(INV_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/inv $(INV_OBJS) $(LIBS)
 
 cleaninv:
-	rm -rf $(OUTPUTDIR)/inv.exe $(INV_OBJS)
+	rm -rf $(OUTPUTDIR)/inv $(INV_OBJS)
 
 TESTMMF_CPP_SRCS = testmmf.cpp
 
@@ -641,10 +642,10 @@ include $(TESTMMF_CPP_SRCS:.cpp=.d)
 testmmf : $(OUTPUTDIR) $(OUTPUTDIR)/testmmf
 	
 $(OUTPUTDIR)/testmmf : $(TESTMMF_OBJS) 
-	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testmmf.exe $(TESTMMF_OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/testmmf $(TESTMMF_OBJS) $(LIBS)
 
 cleantestmmf :
-	rm -rf $(OUTPUTDIR)/testmmf.exe $(TESTMMF_OBJS)
+	rm -rf $(OUTPUTDIR)/testmmf $(TESTMMF_OBJS)
 
 STEST_CPP_SRCS = stest.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp Logger.cpp
 
@@ -658,8 +659,8 @@ $(OUTPUTDIR)/stest : $(STEST_OBJS)
 	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/stest $(STEST_OBJS) $(LIBS)
 
 cleanstest: 
-	rm -rf $(OUTPUTDIR)/stest.exe $(STEST_OBJS)
+	rm -rf $(OUTPUTDIR)/stest $(STEST_OBJS)
 
 clean:
-	rm -rf $(OUTPUTDIR)/*.exe *$(OBJEXT) *.d
+	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d
 
