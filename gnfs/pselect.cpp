@@ -27,7 +27,7 @@ Skewed_selection_config Skewed_config("skewed.cfg");
 struct Kleinjung_poly_info
 {
     Kleinjung_poly_info(const VeryLong& a, const VeryLong& b, const Polynomial<VeryLong>& fm)
-            : a_(a), b_(b), fm_(fm)
+        : a_(a), b_(b), fm_(fm)
     {
         //als_ = average_log_size(fm, 1000);
     }
@@ -704,278 +704,278 @@ bool check_c_d_1(const VeryLong& c_d_1, const VeryLong& N, const VeryLong& c_d,
 
 class PolynomialPairCalculator
 {
-    public:
-        PolynomialPairCalculator(const VeryLong& N, const VeryLong& c_d, std::fstream& output_file, bool debug = false)
-                : N_(N), c_d_(c_d), output_file_(output_file), debug_(debug)
-        {}
-        ~PolynomialPairCalculator() {}
+public:
+    PolynomialPairCalculator(const VeryLong& N, const VeryLong& c_d, std::fstream& output_file, bool debug = false)
+        : N_(N), c_d_(c_d), output_file_(output_file), debug_(debug)
+    {}
+    ~PolynomialPairCalculator() {}
 
-        bool generate(long int degree);
+    bool generate(long int degree);
 
-    private:
-        /*
-         * Each flist_item records a sum, and a mu index
-         * The mu_index encodes the permutation mu as digits in base d
-         */
-        struct flist_item
+private:
+    /*
+     * Each flist_item records a sum, and a mu index
+     * The mu_index encodes the permutation mu as digits in base d
+     */
+    struct flist_item
+    {
+        flist_item(double sum, size_t mu_index)
+            : sum_(sum), mu_index_(mu_index)
         {
-            flist_item(double sum, size_t mu_index)
-                    : sum_(sum), mu_index_(mu_index)
-            {
-            }
-            flist_item()
-                    : sum_(0.0), mu_index_(0L)
-            {
-            }
-
-            double sum_;
-            size_t mu_index_;
-            bool operator<(const flist_item& fi) const
-            {
-                return (sum_ < fi.sum_);
-            }
-
-            void display() const
-            {
-                std::cout << "flist_item : sum_ = " << sum_ << ", mu_index_ = " << mu_index_ << std::endl;
-            }
-
-            void display(long int degree, size_t mu_length) const
-            {
-                std::vector<long int> mu;
-                get_mu(degree, mu, mu_length);
-                std::cout << "flist_item : sum_ = " << sum_ << ", mu_index_ = " << mu_index_ << " : (";
-                for (size_t i = 0; i < mu.size(); ++i)
-                {
-                    std::cout << mu[i];
-                    if (i < mu.size() - 1)
-                        std::cout << ",";
-                    else
-                        std::cout << ")" << std::endl;            
-                }
-            }
-
-            // Compute a permutation mu from the index in mu_index_
-            void get_mu(long int degree, std::vector<long int>& mu, size_t mu_length) const
-            {
-                const long int d(degree);
-                size_t i = 0;
-                long int digit = 0L;
-                size_t index = mu_index_;
-                while (index > 0L)
-                {
-                    if (i >= mu_length)
-                        throw "Index out of range in get_mu";
-
-                    digit = index % d;
-                    mu.push_back(digit);
-
-                    index -= digit;
-                    index /= d;
-                    ++i;
-                }
-
-                for (; i < mu_length; ++i)
-                {
-                    mu.push_back(0L);
-                }
-            }
-        };
-
-        template <size_t S, size_t M>
-        class flist_hash_table_
+        }
+        flist_item()
+            : sum_(0.0), mu_index_(0L)
         {
-            public:
-                void add(const flist_item& item)
-                {
-                    size_t slot = (item.sum_ + 0.5) * S;
-                    if (slot >= S)
-                        slot = S - 1;
-                    flist_list& fl = hash_table_[slot];
-                    if (fl.item_count_ < M)
-                    {
-                        fl.item_[fl.item_count_] = item;
-                        ++fl.item_count_;
-                    }
-                }
-                void check_for_match(long int degree,
-                                     const flist_item& item,
-                                     double epsilon,
-                                     size_t flist1_mu_length,
-                                     size_t flist2_mu_length,
-                                     std::vector<std::vector<long int> >& good_mu,
-                                     bool debug = false)
-                {
-                    const long int d(degree);
-                    // we are looking for it such that
-                    // -(it->sum_) - epsilon <= item.sum_ <= -(it->sum_) + epsilon)
-                    // <=>
-                    // -epsilon <= it->sum_ + item.sum_ <= epsilon)
-                    // i.e. it->sum_ + item.sum_ is very close to zero
-                    //
-                    // Given item, we want to find the slots in hash_table which could contain such *it
-                    // i.e. -item.sum_ is close to it->sum_
-                    double lb = -item.sum_ - epsilon;
-                    double ub = -item.sum_ + epsilon;
-                    size_t slot = (-item.sum_ + 0.5) * S;
-                    if (slot >= S)
-                        slot = S - 1;
-                    //std::cout << "Looking for match in slot " << slot << " for item : ";
-                    //item.display(degree, flist1_mu_length);
-                    flist_list& fl = hash_table_[slot];
-                    //if (fl.item_count_ > 0)
-                    //{
-                        //std::cout << "Slot " << slot << std::endl;
-                        //fl.display();
-                    //}
-                    for (flist_item* it = fl.item_;
-                            it != fl.item_ + fl.item_count_;
-                            ++it)
-                    {
-                        if (it->sum_ >= lb && it->sum_ <= ub)
-                        {
-                            std::vector<long int> mu;
-                            mu.reserve(flist1_mu_length + flist2_mu_length);
-                            item.get_mu(d, mu, flist1_mu_length);
-                            it->get_mu(d, mu, flist2_mu_length);
-                            good_mu.push_back(mu);
-                            if (debug)
-                            {
-                                std::cout << std::setprecision(16) << "Match found: epsilon = " << epsilon << ", it->sum_ = " << it->sum_ << ", item.sum_ = " << item.sum_ << ", ";
-                                display_mu(mu);
-                            }
-                        }
-                    }
-                }
-                void display() const
-                {
-                    for (size_t i = 0; i < S; ++i)
-                    {
-                        const flist_list& fll = hash_table_[i];
-                        if (fll.item_count_ > 0)
-                        {
-                            std::cout << "Slot " << i << " : " << std::endl;
-                        }
-                        fll.display();
-                    }
-                }
-                void clear()
-                {
-                    for (size_t i = 0; i < S; ++i)
-                    {
-                        flist_list& fll = hash_table_[i];
-                        fll.item_count_ = 0;
-                    }
-                }
-            private:
-                struct flist_list
-                {
-                    size_t item_count_;
-                    flist_item item_[M];
-                    flist_list() : item_count_(0) {}
-                    void display() const
-                    {
-                        for (size_t j = 0; j < item_count_; ++j)
-                        {
-                            item_[j].display();
-                        }
-                    }
-                };
-                flist_list& find(double sum)
-                {
-                    size_t slot = (sum + 0.5) * S;
-                    if (slot >= S)
-                        slot = S - 1;
-                    return hash_table_[slot];
-                }
-                flist_list hash_table_[S];
-        };
-
-        enum { number_of_slots = 512L, max_items = 8L };
-
-        typedef flist_hash_table_<number_of_slots, max_items> flist_hash_table;
-
-        static void make_flist_hash_table(size_t u, long int offset, const std::vector<std::vector<double> >& f, double base, long int d, flist_hash_table& hash_table);
-
-        typedef std::vector<flist_item> flist_collection;
-
-        static double modZ(double d)
-        {
-            double f = ::fmod(d, 1.0);
-            if (::fabs(f) < 0.5)
-                return f;
-            if (f >= 0.5)
-                return f - 1.0;
-            return f + 1.0;
         }
 
-        static void make_flist(size_t u, const std::vector<std::vector<double> >& f, double base, long int d, flist_collection& flist);
-
-        static VeryLong calculate_c_d_1(const VeryLong& N, 
-                                        const VeryLong& c_d,
-                                        long int degree,
-                                        long int primes_to_combine,
-                                        const VeryLong& a,
-                                        const VeryLong& N_inv_c_d,
-                                        const VeryLong& m_mu_0,
-                                        const VeryLong& c_d_1_0,
-                                        const std::vector<std::vector<VeryLong> >& m,
-                                        const std::vector<long int>& mu);
-
-        struct XYZ
+        double sum_;
+        size_t mu_index_;
+        bool operator<(const flist_item& fi) const
         {
-            XYZ(const PolynomialPairCalculator& ppc, const Combinations& combination, long int primes_to_combine) 
-                : ppc_(ppc), combination_(combination), primes_to_combine_(primes_to_combine), p_(primes_to_combine_), a_(1L), x_(primes_to_combine_), 
-                  m_(primes_to_combine_), f_(primes_to_combine_) {}
-            XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& q, const VeryLong& s); 
-            XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& m_adjustment); 
-            void generate(std::vector<Kleinjung_poly_info>& top_polys);
-            void generate(long int iterations, const VeryLong& q, const VeryLong& s, std::vector<Kleinjung_poly_info>& top_polys);
-            bool make_a();
-            void make_x();
-            void make_f();
-            void make_flists();
-            void find_good_mu();
-            void process_good_mu(std::vector<Kleinjung_poly_info>& top_polys);
+            return (sum_ < fi.sum_);
+        }
 
-            const PolynomialPairCalculator& ppc_;
-            const Combinations& combination_;
-            long int primes_to_combine_;
-            std::vector<long int> p_;
-            VeryLong a_;
-            VeryLong m0_;
-            std::vector<std::vector<double> > x_;
-            std::vector<std::vector<VeryLong> > m_;
-            VeryLong m_mu_0_;
-            VeryLong c_d_1_0_;
-            std::vector<std::vector<double> > f_;
-            double f0_;
-            VeryLong N_inv_c_d_;
-            std::vector<std::vector<long int> > good_mu_;
-            flist_collection flist1_;
-            size_t flist1_mu_length_;
-            flist_hash_table flist2_;
-            size_t flist2_mu_length_;
+        void display() const
+        {
+            std::cout << "flist_item : sum_ = " << sum_ << ", mu_index_ = " << mu_index_ << std::endl;
+        }
+
+        void display(long int degree, size_t mu_length) const
+        {
+            std::vector<long int> mu;
+            get_mu(degree, mu, mu_length);
+            std::cout << "flist_item : sum_ = " << sum_ << ", mu_index_ = " << mu_index_ << " : (";
+            for (size_t i = 0; i < mu.size(); ++i)
+            {
+                std::cout << mu[i];
+                if (i < mu.size() - 1)
+                    std::cout << ",";
+                else
+                    std::cout << ")" << std::endl;
+            }
+        }
+
+        // Compute a permutation mu from the index in mu_index_
+        void get_mu(long int degree, std::vector<long int>& mu, size_t mu_length) const
+        {
+            const long int d(degree);
+            size_t i = 0;
+            long int digit = 0L;
+            size_t index = mu_index_;
+            while (index > 0L)
+            {
+                if (i >= mu_length)
+                    throw "Index out of range in get_mu";
+
+                digit = index % d;
+                mu.push_back(digit);
+
+                index -= digit;
+                index /= d;
+                ++i;
+            }
+
+            for (; i < mu_length; ++i)
+            {
+                mu.push_back(0L);
+            }
+        }
+    };
+
+    template <size_t S, size_t M>
+    class flist_hash_table_
+    {
+    public:
+        void add(const flist_item& item)
+        {
+            size_t slot = (item.sum_ + 0.5) * S;
+            if (slot >= S)
+                slot = S - 1;
+            flist_list& fl = hash_table_[slot];
+            if (fl.item_count_ < M)
+            {
+                fl.item_[fl.item_count_] = item;
+                ++fl.item_count_;
+            }
+        }
+        void check_for_match(long int degree,
+                             const flist_item& item,
+                             double epsilon,
+                             size_t flist1_mu_length,
+                             size_t flist2_mu_length,
+                             std::vector<std::vector<long int> >& good_mu,
+                             bool debug = false)
+        {
+            const long int d(degree);
+            // we are looking for it such that
+            // -(it->sum_) - epsilon <= item.sum_ <= -(it->sum_) + epsilon)
+            // <=>
+            // -epsilon <= it->sum_ + item.sum_ <= epsilon)
+            // i.e. it->sum_ + item.sum_ is very close to zero
+            //
+            // Given item, we want to find the slots in hash_table which could contain such *it
+            // i.e. -item.sum_ is close to it->sum_
+            double lb = -item.sum_ - epsilon;
+            double ub = -item.sum_ + epsilon;
+            size_t slot = (-item.sum_ + 0.5) * S;
+            if (slot >= S)
+                slot = S - 1;
+            //std::cout << "Looking for match in slot " << slot << " for item : ";
+            //item.display(degree, flist1_mu_length);
+            flist_list& fl = hash_table_[slot];
+            //if (fl.item_count_ > 0)
+            //{
+            //std::cout << "Slot " << slot << std::endl;
+            //fl.display();
+            //}
+            for (flist_item* it = fl.item_;
+                    it != fl.item_ + fl.item_count_;
+                    ++it)
+            {
+                if (it->sum_ >= lb && it->sum_ <= ub)
+                {
+                    std::vector<long int> mu;
+                    mu.reserve(flist1_mu_length + flist2_mu_length);
+                    item.get_mu(d, mu, flist1_mu_length);
+                    it->get_mu(d, mu, flist2_mu_length);
+                    good_mu.push_back(mu);
+                    if (debug)
+                    {
+                        std::cout << std::setprecision(16) << "Match found: epsilon = " << epsilon << ", it->sum_ = " << it->sum_ << ", item.sum_ = " << item.sum_ << ", ";
+                        display_mu(mu);
+                    }
+                }
+            }
+        }
+        void display() const
+        {
+            for (size_t i = 0; i < S; ++i)
+            {
+                const flist_list& fll = hash_table_[i];
+                if (fll.item_count_ > 0)
+                {
+                    std::cout << "Slot " << i << " : " << std::endl;
+                }
+                fll.display();
+            }
+        }
+        void clear()
+        {
+            for (size_t i = 0; i < S; ++i)
+            {
+                flist_list& fll = hash_table_[i];
+                fll.item_count_ = 0;
+            }
+        }
+    private:
+        struct flist_list
+        {
+            size_t item_count_;
+            flist_item item_[M];
+            flist_list() : item_count_(0) {}
+            void display() const
+            {
+                for (size_t j = 0; j < item_count_; ++j)
+                {
+                    item_[j].display();
+                }
+            }
         };
+        flist_list& find(double sum)
+        {
+            size_t slot = (sum + 0.5) * S;
+            if (slot >= S)
+                slot = S - 1;
+            return hash_table_[slot];
+        }
+        flist_list hash_table_[S];
+    };
 
-        VeryLong N_;
-        long int d_;
-        std::vector<long int> d_powers_;
-        Polynomial<VeryLong> poly_;
-        VeryLong c_d_;
-        VeryLong c_d_1_max_;
-        VeryLong c_d_2_max_;
-        double minus_c_d_d_d_;
-        std::vector<Kleinjung_poly_info> top_polys_;
-        mutable VeryLong prev_top_c_d_1_;
-        VeryLong m_;
-        std::vector<long int> primes_;
-        std::vector<long int> extra_primes_;
-        std::vector<std::vector<LongModular> > roots_mod_p_;
-        std::vector<LongModular > extra_roots_mod_p_;
-        std::fstream& output_file_;
-        mutable int count_;
-        mutable bool debug_;
+    enum { number_of_slots = 512L, max_items = 8L };
+
+    typedef flist_hash_table_<number_of_slots, max_items> flist_hash_table;
+
+    static void make_flist_hash_table(size_t u, long int offset, const std::vector<std::vector<double> >& f, double base, long int d, flist_hash_table& hash_table);
+
+    typedef std::vector<flist_item> flist_collection;
+
+    static double modZ(double d)
+    {
+        double f = ::fmod(d, 1.0);
+        if (::fabs(f) < 0.5)
+            return f;
+        if (f >= 0.5)
+            return f - 1.0;
+        return f + 1.0;
+    }
+
+    static void make_flist(size_t u, const std::vector<std::vector<double> >& f, double base, long int d, flist_collection& flist);
+
+    static VeryLong calculate_c_d_1(const VeryLong& N,
+                                    const VeryLong& c_d,
+                                    long int degree,
+                                    long int primes_to_combine,
+                                    const VeryLong& a,
+                                    const VeryLong& N_inv_c_d,
+                                    const VeryLong& m_mu_0,
+                                    const VeryLong& c_d_1_0,
+                                    const std::vector<std::vector<VeryLong> >& m,
+                                    const std::vector<long int>& mu);
+
+    struct XYZ
+    {
+        XYZ(const PolynomialPairCalculator& ppc, const Combinations& combination, long int primes_to_combine)
+            : ppc_(ppc), combination_(combination), primes_to_combine_(primes_to_combine), p_(primes_to_combine_), a_(1L), x_(primes_to_combine_),
+              m_(primes_to_combine_), f_(primes_to_combine_) {}
+        XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& q, const VeryLong& s);
+        XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& m_adjustment);
+        void generate(std::vector<Kleinjung_poly_info>& top_polys);
+        void generate(long int iterations, const VeryLong& q, const VeryLong& s, std::vector<Kleinjung_poly_info>& top_polys);
+        bool make_a();
+        void make_x();
+        void make_f();
+        void make_flists();
+        void find_good_mu();
+        void process_good_mu(std::vector<Kleinjung_poly_info>& top_polys);
+
+        const PolynomialPairCalculator& ppc_;
+        const Combinations& combination_;
+        long int primes_to_combine_;
+        std::vector<long int> p_;
+        VeryLong a_;
+        VeryLong m0_;
+        std::vector<std::vector<double> > x_;
+        std::vector<std::vector<VeryLong> > m_;
+        VeryLong m_mu_0_;
+        VeryLong c_d_1_0_;
+        std::vector<std::vector<double> > f_;
+        double f0_;
+        VeryLong N_inv_c_d_;
+        std::vector<std::vector<long int> > good_mu_;
+        flist_collection flist1_;
+        size_t flist1_mu_length_;
+        flist_hash_table flist2_;
+        size_t flist2_mu_length_;
+    };
+
+    VeryLong N_;
+    long int d_;
+    std::vector<long int> d_powers_;
+    Polynomial<VeryLong> poly_;
+    VeryLong c_d_;
+    VeryLong c_d_1_max_;
+    VeryLong c_d_2_max_;
+    double minus_c_d_d_d_;
+    std::vector<Kleinjung_poly_info> top_polys_;
+    mutable VeryLong prev_top_c_d_1_;
+    VeryLong m_;
+    std::vector<long int> primes_;
+    std::vector<long int> extra_primes_;
+    std::vector<std::vector<LongModular> > roots_mod_p_;
+    std::vector<LongModular > extra_roots_mod_p_;
+    std::fstream& output_file_;
+    mutable int count_;
+    mutable bool debug_;
 };
 
 void PolynomialPairCalculator::make_flist_hash_table(size_t u, long int offset, const std::vector<std::vector<double> >& f, double base, long int d, flist_hash_table& hash_table)
@@ -1104,16 +1104,16 @@ void PolynomialPairCalculator::make_flist(size_t u, const std::vector<std::vecto
     }
 }
 
-VeryLong PolynomialPairCalculator::calculate_c_d_1(const VeryLong& N, 
-                                                   const VeryLong& c_d, 
-                                                   long int degree,
-                                                   long int primes_to_combine,
-                                                   const VeryLong& a,
-                                                   const VeryLong& N_inv_c_d,
-                                                   const VeryLong& m_mu_0,
-                                                   const VeryLong& c_d_1_0,
-                                                   const std::vector<std::vector<VeryLong> >& m,
-                                                   const std::vector<long int>& mu)
+VeryLong PolynomialPairCalculator::calculate_c_d_1(const VeryLong& N,
+        const VeryLong& c_d,
+        long int degree,
+        long int primes_to_combine,
+        const VeryLong& a,
+        const VeryLong& N_inv_c_d,
+        const VeryLong& m_mu_0,
+        const VeryLong& c_d_1_0,
+        const std::vector<std::vector<VeryLong> >& m,
+        const std::vector<long int>& mu)
 {
     //std::cout << "DEBUG : ";
     //display_mu(mu);
@@ -1197,7 +1197,7 @@ bool PolynomialPairCalculator::XYZ::make_a()
     {
         std::cout << "a        = " << a_ << std::endl;
     }
- 
+
     //
     // m  is the smallest integer bigger than m_ and divisible by a
     //  0
@@ -1387,8 +1387,8 @@ void PolynomialPairCalculator::XYZ::make_f()
             double f_i_j(ppc_.minus_c_d_d_d_);
             f_i_j *= x_[0][0];
             VeryLong e_i_j(ppc_.N_);
-            
-            // 
+
+            //
             // dependency on m    here
             //                mu
             //                  0
@@ -1409,7 +1409,7 @@ void PolynomialPairCalculator::XYZ::make_f()
         {
             double f_i_j(ppc_.minus_c_d_d_d_);
             f_i_j *= x_[0][j];
-            // 
+            //
             // dependency on m    here
             //                mu
             //                  0
@@ -1543,7 +1543,7 @@ void PolynomialPairCalculator::XYZ::process_good_mu(std::vector<Kleinjung_poly_i
                 std::cout << "b = " << b << " is less than m~ = " << ppc_.m_ << std::endl;
             }
             else
-            {   
+            {
                 std::cout << "b = " << b << " is not less than m~ = " << ppc_.m_ << std::endl;
             }
         }
@@ -1684,7 +1684,7 @@ void PolynomialPairCalculator::XYZ::generate(std::vector<Kleinjung_poly_info>& t
 #if 0
     for (int iteration = 1; iteration < 30; ++iteration)
     {
-        PolynomialPairCalculator::XYZ newer_xyz(*this, iteration * 30000L); 
+        PolynomialPairCalculator::XYZ newer_xyz(*this, iteration * 30000L);
         newer_xyz.good_mu_.clear();
         newer_xyz.find_good_mu();
 
@@ -1695,13 +1695,13 @@ void PolynomialPairCalculator::XYZ::generate(std::vector<Kleinjung_poly_info>& t
 
 PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& q, const VeryLong& s)
     : ppc_(xyz.ppc_), combination_(xyz.combination_), primes_to_combine_(xyz.primes_to_combine_), p_(xyz.p_),
-      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_), 
-      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_), 
+      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_),
+      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_),
       flist2_(xyz.flist2_), flist2_mu_length_(xyz.flist2_mu_length_)
 {
     const VeryLong zero(0L);
     a_ *= q;
-    
+
     //
     // m  is set here
     //  0
@@ -1748,7 +1748,7 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
             x_[0][j] = x_i_j.get_double();
             //
             // m  is added into m    here
-            //  0                0 j 
+            //  0                0 j
             //
             // but x    is not changed for each adjustment of m
             //      0 j                                        0
@@ -1799,8 +1799,8 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
 
 PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& m_adjustment)
     : ppc_(xyz.ppc_), combination_(xyz.combination_), primes_to_combine_(xyz.primes_to_combine_), p_(xyz.p_),
-      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_), 
-      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_), 
+      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_),
+      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_),
       flist2_(xyz.flist2_), flist2_mu_length_(xyz.flist2_mu_length_)
 {
     const VeryLong zero(0L);
@@ -1828,7 +1828,7 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
 
     //
     // don't need to change x    for i > 0
-    //                       i j 
+    //                       i j
 
     m_mu_0_ = zero;
     for (size_t i = 0; i < m_.size(); ++i)
@@ -1849,7 +1849,7 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
     c_d_1_0_ = ppc_.N_;
     c_d_1_0_ -= ppc_.c_d_ * pow<VeryLong, long int>(m_mu_0_, ppc_.d_);
     c_d_1_0_ *= m_mu_0_;
-    
+
     double a_d(a_.get_double());
     double a_d_2(a_d);
     a_d_2 *= a_d;
@@ -1878,7 +1878,7 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
             fli.sum_ -= old_f;
             fli.sum_ += new_f;
             index += ppc_.d_;
-        }   
+        }
     }
 }
 
@@ -1886,7 +1886,7 @@ void PolynomialPairCalculator::XYZ::generate(long int iterations, const VeryLong
 {
     long int iteration = 0;
 
-    PolynomialPairCalculator::XYZ new_xyz(*this, q, s); 
+    PolynomialPairCalculator::XYZ new_xyz(*this, q, s);
 
     new_xyz.good_mu_.clear();
     new_xyz.find_good_mu();
@@ -1895,7 +1895,7 @@ void PolynomialPairCalculator::XYZ::generate(long int iterations, const VeryLong
 
     for (iteration = 1; iteration < iterations; ++iteration)
     {
-        PolynomialPairCalculator::XYZ newer_xyz(new_xyz, iteration * 10000L); 
+        PolynomialPairCalculator::XYZ newer_xyz(new_xyz, iteration * 10000L);
         newer_xyz.good_mu_.clear();
         newer_xyz.find_good_mu();
 
@@ -2066,25 +2066,25 @@ bool PolynomialPairCalculator::generate(long int degree)
     {
         XYZ xyz(*this, combination, primes_to_combine);
         xyz.generate(top_polys_);
-        
+
         const int extra_primes_to_use = 2;
         if ((int)extra_primes_.size() >= extra_primes_to_use)
         {
             Combinations combination_1(extra_primes_to_use, extra_primes_.size());
             do
-            //for (Combinations combination_1(2, extra_primes_.size()); ; combination_1.next())
+                //for (Combinations combination_1(2, extra_primes_.size()); ; combination_1.next())
             {
                 VeryLong q(1L);
                 for (int i = 0; i < extra_primes_to_use; ++i)
                 {
-                    q *= extra_primes_[combination_1(i)]; 
+                    q *= extra_primes_[combination_1(i)];
                 }
                 if (q * xyz.a_ > c_d_1_max_)
                 {
                     continue;
                 }
-    
-                // find root mod q which is sum of 
+
+                // find root mod q which is sum of
                 //  r_i * (q / p_i) * ((q / p_i)^-1 mod p_i)
                 VeryLong s(0L);
                 for (int i = 0; i < extra_primes_to_use; ++i)
@@ -2112,7 +2112,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                     }
                 }
 #endif
-    
+
                 const long int iterations = 30;
                 xyz.generate(iterations, q, s, top_polys_);
             }
@@ -2527,7 +2527,7 @@ void skewed_polynomial_selection()
                         double prev_als = 100.0;
                         while (change > 0 && fabs(change) > 0.1)
                         {
-		            VeryLong dummy;
+                            VeryLong dummy;
                             min_poly = PolynomialOptimizer::minimize_I(try_poly, 1L, try_m, try_m, s_vl, average_log_size, dummy, new_m);
                             change = prev_als - average_log_size;
                             if (change > 0.0)

@@ -55,7 +55,7 @@ public:
         Quotient<long int> q6(10L, 3L);
         q3 = q6;
         Quotient<long int> q7(q6);
-        CPPUNIT_ASSERT(q3 == q7); 
+        CPPUNIT_ASSERT(q3 == q7);
 
         Quotient<long int> q8(5L, 8L);
         Quotient<long int> q9(2L, 3L);
@@ -101,15 +101,15 @@ public:
         Quotient<long int> q18(222L, 5L);
         CPPUNIT_ASSERT(q17 / q18 == Quotient<long int>(1L, 2L));
 
-/*
-        std::istringstream iss("102325/2302938");
-        Quotient<long int> q19;
-        iss >> q19;
-        CPPUNIT_ASSERT(q19 == Quotient<long int>(102325L, 2302938L));
-        std::ostringstream oss;
-        oss << q19;
-        CPPUNIT_ASSERT(oss.str() == "102325/2302938");
-*/
+        /*
+                std::istringstream iss("102325/2302938");
+                Quotient<long int> q19;
+                iss >> q19;
+                CPPUNIT_ASSERT(q19 == Quotient<long int>(102325L, 2302938L));
+                std::ostringstream oss;
+                oss << q19;
+                CPPUNIT_ASSERT(oss.str() == "102325/2302938");
+        */
 
         Quotient<long int> q20(5L, 2L);
         Quotient<long int> q21 = exp(q20, 3L);
@@ -207,15 +207,15 @@ public:
         Quotient<VeryLong> q18(VeryLong(222L), VeryLong(5L));
         CPPUNIT_ASSERT(q17 / q18 == Quotient<VeryLong>(VeryLong(1L), VeryLong(2L)));
 
-/*
-        std::istringstream iss("102325/2302938");
-        Quotient<VeryLong> q19;
-        iss >> q19;
-        CPPUNIT_ASSERT(q19 == Quotient<VeryLong>(VeryLong(102325L), VeryLong(2302938L)));
-        std::ostringstream oss;
-        oss << q19;
-        CPPUNIT_ASSERT(oss.str() == "102325/2302938");
-*/
+        /*
+                std::istringstream iss("102325/2302938");
+                Quotient<VeryLong> q19;
+                iss >> q19;
+                CPPUNIT_ASSERT(q19 == Quotient<VeryLong>(VeryLong(102325L), VeryLong(2302938L)));
+                std::ostringstream oss;
+                oss << q19;
+                CPPUNIT_ASSERT(oss.str() == "102325/2302938");
+        */
 
         Quotient<VeryLong> q20(VeryLong(5L), VeryLong(2L));
         Quotient<VeryLong> q21 = exp(q20, 3L);
@@ -231,7 +231,7 @@ public:
         CPPUNIT_ASSERT(q23 == VeryLong(10L));
     }
 };
-    
+
 int main()
 {
     CppUnit::TextUi::TestRunner runner;

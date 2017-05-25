@@ -6,17 +6,17 @@
 
 class QuadraticCharacters
 {
-   public:
-      QuadraticCharacters(const Polynomial<VeryLong>& f, long int B);
-      ~QuadraticCharacters()
-      {}
-      void generate(const VeryLong& a, const VeryLong& b, std::vector<char>& qcs);
+public:
+    QuadraticCharacters(const Polynomial<VeryLong>& f, long int B);
+    ~QuadraticCharacters()
+    {}
+    void generate(const VeryLong& a, const VeryLong& b, std::vector<char>& qcs);
 
-   private:
-      Polynomial<VeryLong> f_;
-      long int B_;
-      std::vector<std::pair<VeryLong, VeryLong> > qs_;
-      void initialise();
+private:
+    Polynomial<VeryLong> f_;
+    long int B_;
+    std::vector<std::pair<VeryLong, VeryLong> > qs_;
+    void initialise();
 
 };
 #endif

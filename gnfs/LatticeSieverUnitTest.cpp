@@ -8,16 +8,16 @@
 
 namespace
 {
-    //LatticeSiever siever(std::string("ut_sieve_fixed.cfg"));
-    LatticeSiever* sieverp = 0;
-    bool verbose()
+//LatticeSiever siever(std::string("ut_sieve_fixed.cfg"));
+LatticeSiever* sieverp = 0;
+bool verbose()
+{
+    if (std::getenv("GNFS_TEST_VERBOSE"))
     {
-        if (std::getenv("GNFS_TEST_VERBOSE"))
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
+}
 }
 
 class LatticeSieverTest : public CppUnit::TestFixture
@@ -27,14 +27,14 @@ class LatticeSieverTest : public CppUnit::TestFixture
     CPPUNIT_TEST(test_fixed_sieve_region);
     CPPUNIT_TEST_SUITE_END();
 
-    public:
-    void setUp() 
+public:
+    void setUp()
     {
         make_config();
         VeryLong::generate_prime_table();
     }
 
-    void tearDown() 
+    void tearDown()
     {
         cleanup();
     }
@@ -147,7 +147,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
                     {
                         std::cerr << "e = " << e << ", f_min = " << f_min << ", f_max = " << f_max << ", (c1,d1) = (" << c1 << "," << d1 << "), (c2,d2) = (" << c2 << "," << d2 << ")" << std::endl;
                     }
-    
+
                     for (long int f = f_min; f <= f_max; ++f)
                     {
                         long int c = e * e1.first + f * e2.first;
@@ -162,7 +162,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);
                     }
-    
+
                     ++e;
                 }
             }
@@ -214,7 +214,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);
                     }
-                ++e;
+                    ++e;
                 }
             }
         }
@@ -265,7 +265,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
                         CPPUNIT_ASSERT(c >= min_c && c <= max_c);
                         CPPUNIT_ASSERT(d >= min_d && d <= max_d);
                     }
-                ++e;
+                    ++e;
                 }
             }
         }
@@ -277,10 +277,10 @@ class LatticeSieverTest : public CppUnit::TestFixture
         LatticeSiever& siever(*sieverp);
         CPPUNIT_ASSERT(siever.f1_ == Polynomial<VeryLong>::read_polynomial("-16612792256731454888860424973312 + 1498121907742379786368701480 X - 71616325394087869671190 X^2 - 436671758051847283 X^3 + 25011687432982 X^4 + 23794992 X^5"));
         CPPUNIT_ASSERT(siever.f2_ == Polynomial<VeryLong>::read_polynomial("-1669121445503958099638459425 + 11774494093137707 X"));
-        CPPUNIT_ASSERT(siever.B1_ == 16000000L); 
-        CPPUNIT_ASSERT(siever.L1_ == 300000000L); 
-        CPPUNIT_ASSERT(siever.B2_ == 16000000L); 
-        CPPUNIT_ASSERT(siever.L2_ == 300000000L); 
+        CPPUNIT_ASSERT(siever.B1_ == 16000000L);
+        CPPUNIT_ASSERT(siever.L1_ == 300000000L);
+        CPPUNIT_ASSERT(siever.B2_ == 16000000L);
+        CPPUNIT_ASSERT(siever.L2_ == 300000000L);
         CPPUNIT_ASSERT(siever.LP1_ == 2L);
         CPPUNIT_ASSERT(siever.LP2_ == 2L);
         CPPUNIT_ASSERT(siever.MIN_A_ == -2600000000.0);
@@ -292,7 +292,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(siever.SMALL_PRIME_BOUND1_ == 500L);
         CPPUNIT_ASSERT(siever.SMALL_PRIME_BOUND2_ == 300L);
         CPPUNIT_ASSERT(siever.INITIAL_CUTOFF_ == 10L);
-        CPPUNIT_ASSERT(siever.SKEWEDNESS_ == 53378.0); 
+        CPPUNIT_ASSERT(siever.SKEWEDNESS_ == 53378.0);
 
         long int q = 10000019L;
         std::vector<LongModular> q_roots;
@@ -337,7 +337,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
             size_t offset = siever.c_d_to_offset(cd);
             std::pair<long int, long int> cd1 = siever.offset_to_c_d(offset);
             CPPUNIT_ASSERT(cd == cd1);
-            
+
         }
 #endif
 
@@ -354,7 +354,7 @@ class LatticeSieverTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(siever.sieve(q));
 
         CPPUNIT_ASSERT(SieveUtils::checkRelations(relfile.c_str(), config));
- 
+
     }
 };
 

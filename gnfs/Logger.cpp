@@ -18,14 +18,14 @@ std::string level_to_string(Logger::level l)
 {
     switch (l)
     {
-        case Logger::error:
-            return "ERROR  ";
-        case Logger::warning:
-            return "WARNING";
-        case Logger::info:
-            return "INFO   ";
-        case Logger::debug:
-            return "DEBUG  ";
+    case Logger::error:
+        return "ERROR  ";
+    case Logger::warning:
+        return "WARNING";
+    case Logger::info:
+        return "INFO   ";
+    case Logger::debug:
+        return "DEBUG  ";
     }
     return "NOTICE ";
 }
@@ -97,8 +97,8 @@ LogManager::log_id_type LogManager::start_logging(const std::string& logfile, bo
     Logger* logger = new Logger(logfile);
     log_id_type log_id = 0;
     for (auto it = logger_list_.begin();
-         it != logger_list_.end();
-         ++it, ++log_id)
+            it != logger_list_.end();
+            ++it, ++log_id)
     {
         if (*it == 0)
         {
@@ -129,13 +129,13 @@ void LogManager::stop_logging(LogManager::log_id_type log_id)
     {
         log_id_type id = 0;
         for (auto it = logger_list_.begin();
-             it != logger_list_.end();
-             ++it, ++log_id)
+                it != logger_list_.end();
+                ++it, ++log_id)
         {
             if (*it)
             {
-               current_logger_ = id;
-               return;
+                current_logger_ = id;
+                return;
             }
         }
         current_logger_ = -1;
@@ -146,7 +146,7 @@ void LogManager::log(const std::string& msg, Logger::level l)
 {
     if (current_logger_ >= 0 && current_logger_ < (log_id_type)logger_list_.size())
     {
-        Logger* logger = logger_list_[current_logger_]; 
+        Logger* logger = logger_list_[current_logger_];
         logger->log(msg, l);
     }
 }

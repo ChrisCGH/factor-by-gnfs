@@ -1,60 +1,60 @@
 #if 0
 {
-   Copyright Arjen K. Lenstra, 1989-1997
+    Copyright Arjen K. Lenstra, 1989-1997
 
-   free  L I P
+    free  L I P
 
-   l o n g   i n t e g e r   p a c k a g e
+    l o n g   i n t e g e r   p a c k a g e
 
-   Arjen K. Lenstra
+    Arjen K. Lenstra
 
-   version 1.1
+    version 1.1
 
-   Introduction
-   ============
-   This very long int package is supposed to be easy to use, portable, and
-   not too slow.  It should also not be hard to make it fast by converting
-   a few macros to your favorite assembly code.
+    Introduction
+    ============
+    This very long int package is supposed to be easy to use, portable, and
+    not too slow.  It should also not be hard to make it fast by converting
+    a few macros to your favorite assembly code.
 
-   This version has an include file lip.h that defines all functions
+    This version has an include file lip.h that defines all functions
 and their arguments for ANSI C and contains:
 
-   typedef long * verylong;
+    typedef long * verylong;
 
 Older programs need not be changed to use this type.  It is added for
-   enhancing program readability.
+    enhancing program readability.
 
-   As an example, the following program reads the decimal representation
-   of two arbitrary length signed integers a and b from stdin, computes
-   their product in c, and prints c in decimal on stdout, followed by a
+    As an example, the following program reads the decimal representation
+    of two arbitrary length signed integers a and b from stdin, computes
+    their product in c, and prints c in decimal on stdout, followed by a
 newline:
 
 #include "lip.h"
-   main()
-   {
-      /* declare verylong ints a, b, c */
-      verylong a = 0;
-      verylong b = 0;
-      verylong c = 0;
-      /*********************************\
-      *   or declare them by
-      *       long *a = 0, *b = 0, *c = 0
-      \*********************************/
-      zread(&a);      /* read a from stdin */
-      zread(&b);      /* read b from stdin */
-      zmul(a, b, &c); /* multiply a anb b, put result in c */
-      zwriteln(c);    /* print c, followed by a newline */
-   }
+    main()
+    {
+        /* declare verylong ints a, b, c */
+        verylong a = 0;
+        verylong b = 0;
+        verylong c = 0;
+        /*********************************\
+        *   or declare them by
+        *       long *a = 0, *b = 0, *c = 0
+        \*********************************/
+        zread(&a);      /* read a from stdin */
+        zread(&b);      /* read b from stdin */
+        zmul(a, b, &c); /* multiply a anb b, put result in c */
+        zwriteln(c);    /* print c, followed by a newline */
+    }
 
 Sample input:
 
-   7419043440758059956596 -60967068778579064460287972
+    7419043440758059956596 -60967068778579064460287972
 
 with output:
 
-   -452317331723962514217511611516823866219980863312
+    -452317331723962514217511611516823866219980863312
 
-(To run this example, first produce lip.o:
+    (To run this example, first produce lip.o:
 
     gcc -O -c lip.c
 
@@ -64,73 +64,73 @@ with output:
 
     to get the executable example1.)
 
-   As you can see, very long ints a, b, and c are declared simply by
+    As you can see, very long ints a, b, and c are declared simply by
 
-   verylong a = 0;
-   verylong b = 0;
-   verylong c = 0;
+    verylong a = 0;
+    verylong b = 0;
+    verylong c = 0;
 
-   If a very long int is input to a function (like a and b in zmul(a, b, &c)),
-   just give its name as argument. Long ints that get new values in
-   a function (like a in zread(&a), b in zread(&b), c in zmul(a, b, &c))
-   are given by their address, which means that they are preceded by a &
-   in the function call.
+    If a very long int is input to a function (like a and b in zmul(a, b, &c)),
+    just give its name as argument. Long ints that get new values in
+    a function (like a in zread(&a), b in zread(&b), c in zmul(a, b, &c))
+    are given by their address, which means that they are preceded by a &
+    in the function call.
 
-   As a slightly more challenging example, the following program starts
-   the random generator with a seed read from stdin, and attempts to
-   generate and print 5 probable primes of binary lengths 64, 80, 96, 112,
+    As a slightly more challenging example, the following program starts
+    the random generator with a seed read from stdin, and attempts to
+    generate and print 5 probable primes of binary lengths 64, 80, 96, 112,
 128:
 
 #include "lip.h"
-   main()
-   {
-      verylong seed = 0;
-      long  bl;
-      verylong p = 0;
+    main()
+    {
+        verylong seed = 0;
+        long  bl;
+        verylong p = 0;
 
-      zread(&seed);   /* get seed from stdin */
-      zrstart(seed);  /* start the random generator */
-      for (bl = 64; bl <= 128; bl += 16)
-      {
-         /* find prime of bl bits */
-         if (zrandomprime(bl, 5, &p, zrandomb))
-         {
-            /* refer to description below for the 5 */
-            printf("%3d bits: ", bl);
-            zwriteln(p);
-         }
-         else
-            printf("couldn`t find a %3d bit prime\n", bl);
-      }
-   }
+        zread(&seed);   /* get seed from stdin */
+        zrstart(seed);  /* start the random generator */
+        for (bl = 64; bl <= 128; bl += 16)
+        {
+            /* find prime of bl bits */
+            if (zrandomprime(bl, 5, &p, zrandomb))
+            {
+                /* refer to description below for the 5 */
+                printf("%3d bits: ", bl);
+                zwriteln(p);
+            }
+            else
+                printf("couldn`t find a %3d bit prime\n", bl);
+        }
+    }
 
 Sample input:
 
-   742434390077967024401578982882
+    742434390077967024401578982882
 
 with output:
 
 64 bits:
-   10513989034112217947
+    10513989034112217947
 80 bits:
-   775541835531627786320957
+    775541835531627786320957
 96 bits:
-   58185536691780358241291462137
+    58185536691780358241291462137
 112 bits:
-   3464241483388970526627866839605371
+    3464241483388970526627866839605371
 128 bits:
-   198790427312192931901507582677867621703
+    198790427312192931901507582677867621703
 
 
 
 WARNING  for old users:
-   some names have been changed.
-   =======  If zxxx is a function operating on very long ints, then there
+    some names have been changed.
+    =======  If zxxx is a function operating on very long ints, then there
          may be two variants of zxxx:
-            zsxxx where one op the operands
-            is an ordinary long, and zxxxs where all operands are ordinary
-            longs. Compared to the previous version, the following
-            functions are affected (with some other name changes as well):
+             zsxxx where one op the operands
+             is an ordinary long, and zxxxs where all operands are ordinary
+             longs. Compared to the previous version, the following
+             functions are affected (with some other name changes as well):
 
                      Old name        New name
                      --------        --------
@@ -151,7 +151,7 @@ WARNING  for old users:
                      zmexp_m_ary     zmontexp_m_ary
 
 
-                     Some arguments of some functions have changed:
+         Some arguments of some functions have changed:
                      zmulin          switched order
                      zmakeodd        *verylong (**long) instead of verylong (*long)
                      znegate         *verylong (**long) instead of verylong (*long)
@@ -161,308 +161,308 @@ WARNING  for old users:
                      Overview of available functions
                      ===============================
 
-                        Basic arithmetic
-                        ----------------
-                        zstart, zsadd, zadd, zsub, zsubpos,
-                        zsmul, zmul, zmulin, zmul_plain, zsq, zsqin, zsq_plain,
-                        zsdiv, zdiv, zsmod, zmod
+                         Basic arithmetic
+                         ----------------
+                         zstart, zsadd, zadd, zsub, zsubpos,
+                         zsmul, zmul, zmulin, zmul_plain, zsq, zsqin, zsq_plain,
+                         zsdiv, zdiv, zsmod, zmod
 
-                        Shifting and bit manipulation
-                        -----------------------------
-                        z2mul, z2div, z2mod, zlshift, zrshift, zmakeodd,
-                        zodd, znot, zand, zor, zxor, zslowbits, zlowbits,
-                        zshighbits, zhighbits, zweights, zweight, zcat,
-                        zbit, zgetbits, zsetbit, zswitchbit, zreverses,
-                        zreverse
+                         Shifting and bit manipulation
+                         -----------------------------
+                         z2mul, z2div, z2mod, zlshift, zrshift, zmakeodd,
+                         zodd, znot, zand, zor, zxor, zslowbits, zlowbits,
+                         zshighbits, zhighbits, zweights, zweight, zcat,
+                         zbit, zgetbits, zsetbit, zswitchbit, zreverses,
+                         zreverse
 
-                        Comparison, signs, copying, logarithms
-                        --------------------------------------
-                        zscompare, zcompare, ziszero, zsign, zabs, znegate, zcopy, zswap
-                        z2logs, z2log, zln, zslog, zlog, zdlog
+                         Comparison, signs, copying, logarithms
+                         --------------------------------------
+                         zscompare, zcompare, ziszero, zsign, zabs, znegate, zcopy, zswap
+                         z2logs, z2log, zln, zslog, zlog, zdlog
 
-                        Conversion
-                        ----------
-                        zzero, zone, zintoz, zuintoz, zultoz, ztoint, ztouint, ztoul,
-                        sztrtozbas, zstrtoz, zdoub, zsbastoz, zbastoz, zstobas, ztobas,
-                        zstosymbas, ztosymbas
+                         Conversion
+                         ----------
+                         zzero, zone, zintoz, zuintoz, zultoz, ztoint, ztouint, ztoul,
+                         sztrtozbas, zstrtoz, zdoub, zsbastoz, zbastoz, zstobas, ztobas,
+                         zstosymbas, ztosymbas
 
-                        Non-modular exponentiation
-                        --------------------------
-                        zsexp, zexp, zsqrts, zsqrt, zroot, zispower
+                         Non-modular exponentiation
+                         --------------------------
+                         zsexp, zexp, zsqrts, zsqrt, zroot, zispower
 
-                        Modular arithmetic
-                        ------------------
-                        zaddmod, zsubmod, zmulmods, zsmulmod, zmulmod, zsqmod, zdivmod,
-                        zinvmod, zexpmods, z2expmod, zsexpmod, zexpmod, zexpmod_m_ary,
-                        zdefault_m, zexpmod_doub1, zexpmod_doub2, zexpmod_doub3, zexpmod_doub,
-                        zmulmod26
+                         Modular arithmetic
+                         ------------------
+                         zaddmod, zsubmod, zmulmods, zsmulmod, zmulmod, zsqmod, zdivmod,
+                         zinvmod, zexpmods, z2expmod, zsexpmod, zexpmod, zexpmod_m_ary,
+                         zdefault_m, zexpmod_doub1, zexpmod_doub2, zexpmod_doub3, zexpmod_doub,
+                         zmulmod26
 
-                        Montgomery modular arithmetic
-                        -----------------------------
-                        zmstart, zmfree, ztom, zmtoz, zmontadd, zmontsub, zsmontmul, zmontmul,
-                        zmontsq, zmontdiv, zmontinv, zmontexp, zmontexp_m_ary,
-                        zmontexp_doub1, zmontexp_doub2, zmontexp_doub3, zmontexp_doub
+                         Montgomery modular arithmetic
+                         -----------------------------
+                         zmstart, zmfree, ztom, zmtoz, zmontadd, zmontsub, zsmontmul, zmontmul,
+                         zmontsq, zmontdiv, zmontinv, zmontexp, zmontexp_m_ary,
+                         zmontexp_doub1, zmontexp_doub2, zmontexp_doub3, zmontexp_doub
 
-                        Euclidean algorithms
-                        --------------------
-                        zgcd, zgcdeucl, zexteucl, zinvs, zinvodds, zinv, zchirem,
-                        zjacobis, zjacobi
+                         Euclidean algorithms
+                         --------------------
+                         zgcd, zgcdeucl, zexteucl, zinvs, zinvodds, zinv, zchirem,
+                         zjacobis, zjacobi
 
-                        Random number generation
-                        ------------------------
-                        zrstarts, zrstart, zrseed, zrandom, zrandomb, zrandoml,
-                        zrandomprime, zrandomqprime, zrandomfprime, zrandomgprime
+                         Random number generation
+                         ------------------------
+                         zrstarts, zrstart, zrseed, zrandom, zrandomb, zrandoml,
+                         zrandomprime, zrandomqprime, zrandomfprime, zrandomgprime
 
-                        Small prime generation
-                        ----------------------
-                        zpstart, zpstart2, zpnext, zpnextb, zp
+                         Small prime generation
+                         ----------------------
+                         zpstart, zpstart2, zpnext, zpnextb, zp
 
-                        Compositeness testing and factorization
-                        ---------------------------------------
-                        zcomposite, zmcomposite, zprime, zprobprime,
-                        ztridiv, zpollardrho, zecm_trial, zecm, zfecm, zsquf
+                         Compositeness testing and factorization
+                         ---------------------------------------
+                         zcomposite, zmcomposite, zprime, zprobprime,
+                         ztridiv, zpollardrho, zecm_trial, zecm, zfecm, zsquf
 
-                        Allocation
-                        ----------
-                        zsetlength, zfree
+                         Allocation
+                         ----------
+                         zsetlength, zfree
 
-                        Timing
-                        ------
-                        gettime, getutime, getstime, starttime, printtime
+                         Timing
+                         ------
+                         gettime, getutime, getstime, starttime, printtime
 
-                        Input and output
-                        ----------------
-                        from       to        to      from     to      to       from    to
-                        file      file      file     stdin  stdout  stdout    string  string
-                        ------------------------------------------------------------------------
-                        decimal| zfread   zfwrite   zfwriteln  zread  zwrite  zwriteln  zsread  zswrite
-                        hex    | zhfread  zhfwrite  zhfwriteln zhread zhwrite zhwriteln
-                        nits   | zbfread  zbfwrite
-                        anybase| zfread_b zfwrite_b zfwriteln_b
+                         Input and output
+                         ----------------
+                         from       to        to      from     to      to       from    to
+                         file      file      file     stdin  stdout  stdout    string  string
+                         ------------------------------------------------------------------------
+                         decimal| zfread   zfwrite   zfwriteln  zread  zwrite  zwriteln  zsread  zswrite
+                         hex    | zhfread  zhfwrite  zhfwriteln zhread zhwrite zhwriteln
+                         nits   | zbfread  zbfwrite
+                         anybase| zfread_b zfwrite_b zfwriteln_b
 
 
-                        Remarks
-                        =======
-                           - Unless stated otherwise, output can be input, but it`s not advised
-                           to make output arguments identical (if there are more output
-                                                               parameters).
-                           - Very long integers are represented by arrays of longs, in blocks
-                           of NBITS bits (these blocks will be referred to as "nits").
-                           A very long int (declared as  verylong a=0 ) either satisfies a==0,
-                        in which case it is treated as zero, or it satisfies the following:
+                         Remarks
+                         =======
+                             - Unless stated otherwise, output can be input, but it`s not advised
+                             to make output arguments identical (if there are more output
+                                     parameters).
+                                 - Very long integers are represented by arrays of longs, in blocks
+                                 of NBITS bits (these blocks will be referred to as "nits").
+                                 A very long int (declared as  verylong a=0 ) either satisfies a==0,
+                             in which case it is treated as zero, or it satisfies the following:
 
-                              - |a[0]| is the significant length, say n, with n>0,
-                              even for a with value zero.
+        - |a[0]| is the significant length, say n, with n>0,
+        even for a with value zero.
 
-                              - a[1], a[2], ..., a[n] are the nits, most significant nit
-                                 is a[n], with always 0<a[n]<RADIX and 0<=a[i]<RADIX for
-                                 i=1,2,...,n-1;
-here RADIX is (1<<NBITS).
-   Exception:
-a[n] can be zero if n=1, in which case a has
-                            value zero.
+        - a[1], a[2], ..., a[n] are the nits, most significant nit
+            is a[n], with always 0<a[n]<RADIX and 0<=a[i]<RADIX for
+            i=1,2,...,n-1;
+    here RADIX is (1<<NBITS).
+Exception:
+    a[n] can be zero if n=1, in which case a has
+                                  value zero.
 
-                            - the sign of a[0] is the sign of a.
+                                  - the sign of a[0] is the sign of a.
 
-                               - a[-1] gives the amount of space currently allocated
-                               for a. The functions check this location to see if
-                                  reallocation is needed.
+                                      - a[-1] gives the amount of space currently allocated
+                                      for a. The functions check this location to see if
+                                          reallocation is needed.
 
-                                  - the values of a[n+1],...,a[a[-1]] are undefined, and
-                                     cannot be assumed to be zero.
+                                          - the values of a[n+1],...,a[a[-1]] are undefined, and
+                                              cannot be assumed to be zero.
 
-                                     - except a==0, the only other correct representation
-                                     of an a with value zero is:
-   a[0]==1, a[1]==0. Negative
-   zero is not recognized.
+                                              - except a==0, the only other correct representation
+                                              of an a with value zero is:
+        a[0]==1, a[1]==0. Negative
+        zero is not recognized.
 
-   Unless you know what you`re doing, don`t play with any of the a[i].
+        Unless you know what you`re doing, don`t play with any of the a[i].
 
-   - Because of the way verylongs are represented, local change (in
-         a routine) of a verylong parameter can affect the global value
-   of that parameter (and even destroy it entirely). As an example,
+        - Because of the way verylongs are represented, local change (in
+                a routine) of a verylong parameter can affect the global value
+        of that parameter (and even destroy it entirely). As an example,
 consider the following program:
 
 #include "lip.h"
 
-   change_verylong(
-      verylong verylong_a
-   )
-{
-      zwriteln(verylong_a);
-      zsadd(verylong_a,1,&verylong_a);
-      zwriteln(verylong_a);
-   }
+        change_verylong(
+            verylong verylong_a
+        )
+    {
+        zwriteln(verylong_a);
+        zsadd(verylong_a,1,&verylong_a);
+        zwriteln(verylong_a);
+    }
 
-   change_long(
-      long long_a
-   )
-   {
-      printf("%ld\n",long_a);
-      long_a ++;
-      printf("%ld\n",long_a);
-   }
+    change_long(
+        long long_a
+    )
+    {
+        printf("%ld\n",long_a);
+        long_a ++;
+        printf("%ld\n",long_a);
+    }
 
-   main ()
-   {
-      long a = 5;
-      verylong b = 0;
-      zintoz(5,&b);
-      change_long(a);
-      printf("%ld\n",a);
-      change_verylong(b);
-      zwriteln(b);
-   }
+    main ()
+    {
+        long a = 5;
+        verylong b = 0;
+        zintoz(5,&b);
+        change_long(a);
+        printf("%ld\n",a);
+        change_verylong(b);
+        zwriteln(b);
+    }
 
 Ouput:
-   5
-   6
-   5
-   5
-   6
-   6
+    5
+    6
+    5
+    5
+    6
+    6
 
-   Although the parameter long_a gets a new value in change_long, this does
+    Although the parameter long_a gets a new value in change_long, this does
 not affect the value of the argument a upon call:
-   it is 5 before and after
-   the call. In change_verylong, however, the change made to the parameter
+    it is 5 before and after
+    the call. In change_verylong, however, the change made to the parameter
 verylong_a affects the value of the argument b:
-   it is 5 before, but 6
-   after the call. More dramatic things might happen too, if for instance
-      verylong_a gets reallocated in change_verylong and its original space
-      gets freed up....  To avoid these possible side-effects, either make
-      verylong_a a *verylong parameter (which should and does keep the local
-                                        changes made to it), or copy verylong_a to a local variable, and work
+    it is 5 before, but 6
+    after the call. More dramatic things might happen too, if for instance
+        verylong_a gets reallocated in change_verylong and its original space
+        gets freed up....  To avoid these possible side-effects, either make
+        verylong_a a *verylong parameter (which should and does keep the local
+                                          changes made to it), or copy verylong_a to a local variable, and work
 with the local variable:
 
-         better_change_verylong(
-            verylong verylong_a
-         )
-      {
-         static local_verylong_a = 0;
-         zcopy(verylong_a,&local_verylong_a);
-         zwriteln(local_verylong_a);
-         zsadd(local_verylong_a,1,&local_verylong_a);
-         zwriteln(local_verylong_a);
-      }
+            better_change_verylong(
+                verylong verylong_a
+            )
+        {
+            static local_verylong_a = 0;
+            zcopy(verylong_a,&local_verylong_a);
+            zwriteln(local_verylong_a);
+            zsadd(local_verylong_a,1,&local_verylong_a);
+            zwriteln(local_verylong_a);
+        }
 
 
-   - For those who know what the sizes of input and output
-   arguments are going to be, you can allocate variables by hand using
-   zsetlength, and make things slightly faster by using the
-   -DNO_ALLOCATE flag. Internal local variables will always be allocated
-   to the proper length, no matter what flags you use, and output
-   variables will also be reallocated if they didn`t get enough
-   space, irrespective of the -DNO_ALLOCATE flag.
+    - For those who know what the sizes of input and output
+    arguments are going to be, you can allocate variables by hand using
+    zsetlength, and make things slightly faster by using the
+    -DNO_ALLOCATE flag. Internal local variables will always be allocated
+    to the proper length, no matter what flags you use, and output
+    variables will also be reallocated if they didn`t get enough
+    space, irrespective of the -DNO_ALLOCATE flag.
 
-   - To get an indication of what (re)allocations take place,
-      you can use the -DPRT_REALLOC flag. The indications will be
-      printed on stderr.
+    - To get an indication of what (re)allocations take place,
+        you can use the -DPRT_REALLOC flag. The indications will be
+        printed on stderr.
 
-      - If an error is detected (division by zero, undefined Montgomery
-                                 modulus, undefined results, etc) a message is printed on stderr
-      and the program exits. If the -DNO_HALT flag is used, the
-      program won`t exit, but values of variables might be undefined.
-      In the function descriptions below the possible error messages are
-      described. They are supposed to be self-explanatory, if not
-      a short explanation follows between (). If the message implies a bug
-         in LIP, please report it to arjen.lenstra@citicorp.com as soon as possible.
-         There is one message (`wrong call to zsmexp...BUG`) which can only be
-         generated by a wrong call to the internal (and undocumented) function
-         zsmexp;
-   if you get this message you`re not using the original code.
+        - If an error is detected (division by zero, undefined Montgomery
+                                   modulus, undefined results, etc) a message is printed on stderr
+        and the program exits. If the -DNO_HALT flag is used, the
+        program won`t exit, but values of variables might be undefined.
+        In the function descriptions below the possible error messages are
+        described. They are supposed to be self-explanatory, if not
+        a short explanation follows between (). If the message implies a bug
+            in LIP, please report it to arjen.lenstra@citicorp.com as soon as possible.
+            There is one message (`wrong call to zsmexp...BUG`) which can only be
+            generated by a wrong call to the internal (and undocumented) function
+            zsmexp;
+    if you get this message you`re not using the original code.
 
-   - If you don`t want to think about -DNO_ALLOCATE or -DPRT_REALLOC
-   flags, allocations, or other unpleasant matters, everything
-   should work fine, as long as you make sure that you declare
-   the very long ints as indicated above (i.e., verylong a=0, b=0, etc...),
-      and give them a & in a function call if they are output.
-      So, as you can see below, zadd(a, a, &a) adds a to a and puts
-         the result in a. On the other hand, zmul(a, b, &a) leads to
-         trouble, because input cannot be output in zmul;
-   use
-   zmulin(b, &a) instead.
+    - If you don`t want to think about -DNO_ALLOCATE or -DPRT_REALLOC
+    flags, allocations, or other unpleasant matters, everything
+    should work fine, as long as you make sure that you declare
+    the very long ints as indicated above (i.e., verylong a=0, b=0, etc...),
+            and give them a & in a function call if they are output.
+            So, as you can see below, zadd(a, a, &a) adds a to a and puts
+                the result in a. On the other hand, zmul(a, b, &a) leads to
+                trouble, because input cannot be output in zmul;
+    use
+    zmulin(b, &a) instead.
 
-   - If you`re writing your own functions with local very long ints,
-   then it`s a good idea to declare the very long ints in frequently
+    - If you`re writing your own functions with local very long ints,
+    then it`s a good idea to declare the very long ints in frequently
 called non-recursive functions as statics:
 
-   static verylong a = 0;
-   static verylong b = 0;
-   etc...
+    static verylong a = 0;
+    static verylong b = 0;
+    etc...
 
-   instead of
+    instead of
 
-   verylong a = 0;
-   verylong b = 0;
-   etc...
+    verylong a = 0;
+    verylong b = 0;
+    etc...
 
-   If static is used, reallocation of space for the local
-   very long ints is avoided in later calls to that same function,
-   unless one of the local very long ints needs more space than
-in any of the previous calls:
-   they always keep their longest
-   length. If you don`t use static, new space for the local
-      very long ints will be allocated for each new call to the
-         function, which is less efficient;
+    If static is used, reallocation of space for the local
+    very long ints is avoided in later calls to that same function,
+         unless one of the local very long ints needs more space than
+     in any of the previous calls:
+         they always keep their longest
+         length. If you don`t use static, new space for the local
+             very long ints will be allocated for each new call to the
+                 function, which is less efficient;
 also, you should use zfree
 in that case at the end of the function, see below.
 
-   Acknowledgments
-   ===============
-      Acknowledgments are due to many users for reporting bugs,
-         to Achim Flammenkamp for initializing the process of writing
-            this documentation, and to Bob Cain for converting to ansi.
+    Acknowledgments
+    ===============
+        Acknowledgments are due to many users for reporting bugs,
+                            to Achim Flammenkamp for initializing the process of writing
+                                this documentation, and to Bob Cain for converting to ansi.
 
-               Before you compile
-               ==================
-               You should make sure that some constants get the right value
-               for your environment. Here`s a short description of what you
-                  need. If in doubt, don`t change it, and just try how it works.
+                                    Before you compile
+                                    ==================
+                                    You should make sure that some constants get the right value
+                                    for your environment. Here`s a short description of what you
+                                        need. If in doubt, don`t change it, and just try how it works.
 
-                     Include Files Needed
-                     --------------------
+                                            Include Files Needed
+                                            --------------------
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
 #include <sys/resource.h>
 #include "lip.h"
 
-                     Machine dependent constants
-                     ---------------------------
-                     Have a look at the constants with <------, and set them
-                     to the right value for your environment
+                                            Machine dependent constants
+                                            ---------------------------
+                                            Have a look at the constants with <------, and set them
+                                            to the right value for your environment
 
 #define CHARL           8       <------ Set this to the number of
-                        bits in a byte. Usually it`s 8.
+                                                bits in a byte. Usually it`s 8.
 
 #define SIZEOFLONG      4       <------ Set this to the number of
-                        bytes in a long, equals
-                        sizeof(long).
+                                                bytes in a long, equals
+                                                sizeof(long).
 
 #define NBITS           30      <------ Set this even, and as large as
-                           possible such that
-                           0 < NBITS < CHARL*SIZEOFLONG.
+                                                    possible such that
+                                                    0 < NBITS < CHARL*SIZEOFLONG.
 
-                           (Addition: use -DSINGLE_MUL flag to get NBITS=26 and faster macros
-                                 (at least, on most machines); assumes that words
-                            in doubles are ordered high-low. Use -DDOUBLE_LOW_HIGH if it`s
-                            the other way around)
+                                                    (Addition: use -DSINGLE_MUL flag to get NBITS=26 and faster macros
+                                                            (at least, on most machines); assumes that words
+                                                     in doubles are ordered high-low. Use -DDOUBLE_LOW_HIGH if it`s
+                                                     the other way around)
 
 #define RADIX           (1<<NBITS)      Don`t touch this, but it`s
-                              good to know what the radix is.
+                                                        good to know what the radix is.
 
 #define KAR_MUL_CROV      30              If in a call zmul(a, b, &c) the
 #define KAR_SQU_CROV    30              number of nits of a or b is
 #define KAR_DEPTH        20              less than KAR_MUL_CROV, then a
-                              and b are multiplied using the
-                              plain quadratic multiplication function;
-   if that`s not the
+                                                        and b are multiplied using the
+                                                        plain quadratic multiplication function;
+    if that`s not the
 case Karatsuba will be applied, recursively, but to a
-      maximum of at most KAR_DEPTH recursions. Same for zsq and
-         ZKAR_SQU_CROV. The optimal values of these two cross-over
-         values depend on the machine you are going to use. The
-         choices above are not too far from optimal on a DEC5000;
+        maximum of at most KAR_DEPTH recursions. Same for zsq and
+            ZKAR_SQU_CROV. The optimal values of these two cross-over
+            values depend on the machine you are going to use. The
+            choices above are not too far from optimal on a DEC5000;
 on Sparcs the optimal values are somewhat smaller. You
 can make KAR_DEPTH as large as you like, as long as you
 have enough memory.
@@ -470,36 +470,36 @@ have enough memory.
 #define SIZE            20      <------ Set this to anything such that
 SIZE*NBITS>=CHARL*SIZEOFLONG
 SIZE is the default and minimum allocation size for very
-      long ints. Any value >= 2 should work. Depending on your
-      application smaller or larger values than 20 might lead
-      to more efficient code, because it either uses less space
-      (for a smaller SIZE), or it uses fewer allocations (for
-               a larger SIZE). If you`re not sure what SIZE to pick,
-         compile the package and your program with the -DPRT_REALLOC
-         flag, and run a representative example:
-   the output will give
-   you an impression of the actual sizes that will be used, and
-   SIZE can be set accordingly before you compile again without
-   the -DPRT_REALLOC flag. If you don`t change it, it should work
-   fine.
+        long ints. Any value >= 2 should work. Depending on your
+        application smaller or larger values than 20 might lead
+        to more efficient code, because it either uses less space
+        (for a smaller SIZE), or it uses fewer allocations (for
+                        a larger SIZE). If you`re not sure what SIZE to pick,
+                            compile the package and your program with the -DPRT_REALLOC
+                            flag, and run a representative example:
+    the output will give
+    you an impression of the actual sizes that will be used, and
+    SIZE can be set accordingly before you compile again without
+    the -DPRT_REALLOC flag. If you don`t change it, it should work
+    fine.
 
 #define OUT_LINE        68      <------ An approximate bound for
-   the maximal number of digits
-   per line of output. You might want to change this to 40
-   if you have an unusually narrow screen, or to 132 if you`re
-      still using one of these nice old lineprinters.
+    the maximal number of digits
+    per line of output. You might want to change this to 40
+    if you have an unusually narrow screen, or to 132 if you`re
+        still using one of these nice old lineprinters.
 
 #define IN_LINE         2048            Input accepts at most
-      IN_LINE characters per line.
-      This should not be too restrictive, because long lines
-      can easily be split into smaller lines, see below.
+        IN_LINE characters per line.
+        This should not be too restrictive, because long lines
+        can easily be split into smaller lines, see below.
 
 #define PRIM_BND         16500            This enables you to
-      generate the primes
-      less than (2*PRIM_BND+1)^2 using zpnext, see below.
-         For 16500 the last prime that can thus be generated is
-         1089065981.
-      }
+        generate the primes
+        less than (2*PRIM_BND+1)^2 using zpnext, see below.
+            For 16500 the last prime that can thus be generated is
+            1089065981.
+        }
 #endif
 
 
@@ -2655,74 +2655,74 @@ long zfwriteln_b(FILE *f, verylong a, verylong out_base, long sym_out);
 
 Example 1
 =========
-   The following program attempts to find primes p and q with
-   q dividing p-1 and a generator of a subgroup of order q of (Z/pZ)*.
-   The input consists of a seed to initialize the random generator
-   (using zrstarts, so seed is an ordinary long), and two integers
-   specifying the binary lengths of the primes p and q.
+    The following program attempts to find primes p and q with
+    q dividing p-1 and a generator of a subgroup of order q of (Z/pZ)*.
+    The input consists of a seed to initialize the random generator
+    (using zrstarts, so seed is an ordinary long), and two integers
+    specifying the binary lengths of the primes p and q.
 
-   Notice the use of Montgomery arithmetic in find_p_q_q:
-   after
-   finding p, the call zmstart(*p) initializes the Montgomery modulus
-   zn as *p (p is a *verylong in find_p_q_g, so *p is the verylong required
-             for zmstart), and mont_one contains the Montgomery representation
-      of the constant 1. Also notice the use of the *`s and &`s in the
-      other function calls, to get all arguments at the right pointer-level.
-      If you don`t get all *`s and &`s right, it won`t work. Fortunately,
-      in ansi-C the compiler will complain unless you get it right.
+    Notice the use of Montgomery arithmetic in find_p_q_q:
+    after
+    finding p, the call zmstart(*p) initializes the Montgomery modulus
+    zn as *p (p is a *verylong in find_p_q_g, so *p is the verylong required
+              for zmstart), and mont_one contains the Montgomery representation
+        of the constant 1. Also notice the use of the *`s and &`s in the
+        other function calls, to get all arguments at the right pointer-level.
+        If you don`t get all *`s and &`s right, it won`t work. Fortunately,
+        in ansi-C the compiler will complain unless you get it right.
 
 #include "lip.h"
 
-      long
-      find_p_q_g(
-         long lp,
-         long lq,
-         verylong *p,
-         verylong *q,
-         verylong *g,
-         void (*generator) (verylong, verylong*)
-      )
+        long
+        find_p_q_g(
+            long lp,
+            long lq,
+            verylong *p,
+            verylong *q,
+            verylong *g,
+            void (*generator) (verylong, verylong*)
+        )
 {
-   static verylong frac = 0, mont_one = 0;
-   long escape = 1;
-   if (!zrandomqprime(lp, lq, 1, p, q, &frac, generator))
-      return (0);
-   zmstart(*p);
-   zintoz((long)1, &mont_one);
-   ztom(mont_one, &mont_one);
-   do
-   {
-      (*generator)(*p,g);
-      if (ziszero(*g))
-         zsadd(*g,escape++,g);
-      zmontexp_m_ary(*g, frac, g, 0);
-   }
-   while (!zcompare(*g, mont_one));
-   zmtoz(*g, g);
-   return (1);
+    static verylong frac = 0, mont_one = 0;
+    long escape = 1;
+    if (!zrandomqprime(lp, lq, 1, p, q, &frac, generator))
+        return (0);
+    zmstart(*p);
+    zintoz((long)1, &mont_one);
+    ztom(mont_one, &mont_one);
+    do
+    {
+        (*generator)(*p,g);
+        if (ziszero(*g))
+            zsadd(*g,escape++,g);
+        zmontexp_m_ary(*g, frac, g, 0);
+    }
+    while (!zcompare(*g, mont_one));
+    zmtoz(*g, g);
+    return (1);
 }
 
 main()
 {
-   verylong p = 0;
-   verylong q = 0;
-   verylong g = 0;
-   long s;
-   long lp;
-   long lq;
+    verylong p = 0;
+    verylong q = 0;
+    verylong g = 0;
+    long s;
+    long lp;
+    long lq;
 
-   scanf("%ld %ld %ld", &s, &lp, &lq);
-   zrstarts(s);
-   if (find_p_q_g(lp, lq, &p, &q, &g, zrandomb))
-   {
-      zwriteln(g);
-      printf("generates a subgroup of order\n");
-      zwriteln(q);
-      printf("in the multiplicative group of integers modulo\n");
-      zwriteln(p);
-   }
-   else
-      printf("couldn`t find primes p and q with q dividing p-1\n");
+    scanf("%ld %ld %ld", &s, &lp, &lq);
+    zrstarts(s);
+    if (find_p_q_g(lp, lq, &p, &q, &g, zrandomb))
+    {
+        zwriteln(g);
+        printf("generates a subgroup of order\n");
+        zwriteln(q);
+        printf("in the multiplicative group of integers modulo\n");
+        zwriteln(p);
+    }
+    else
+        printf("couldn`t find primes p and q with q dividing p-1\n");
 }
 
 Sample input:
@@ -2740,258 +2740,258 @@ in the multiplicative group of integers modulo
 
 Example 2
 =========
-   The following program does the same as the previous one,
-   except that it generates two different p`s and g`s (both
-         with the same q). The second p is generated as above, but
-   the first p is such that p equals f(m) for a fifth degree
-   polynomial f with small coefficients, and m close to the
-   fifth root of p. The method below works only for a very
-      limited range of lq`s (given lp);
+    The following program does the same as the previous one,
+    except that it generates two different p`s and g`s (both
+            with the same q). The second p is generated as above, but
+    the first p is such that p equals f(m) for a fifth degree
+    polynomial f with small coefficients, and m close to the
+    fifth root of p. The method below works only for a very
+        limited range of lq`s (given lp);
 it works for instance
 for lp=512 and lq=160. These p are interesting because the
-                     discrete logarithm problem modulo such p is much easier (though
-                           still hard...) then for `randomly` chosen p. Generating them,
-                        however, takes much more time. Notice that such p can easily be
-                        recognized using zroot and ztosymbas.
+                      discrete logarithm problem modulo such p is much easier (though
+                              still hard...) then for `randomly` chosen p. Generating them,
+                                        however, takes much more time. Notice that such p can easily be
+                                        recognized using zroot and ztosymbas.
 
 #include "lip.h"
 
 #define BOUND    (2)
 
-                        double tim;
+                                        double tim;
 
 find_x_data(
-   long lc,
-   long lp,
-   verylong *xlow,
-   verylong *xint
+    long lc,
+    long lp,
+    verylong *xlow,
+    verylong *xint
 )
 {
-   static verylong aux=0;
-   zintoz(1,&aux);
-   zlshift(aux,lp-1,&aux);
-   zsdiv(aux,lc,&aux);
-   zroot(aux,5,xlow);
-   zsadd(*xlow,1,xlow);
-   zintoz(1,&aux);
-   zlshift(aux,lp,&aux);
-   zsdiv(aux,lc,&aux);
-   zroot(aux,5,xint);
-   zsub(*xint,*xlow,xint);
+    static verylong aux=0;
+    zintoz(1,&aux);
+    zlshift(aux,lp-1,&aux);
+    zsdiv(aux,lc,&aux);
+    zroot(aux,5,xlow);
+    zsadd(*xlow,1,xlow);
+    zintoz(1,&aux);
+    zlshift(aux,lp,&aux);
+    zsdiv(aux,lc,&aux);
+    zroot(aux,5,xint);
+    zsub(*xint,*xlow,xint);
 }
 
 find_x(
-   long lc,
-   verylong *x,
-   long lp
+    long lc,
+    verylong *x,
+    long lp
 )
 {
-   static verylong xlow[BOUND], xint[BOUND];
-   static long non_init=1, lastlp = 0;
-   register long i;
-   if (non_init)
-   {
-      non_init = 0;
-      for (i=0;i<BOUND;i++) xlow[i]=0;
-      for (i=0;i<BOUND;i++) xint[i]=0;
-   }
-   if (!(xlow[lc-1]) || (lp!=lastlp))
-   {
-      find_x_data(lc,lp,&(xlow[lc-1]),&(xint[lc-1]));
-      lastlp = lp;
-   }
-   zrandomb(xint[lc-1],x);
-   zadd(*x,xlow[lc-1],x);
+    static verylong xlow[BOUND], xint[BOUND];
+    static long non_init=1, lastlp = 0;
+    register long i;
+    if (non_init)
+    {
+        non_init = 0;
+        for (i=0; i<BOUND; i++) xlow[i]=0;
+        for (i=0; i<BOUND; i++) xint[i]=0;
+    }
+    if (!(xlow[lc-1]) || (lp!=lastlp))
+    {
+        find_x_data(lc,lp,&(xlow[lc-1]),&(xint[lc-1]));
+        lastlp = lp;
+    }
+    zrandomb(xint[lc-1],x);
+    zadd(*x,xlow[lc-1],x);
 }
 
 long find_q(
-   verylong x,
-   verylong *q,
-   long lq
+    verylong x,
+    verylong *q,
+    long lq
 )
 {
-   static verylong lowq=0, highq=0, nq=0;
-   static long lastlq=0, p;
-   if (lq != lastlq)
-   {
-      lastlq = lq;
-      zintoz(1,&lowq);
-      zlshift(lowq,lq-1,&lowq);
-      zintoz(1,&highq);
-      zlshift(highq,lq,&highq);
-   }
-   zsq(x,q);
-   zsadd(*q,1,q);
-   zpstart2();
-   /* if lq small compared to 2*lp/5, then increase the 20000 */
-   while ((p=zpnext()) < 20000)
-   {
-      while (!zsdiv(*q,p,&nq))
-      {
-         if (zcompare(nq,lowq)<0) return 0;
-         zswap(&nq,q);
-      }
-   }
-   if (zcompare(*q,highq) >= 0) return 0;
-   if (zprime(*q,2,2)) return 1;
-   return 0;
+    static verylong lowq=0, highq=0, nq=0;
+    static long lastlq=0, p;
+    if (lq != lastlq)
+    {
+        lastlq = lq;
+        zintoz(1,&lowq);
+        zlshift(lowq,lq-1,&lowq);
+        zintoz(1,&highq);
+        zlshift(highq,lq,&highq);
+    }
+    zsq(x,q);
+    zsadd(*q,1,q);
+    zpstart2();
+    /* if lq small compared to 2*lp/5, then increase the 20000 */
+    while ((p=zpnext()) < 20000)
+    {
+        while (!zsdiv(*q,p,&nq))
+        {
+            if (zcompare(nq,lowq)<0) return 0;
+            zswap(&nq,q);
+        }
+    }
+    if (zcompare(*q,highq) >= 0) return 0;
+    if (zprime(*q,2,2)) return 1;
+    return 0;
 }
 
 long find_p(
-   long lp,
-   verylong *p,
-   long a3,
-   verylong x1
+    long lp,
+    verylong *p,
+    long a3,
+    verylong x1
 )
 {
-   register long a2, a1, a0;
-   static verylong lowp=0, highp=0;
-   static long lastlp=0;
-   static verylong x2=0, x3=0, x4=0, x5=0, aux=0;
-   if (lp != lastlp)
-   {
-      lastlp = lp;
-      zintoz(1,&lowp);
-      zlshift(lowp,lp-1,&lowp);
-      zintoz(1,&highp);
-      zlshift(highp,lp,&highp);
-   }
-   zsq(x1,&x2);
-   zmul(x1,x2,&x3);
-   zsq(x2,&x4);
-   zmul(x1,x4,&x5);
-   zsmul(x5,a3,&x5);
-   for (a2 = -BOUND; a2 <= BOUND; a2 ++)
-      for (a1 = -BOUND; a1 <= BOUND; a1 ++)
-         for (a0 = -BOUND; a0 <= BOUND; a0 ++)
-         {
-            zsmul(x4,a2,p);
-            zadd(x5,*p,p);
-            zsmul(x3,(a1+a3),&aux);
-            zadd(*p,aux,p);
-            zsmul(x2,(a0+a2),&aux);
-            zadd(*p,aux,p);
-            zsmul(x1,a1,&aux);
-            zadd(*p,aux,p);
-            zsadd(*p,(a0+1),p);
-            if ((zcompare(*p,lowp)>=0) && (zcompare(*p,highp)<0) &&
-                  (zprobprime(*p,1)))
+    register long a2, a1, a0;
+    static verylong lowp=0, highp=0;
+    static long lastlp=0;
+    static verylong x2=0, x3=0, x4=0, x5=0, aux=0;
+    if (lp != lastlp)
+    {
+        lastlp = lp;
+        zintoz(1,&lowp);
+        zlshift(lowp,lp-1,&lowp);
+        zintoz(1,&highp);
+        zlshift(highp,lp,&highp);
+    }
+    zsq(x1,&x2);
+    zmul(x1,x2,&x3);
+    zsq(x2,&x4);
+    zmul(x1,x4,&x5);
+    zsmul(x5,a3,&x5);
+    for (a2 = -BOUND; a2 <= BOUND; a2 ++)
+        for (a1 = -BOUND; a1 <= BOUND; a1 ++)
+            for (a0 = -BOUND; a0 <= BOUND; a0 ++)
             {
-               printf("(%ld,%ld,%ld,%ld,%ld,%ld) in x=",
-                      a3,a2,a1+a3,a2+a0,a1,a0+1);
-               zwriteln(x1);
-               fflush(stdout);
-               return 1;
+                zsmul(x4,a2,p);
+                zadd(x5,*p,p);
+                zsmul(x3,(a1+a3),&aux);
+                zadd(*p,aux,p);
+                zsmul(x2,(a0+a2),&aux);
+                zadd(*p,aux,p);
+                zsmul(x1,a1,&aux);
+                zadd(*p,aux,p);
+                zsadd(*p,(a0+1),p);
+                if ((zcompare(*p,lowp)>=0) && (zcompare(*p,highp)<0) &&
+                        (zprobprime(*p,1)))
+                {
+                    printf("(%ld,%ld,%ld,%ld,%ld,%ld) in x=",
+                           a3,a2,a1+a3,a2+a0,a1,a0+1);
+                    zwriteln(x1);
+                    fflush(stdout);
+                    return 1;
+                }
             }
-         }
-   return(0);
+    return(0);
 }
 
 long
 find_p_q_g(
-   long lp,
-   long lq,
-   verylong *p,
-   verylong *q,
-   verylong *g,
-   long p_initialized,
-   long q_initialized
+    long lp,
+    long lq,
+    verylong *p,
+    verylong *q,
+    verylong *g,
+    long p_initialized,
+    long q_initialized
 )
 {
-   long escape = 1;
-   static verylong frac = 0, mont_one = 0;
-   if (p_initialized) zdiv(*p,*q,&frac,&mont_one);
-   else if (q_initialized)
-   {
-      if (!zrandomqprime(lp,-1,1,p,q,&frac,zrandomb))
-         return 0;
-   }
-   else if (!zrandomqprime(lp, lq, 1, p, q, &frac,zrandomb))
-      return (0);
-   zmstart(*p);
-   zintoz((long)1, &mont_one);
-   ztom(mont_one, &mont_one);
-   do
-   {
-      zrandomb(*p, g);
-      if (ziszero(*g))
-         zsadd(*g,escape++,g);
-      zmontexp_m_ary(*g, frac, g, 0);
-   }
-   while (!zcompare(*g, mont_one));
-   zmtoz(*g, g);
-   return (1);
+    long escape = 1;
+    static verylong frac = 0, mont_one = 0;
+    if (p_initialized) zdiv(*p,*q,&frac,&mont_one);
+    else if (q_initialized)
+    {
+        if (!zrandomqprime(lp,-1,1,p,q,&frac,zrandomb))
+            return 0;
+    }
+    else if (!zrandomqprime(lp, lq, 1, p, q, &frac,zrandomb))
+        return (0);
+    zmstart(*p);
+    zintoz((long)1, &mont_one);
+    ztom(mont_one, &mont_one);
+    do
+    {
+        zrandomb(*p, g);
+        if (ziszero(*g))
+            zsadd(*g,escape++,g);
+        zmontexp_m_ary(*g, frac, g, 0);
+    }
+    while (!zcompare(*g, mont_one));
+    zmtoz(*g, g);
+    return (1);
 }
 
 long search(
-   long lp,
-   long lq,
-   verylong *p,
-   verylong *q,
-   verylong *g
+    long lp,
+    long lq,
+    verylong *p,
+    verylong *q,
+    verylong *g
 )
 {
-   register long a3,cnt=100,cnt2=0;
-   verylong x1=0;
-   tim = gettime();
-   for (;;)
-   {
-      for (a3=BOUND;a3 > 0; a3 --)
-      {
-         find_x(a3,&x1,lp);
-         if (find_q(x1,q,lq))
-         {
-            if (find_p(lp,p,a3,x1))
+    register long a3,cnt=100,cnt2=0;
+    verylong x1=0;
+    tim = gettime();
+    for (;;)
+    {
+        for (a3=BOUND; a3 > 0; a3 --)
+        {
+            find_x(a3,&x1,lp);
+            if (find_q(x1,q,lq))
             {
-               if (find_p_q_g(lp,lq,p,q,g,1,0))
-               {
-                  return 1;
-               }
-               else
-               {
-                  printf("failure, bug\n");
-                  return 0;
-               }
+                if (find_p(lp,p,a3,x1))
+                {
+                    if (find_p_q_g(lp,lq,p,q,g,1,0))
+                    {
+                        return 1;
+                    }
+                    else
+                    {
+                        printf("failure, bug\n");
+                        return 0;
+                    }
+                }
             }
-         }
-         cnt --;
-         cnt2 ++;
-         if (!cnt)
-         {
-            cnt = 100;
-            printf("%12.8lf\n",gettime()-tim);
-         }
-      }
-   }
+            cnt --;
+            cnt2 ++;
+            if (!cnt)
+            {
+                cnt = 100;
+                printf("%12.8lf\n",gettime()-tim);
+            }
+        }
+    }
 }
 
 main ()
 {
-   long seed, lp, lq;
-   verylong p=0, q=0, g=0;
-   scanf("%ld %ld %ld",&seed,&lp, &lq);
-   zrstarts(seed);
-   if ((5*lq < lp) || (5*lq >= 2*lp))
-   {
-      printf("wrong choice of lq, given lp\n");
-   }
-   else
-   {
-      search(lp,lq,&p,&q,&g);
-      zwriteln(g);
-      printf("generates a subgroup of order\n");
-      zwriteln(q);
-      printf("in the multiplicative group of integers modulo\n");
-      zwriteln(p);
-      printf("\n");
-      fflush(stdout);
-      find_p_q_g(lp,lq,&p,&q,&g,0,1);
-      zwriteln(g);
-      printf("generates a subgroup of order\n");
-      zwriteln(q);
-      printf("in the multiplicative group of integers modulo\n");
-      zwriteln(p);
-   }
+    long seed, lp, lq;
+    verylong p=0, q=0, g=0;
+    scanf("%ld %ld %ld",&seed,&lp, &lq);
+    zrstarts(seed);
+    if ((5*lq < lp) || (5*lq >= 2*lp))
+    {
+        printf("wrong choice of lq, given lp\n");
+    }
+    else
+    {
+        search(lp,lq,&p,&q,&g);
+        zwriteln(g);
+        printf("generates a subgroup of order\n");
+        zwriteln(q);
+        printf("in the multiplicative group of integers modulo\n");
+        zwriteln(p);
+        printf("\n");
+        fflush(stdout);
+        find_p_q_g(lp,lq,&p,&q,&g,0,1);
+        zwriteln(g);
+        printf("generates a subgroup of order\n");
+        zwriteln(q);
+        printf("in the multiplicative group of integers modulo\n");
+        zwriteln(p);
+    }
 }
 
 Sample input:
@@ -3000,66 +3000,66 @@ Sample input:
 
 with output (on a Sparc 10 model 50):
 
-      3.76000000
-      7.52000000
-      11.29000000
-      15.08000000
-      18.87000000
-      22.58000000
-      26.40000000
-      30.24000000
-      34.03000000
-      37.80000000
-      41.58000000
-      45.35000000
-      49.11000000
-      52.88000000
-      56.67000000
-      60.48000000
-      64.24000000
-      68.00000000
-      71.79000000
-      75.55000000
-      79.26000000
-      83.03000000
-      86.80000000
-      90.57000000
-      (1,2,0,0,-1,-1) in x=6669732341656104964502029382432
-                           9362751779753305485633684911118505038419037405636648687671782771219104\
-                           877220810690684615006144515338661060121963795907231644972439047091535229\
-                           187627385769
-                           generates a subgroup of order
-                           943747661700036218559086949811091293194571309721
-                           in the multiplicative group of integers modulo
-                           13199030411146338143272886712220741028036629749389126263587401471402712\
-                           464999500921756267373698996752386196832220041295603564662001282857874989\
-                           403775126751
+    3.76000000
+    7.52000000
+    11.29000000
+    15.08000000
+    18.87000000
+    22.58000000
+    26.40000000
+    30.24000000
+    34.03000000
+    37.80000000
+    41.58000000
+    45.35000000
+    49.11000000
+    52.88000000
+    56.67000000
+    60.48000000
+    64.24000000
+    68.00000000
+    71.79000000
+    75.55000000
+    79.26000000
+    83.03000000
+    86.80000000
+    90.57000000
+    (1,2,0,0,-1,-1) in x=6669732341656104964502029382432
+                         9362751779753305485633684911118505038419037405636648687671782771219104\
+                         877220810690684615006144515338661060121963795907231644972439047091535229\
+                         187627385769
+                         generates a subgroup of order
+                         943747661700036218559086949811091293194571309721
+                         in the multiplicative group of integers modulo
+                         13199030411146338143272886712220741028036629749389126263587401471402712\
+                         464999500921756267373698996752386196832220041295603564662001282857874989\
+                         403775126751
 
-                           5158023791521930252670666673259965118816058379295632263374746360271437\
-                           123929142602529310646812773838180339874626531306680071095321932808886119\
-                           841427044863
-                           generates a subgroup of order
-                           943747661700036218559086949811091293194571309721
-                           in the multiplicative group of integers modulo
-                           11700597700389993490187022197000056687592911421118908770341871059151849\
-                           025129646776595865327886910657123092425509373722802817105366518832401446\
-                           762516493543
+                         5158023791521930252670666673259965118816058379295632263374746360271437\
+                         123929142602529310646812773838180339874626531306680071095321932808886119\
+                         841427044863
+                         generates a subgroup of order
+                         943747661700036218559086949811091293194571309721
+                         in the multiplicative group of integers modulo
+                         11700597700389993490187022197000056687592911421118908770341871059151849\
+                         025129646776595865327886910657123092425509373722802817105366518832401446\
+                         762516493543
 
 
-                           ============================================================================
+                         ============================================================================
 
-                           The package was tested on  ULTRIX V4.2,  HP-UX 8.05,  SunOS 4.1.1&2,
-                           AIX V3.1, IRIX 4.0.5, Digital Unix 4.0
+                         The package was tested on  ULTRIX V4.2,  HP-UX 8.05,  SunOS 4.1.1&2,
+                         AIX V3.1, IRIX 4.0.5, Digital Unix 4.0
 
-                           Bugs, questions, suggestions, additions, whatever, to
+                         Bugs, questions, suggestions, additions, whatever, to
 
-                           Arjen K. Lenstra
-                           Citibank, N.A.
-                           4 Sylvan Way,
-                           Parsippany, NJ 07054
+                         Arjen K. Lenstra
+                         Citibank, N.A.
+                         4 Sylvan Way,
+                         Parsippany, NJ 07054
 
-                           email arjen.lenstra@citicorp.com
-                           fax 201 397 7657;
+                         email arjen.lenstra@citicorp.com
+                         fax 201 397 7657;
 
 #endif
 

@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
             {
                 skew = std::atol(argv[arg]);
             }
-        } 
+        }
         else if (argv[arg] == std::string("-N"))
         {
             ++arg;

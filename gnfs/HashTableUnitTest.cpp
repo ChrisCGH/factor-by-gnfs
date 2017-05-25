@@ -7,28 +7,28 @@
 
 namespace
 {
-    struct StringHasher
+struct StringHasher
+{
+    static unsigned long int hash(const std::string& key)
     {
-        static unsigned long int hash(const std::string& key)
+        unsigned long int h = 0;
+        const char* c = key.c_str();
+        while (c && *c)
         {
-            unsigned long int h = 0;
-            const char* c = key.c_str();
-            while (c && *c)
-            {
-                h += static_cast<unsigned int>(*c);
-                h <<= 1;
-                ++c;
-            }
-            return h;
-        } 
-    };
-    struct IntHasher
+            h += static_cast<unsigned int>(*c);
+            h <<= 1;
+            ++c;
+        }
+        return h;
+    }
+};
+struct IntHasher
+{
+    static unsigned long int hash(int key)
     {
-        static unsigned long int hash(int key)
-        {
-            return key;
-        } 
-    };
+        return key;
+    }
+};
 };
 
 class HashTableTest : public CppUnit::TestFixture
@@ -41,7 +41,7 @@ public:
     void setUp()
     {
     }
-    
+
     void tearDown()
     {
     }
@@ -54,28 +54,28 @@ public:
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (HashTable<std::string, std::string, StringHasher, 1009>()));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (HashTable<std::string, int, StringHasher, 1009>()));
         HashTable<std::string, int, StringHasher, 1009> h1;
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h1["key1"]); 
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h1["key1"]);
         CPPUNIT_ASSERT(h1["key1"] == 0);
         HashTable<std::string, std::string, StringHasher, 1009> h2;
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h2["key2"]); 
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h2["key2"]);
         CPPUNIT_ASSERT(h2["key2"] == "");
         HashTable<std::string, std::string, StringHasher, 1009> h3;
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h3["key3"] = "value3"); 
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h3["key3"] = "value3");
         CPPUNIT_ASSERT(h3["key3"] == "value3");
         HashTable<std::string, int, StringHasher, 1009> h4;
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h4["key4"] = 10001); 
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h4["key4"] = 10001);
         CPPUNIT_ASSERT(h4["key4"] == 10001);
         HashTable<int, int, IntHasher, 1009> h5;
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h5[1231234] = 10001); 
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h5[1231234] = 10001);
         CPPUNIT_ASSERT(h5[1231234] == 10001);
         HashTable<int, int, IntHasher, 5> h6;
         for (int i = 0; i < 1000; ++i)
         {
-           CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h6[i] = i); 
+            CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h6[i] = i);
         }
         for (int i = 0; i < 1000; ++i)
         {
-           CPPUNIT_ASSERT(h6[i] == i);
+            CPPUNIT_ASSERT(h6[i] == i);
         }
         CPPUNIT_ASSERT(h6.find(0));
         CPPUNIT_ASSERT(h6.find(100));
@@ -87,15 +87,15 @@ public:
         HashTable<int, std::string, IntHasher, 7> h7;
         for (int i = 0; i < 1000; ++i)
         {
-           std::ostringstream oss;
-           oss << i;
-           CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h7[i] = oss.str()); 
+            std::ostringstream oss;
+            oss << i;
+            CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h7[i] = oss.str());
         }
         for (int i = 0; i < 1000; ++i)
         {
-           std::ostringstream oss;
-           oss << i;
-           CPPUNIT_ASSERT(h7[i] == oss.str());
+            std::ostringstream oss;
+            oss << i;
+            CPPUNIT_ASSERT(h7[i] == oss.str());
         }
         CPPUNIT_ASSERT(h7.find(0));
         CPPUNIT_ASSERT(h7.find(100));
@@ -107,19 +107,19 @@ public:
         CPPUNIT_ASSERT(!h7.find(0));
         CPPUNIT_ASSERT(!h7.find(100));
         CPPUNIT_ASSERT(!h7.find(874));
-    
+
         HashTable<std::string, std::string, StringHasher, 7> h8;
         for (int i = 0; i < 1000; ++i)
         {
-           std::ostringstream oss;
-           oss << i;
-           CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h8[oss.str()] = oss.str()); 
+            std::ostringstream oss;
+            oss << i;
+            CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h8[oss.str()] = oss.str());
         }
         for (int i = 0; i < 1000; ++i)
         {
-           std::ostringstream oss;
-           oss << i;
-           CPPUNIT_ASSERT(h8[oss.str()] == oss.str());
+            std::ostringstream oss;
+            oss << i;
+            CPPUNIT_ASSERT(h8[oss.str()] == oss.str());
         }
         CPPUNIT_ASSERT(h8.find("0"));
         CPPUNIT_ASSERT(h8.find("100"));
@@ -132,11 +132,11 @@ public:
 
         for (int i = 0; i < 1000; ++i)
         {
-           std::ostringstream oss;
-           oss << i;
-           CPPUNIT_ASSERT(h8.find(oss.str()));
-           CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h8.remove(oss.str())); 
-           CPPUNIT_ASSERT(!h8.find(oss.str()));
+            std::ostringstream oss;
+            oss << i;
+            CPPUNIT_ASSERT(h8.find(oss.str()));
+            CPPUNIT_ASSERT_NO_THROW_MESSAGE("", h8.remove(oss.str()));
+            CPPUNIT_ASSERT(!h8.find(oss.str()));
         }
     }
 };

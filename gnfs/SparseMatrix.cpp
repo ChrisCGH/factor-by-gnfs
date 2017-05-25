@@ -186,10 +186,10 @@ void transpose(const SparseMatrix& A, SparseMatrix& transA, long int max_row_siz
     // read A and populate rows of transA
     for (size_t i = 0; i < A.rows(); i++)
     {
-	if (i % 10000 == 0)
-	{
+        if (i % 10000 == 0)
+        {
             LOG_DEBUG("row = " << i);
-	}
+        }
         if (A.row_size(i))
         {
             auto itend = A.end(i);
@@ -1194,7 +1194,7 @@ void SparseMatrix::removeEmptyRows()
     for (size_t row = 0; row < rows(); row++)
     {
         if (row_size(row) > 0L)
-        //if (sparse_row_[row] && sparse_row_[row]->size() > 0L)
+            //if (sparse_row_[row] && sparse_row_[row]->size() > 0L)
         {
             if (row > new_row)
             {
@@ -1272,7 +1272,7 @@ void SparseMatrix::set_cols()
         ISparseRow* srp = sparse_row_[row];
         if (srp)
         {
-            if (srp->highest_column() > cols) 
+            if (srp->highest_column() > cols)
             {
                 cols = srp->highest_column();
             }
@@ -1284,7 +1284,7 @@ void SparseMatrix::set_cols()
             {
                 long int hc = fbsrm_->row(row).highest_column();
                 if (hc > cols)
-                {   
+                {
                     cols = hc;
                 }
             }

@@ -17,121 +17,121 @@ namespace
 {
 long long strtoll(const char* str)
 {
-   double x = std::atof(str);
-   return (long long)x;
+    double x = std::atof(str);
+    return (long long)x;
 }
 }
 
 int main(int argc, char** argv)
 {
-   RootConfig config("root.cfg");
-   config.display();
-   std::string relfile_str = config.RELATION_FILE();
-   std::string ratRelFile(relfile_str);
-   const char* relfile = relfile_str.c_str();
-   if (argc > 1) relfile = argv[1];
+    RootConfig config("root.cfg");
+    config.display();
+    std::string relfile_str = config.RELATION_FILE();
+    std::string ratRelFile(relfile_str);
+    const char* relfile = relfile_str.c_str();
+    if (argc > 1) relfile = argv[1];
 
-   Polynomial<VeryLong> f1 = config.f1();
-   std::cout << "f1 = " << f1 << std::endl;
+    Polynomial<VeryLong> f1 = config.f1();
+    std::cout << "f1 = " << f1 << std::endl;
 
-   for (int i = 0; i < config.EXTRA_PRIMES(); i++)
-   {
-      VeryLong::addPrime(config.EXTRA_PRIME(i));
-   }
-   char fbFile[132];
-   strcpy(fbFile, config.ROOT_ID().c_str());
-   strcat(fbFile, ".fb.dat");
-   NumberField nf(f1, fbFile);
+    for (int i = 0; i < config.EXTRA_PRIMES(); i++)
+    {
+        VeryLong::addPrime(config.EXTRA_PRIME(i));
+    }
+    char fbFile[132];
+    strcpy(fbFile, config.ROOT_ID().c_str());
+    strcat(fbFile, ".fb.dat");
+    NumberField nf(f1, fbFile);
 
-   AlgebraicNumber::setNumberField(nf);
+    AlgebraicNumber::setNumberField(nf);
 
-   VeryLong p(23L);
-   AlgebraicNumber_in_O_pO::set_basis(p);
+    VeryLong p(23L);
+    AlgebraicNumber_in_O_pO::set_basis(p);
 
-   std::vector<std::pair<PrimeIdeal, int> > primeIdeal;
-   PrimeIdeal::primeDecomposition(p, primeIdeal);
+    std::vector<std::pair<PrimeIdeal, int> > primeIdeal;
+    PrimeIdeal::primeDecomposition(p, primeIdeal);
 
-   for (size_t i = 0; i < primeIdeal.size(); ++i)
-   {
-      std::cout << primeIdeal[i].second << std::endl << primeIdeal[i].first << std::endl;
-      std::cout << "********************************************" << std::endl;
-   }
+    for (size_t i = 0; i < primeIdeal.size(); ++i)
+    {
+        std::cout << primeIdeal[i].second << std::endl << primeIdeal[i].first << std::endl;
+        std::cout << "********************************************" << std::endl;
+    }
 
-   long long int aa = -2251919LL;
-   long int b = 48342L;
-   AlgebraicNumber an(aa, b);
-   AlgebraicNumber_in_O_pO an_(an);
-   AlgebraicNumber_in_O_pO an1_(aa, b);
+    long long int aa = -2251919LL;
+    long int b = 48342L;
+    AlgebraicNumber an(aa, b);
+    AlgebraicNumber_in_O_pO an_(an);
+    AlgebraicNumber_in_O_pO an1_(aa, b);
 
-   if (an_ != an1_)
-   {
-      std::cout << "(a,b) = (" << aa << "," << b << ")" << std::endl;
-      std::cout << "an = " << an << std::endl;
-      std::cout << "an_ = " << an_ << std::endl;
-      std::cout << "an1_ = " << an1_ << std::endl;
-   }
+    if (an_ != an1_)
+    {
+        std::cout << "(a,b) = (" << aa << "," << b << ")" << std::endl;
+        std::cout << "an = " << an << std::endl;
+        std::cout << "an_ = " << an_ << std::endl;
+        std::cout << "an1_ = " << an1_ << std::endl;
+    }
 
-   std::fstream infile(relfile, std::ios::in);
-   // file format should be
-   // a b
-   std::string str;
-   int done = 0;
-   int line = 0;
-   bool numeratorRelation = true;
-   const std::string NumeratorStr("Numerator");
-   const std::string DenominatorStr("Denominator");
-   static char* buf = 0;
-   static std::string::size_type buflen = 0;
-   while (!done)
-   {
-      getline(infile, str);
-      if (str.empty()) continue;
-      if (str.size() > buflen)
-      {
-         delete [] buf;
-         buflen = str.size();
-         buf = new char [ buflen + 1 ];
-      }
-      strcpy(buf, str.c_str());
-      if (buf[0] == '!') done = 1;
-      else
-      {
-         line++;
-         if (NumeratorStr == buf) continue;
-         if (DenominatorStr == buf)
-         {
-            if (numeratorRelation)
+    std::fstream infile(relfile, std::ios::in);
+    // file format should be
+    // a b
+    std::string str;
+    int done = 0;
+    int line = 0;
+    bool numeratorRelation = true;
+    const std::string NumeratorStr("Numerator");
+    const std::string DenominatorStr("Denominator");
+    static char* buf = 0;
+    static std::string::size_type buflen = 0;
+    while (!done)
+    {
+        getline(infile, str);
+        if (str.empty()) continue;
+        if (str.size() > buflen)
+        {
+            delete [] buf;
+            buflen = str.size();
+            buf = new char [ buflen + 1 ];
+        }
+        strcpy(buf, str.c_str());
+        if (buf[0] == '!') done = 1;
+        else
+        {
+            line++;
+            if (NumeratorStr == buf) continue;
+            if (DenominatorStr == buf)
             {
-               numeratorRelation = false;
+                if (numeratorRelation)
+                {
+                    numeratorRelation = false;
+                }
+                continue;
             }
-            continue;
-         }
-         // find space
-         char* c = buf;
-         while (c && *c && *c != ' ') c++;
-         if (!c || !*c || !*(c+1))
-         {
-            std::cerr << "Problem: bad format in line " << line << ":" << std::endl;
-            std::cerr << "[" << buf << "]" << std::endl;
-            return false;
-         }
-         *c = '\0';
-         c++;
-         long long int aa = strtoll(buf);
-         long int b = std::atol(c);
-         AlgebraicNumber an(aa, b);
-         AlgebraicNumber_in_O_pO an_(an);
-         AlgebraicNumber_in_O_pO an1_(aa, b);
+            // find space
+            char* c = buf;
+            while (c && *c && *c != ' ') c++;
+            if (!c || !*c || !*(c+1))
+            {
+                std::cerr << "Problem: bad format in line " << line << ":" << std::endl;
+                std::cerr << "[" << buf << "]" << std::endl;
+                return false;
+            }
+            *c = '\0';
+            c++;
+            long long int aa = strtoll(buf);
+            long int b = std::atol(c);
+            AlgebraicNumber an(aa, b);
+            AlgebraicNumber_in_O_pO an_(an);
+            AlgebraicNumber_in_O_pO an1_(aa, b);
 
-         if (an_ != an1_)
-         {
-            std::cout << "(a,b) = (" << aa << "," << b << ")" << std::endl;
-            std::cout << "an = " << an << std::endl;
-            std::cout << "an_ = " << an_ << std::endl;
-            std::cout << "an1_ = " << an1_ << std::endl;
-         }
-      }
-   }
-   return 0;
+            if (an_ != an1_)
+            {
+                std::cout << "(a,b) = (" << aa << "," << b << ")" << std::endl;
+                std::cout << "an = " << an << std::endl;
+                std::cout << "an_ = " << an_ << std::endl;
+                std::cout << "an1_ = " << an1_ << std::endl;
+            }
+        }
+    }
+    return 0;
 }
 

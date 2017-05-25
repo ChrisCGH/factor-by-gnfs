@@ -21,328 +21,328 @@
 
 class SparseRowIterator
 {
-    public:
-        SparseRowIterator(uint32_t* ptr) : ptr_(ptr)
-        {}
-        SparseRowIterator(const SparseRowIterator& sri) : ptr_(sri.ptr_)
-        {}
-        SparseRowIterator& operator++();
-        size_t operator*() const;
+public:
+    SparseRowIterator(uint32_t* ptr) : ptr_(ptr)
+    {}
+    SparseRowIterator(const SparseRowIterator& sri) : ptr_(sri.ptr_)
+    {}
+    SparseRowIterator& operator++();
+    size_t operator*() const;
 
-        bool operator==(const SparseRowIterator& sri) const;
-        bool operator!=(const SparseRowIterator& sri) const
-        {
-            return !(*this == sri);
-        }
-    private:
-        uint32_t* ptr_;
-        //size_t* ptr_;
+    bool operator==(const SparseRowIterator& sri) const;
+    bool operator!=(const SparseRowIterator& sri) const
+    {
+        return !(*this == sri);
+    }
+private:
+    uint32_t* ptr_;
+    //size_t* ptr_;
 };
 
 class ISparseRow
 {
-    public:
-        enum xor_status { XOR_FAILED = 0, XOR_ADDED, XOR_REMOVED };
-        virtual xor_status xor(size_t col) = 0;
-        virtual xor_status add_next(size_t col) = 0;
-        virtual void set_row(const std::vector<size_t>& columns) = 0;
-        virtual void set_row(const int* first_col, int col_count) = 0;
-        virtual void clear() = 0;
-        virtual long int highest_column() const = 0;
-        virtual size_t size() const = 0;
-        virtual size_t memory_usage() = 0;
-        typedef SparseRowIterator const_iterator;
-        virtual const_iterator begin() const = 0;
-        virtual const_iterator end() const = 0;
-        virtual void compress() = 0;
-        virtual ~ISparseRow() {};
+public:
+    enum xor_status { XOR_FAILED = 0, XOR_ADDED, XOR_REMOVED };
+    virtual xor_status xor(size_t col) = 0;
+    virtual xor_status add_next(size_t col) = 0;
+    virtual void set_row(const std::vector<size_t>& columns) = 0;
+    virtual void set_row(const int* first_col, int col_count) = 0;
+    virtual void clear() = 0;
+    virtual long int highest_column() const = 0;
+    virtual size_t size() const = 0;
+    virtual size_t memory_usage() = 0;
+    typedef SparseRowIterator const_iterator;
+    virtual const_iterator begin() const = 0;
+    virtual const_iterator end() const = 0;
+    virtual void compress() = 0;
+    virtual ~ISparseRow() {};
 };
 
 class SparseMatrix;
 class SparseRow : public ISparseRow
 {
-    public:
-        friend class SparseMatrix;
-        friend class SparseMatrix2;
-        friend class SparseMatrix3;
-        friend class SparseMatrix4;
-        friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size, bool clear_A);
-        enum { default_inc = 50 };
-        SparseRow() : one_(0), one_size_(0), one_cap_(0)
-        {}
-        SparseRow(long int cols) : one_(0), one_size_(0), one_cap_(cols)
-        {
-            one_ = new uint32_t [ one_cap_ ];
-            //one_ = new size_t [ one_cap_ ];
-        }
-    private:
-
-        SparseRow(const std::string& str) : one_(0), one_size_(0), one_cap_(0)
-        {
-            long int num_cols = 0;
-            char* s = SparseRow::begin_parse(str, num_cols);
-            if (!s) return;
-            one_ = new uint32_t [ num_cols ];
-            //one_ = new size_t [ num_cols ];
-            one_size_ = num_cols;
-            one_cap_ = num_cols;
-            int i = 0;
-            while ((s = strtok(0, " ")))
-            {
-                int n = std::atol(s);
-                one_[i] = n;
-                i++;
-            }
-        }
-
-        SparseRow(long int num_cols, char* s) : one_(0), one_size_(0), one_cap_(0)
-        {
-            one_ = new uint32_t [ num_cols ];
-            //one_ = new size_t [ num_cols ];
-            one_size_ = num_cols;
-            one_cap_ = num_cols;
-            int i = 0;
-            while ((s = strtok(0, " ")))
-            {
-                int n = std::atol(s);
-                one_[i] = n;
-                i++;
-            }
-        }
 public:
-        virtual ~SparseRow()
+    friend class SparseMatrix;
+    friend class SparseMatrix2;
+    friend class SparseMatrix3;
+    friend class SparseMatrix4;
+    friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size, bool clear_A);
+    enum { default_inc = 50 };
+    SparseRow() : one_(0), one_size_(0), one_cap_(0)
+    {}
+    SparseRow(long int cols) : one_(0), one_size_(0), one_cap_(cols)
+    {
+        one_ = new uint32_t [ one_cap_ ];
+        //one_ = new size_t [ one_cap_ ];
+    }
+private:
+
+    SparseRow(const std::string& str) : one_(0), one_size_(0), one_cap_(0)
+    {
+        long int num_cols = 0;
+        char* s = SparseRow::begin_parse(str, num_cols);
+        if (!s) return;
+        one_ = new uint32_t [ num_cols ];
+        //one_ = new size_t [ num_cols ];
+        one_size_ = num_cols;
+        one_cap_ = num_cols;
+        int i = 0;
+        while ((s = strtok(0, " ")))
+        {
+            int n = std::atol(s);
+            one_[i] = n;
+            i++;
+        }
+    }
+
+    SparseRow(long int num_cols, char* s) : one_(0), one_size_(0), one_cap_(0)
+    {
+        one_ = new uint32_t [ num_cols ];
+        //one_ = new size_t [ num_cols ];
+        one_size_ = num_cols;
+        one_cap_ = num_cols;
+        int i = 0;
+        while ((s = strtok(0, " ")))
+        {
+            int n = std::atol(s);
+            one_[i] = n;
+            i++;
+        }
+    }
+public:
+    virtual ~SparseRow()
+    {
+        delete [] one_;
+    }
+private:
+    SparseRow& operator=(const SparseRow& sr)
+    {
+        if (sr.one_size_ > one_cap_)
         {
             delete [] one_;
+            one_ = new uint32_t [ sr.one_size_ ];
+            //one_ = new size_t [ sr.one_size_ ];
+            if (!one_)
+            {
+                std::cerr << "operator new failed!" << std::endl;
+                std::exit(0);
+            }
+            one_cap_ = sr.one_size_;
         }
+        one_size_ = sr.one_size_;
+        memcpy(one_, sr.one_, one_size_ * sizeof(uint32_t));
+        //memcpy(one_, sr.one_, one_size_ * sizeof(long int));
+        return *this;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const SparseRow& r);
+    long int highest_column() const
+    {
+        if (one_size_ == 0) return -1;
+        return static_cast<long int>(one_[one_size_ - 1]);
+    }
+    void clear()
+    {
+        one_size_ = 0;
+    }
+
+    static char* begin_parse(const std::string& str, long int& column_count)
+    {
+        // This function gets the column count from str using strtok(buf, " "),
+        // and returns a char* buf suitable for subsequent calls to strtok(0, " ")
+        static char* buf = 0;
+        static std::string::size_type buflen = 0;
+        column_count = 0;
+        if (str.empty()) return 0;
+        if (str.size() > buflen)
+        {
+            delete [] buf;
+            buflen = str.size();
+            buf = new char [ buflen + 1 ];
+        }
+        strcpy(buf, str.c_str());
+        char* s = strtok(buf, " ");
+        column_count = std::atol(s);
+        return buf;
+    }
+
+    void compress();
 private:
-        SparseRow& operator=(const SparseRow& sr)
+    SparseRow(const SparseRow& sr);
+    bool operator==(const SparseRow& sr) const;
+    bool operator!=(const SparseRow& sr) const;
+
+    void extend(int inc = default_inc)
+    {
+        try
         {
-            if (sr.one_size_ > one_cap_)
+            if (one_cap_ <= one_size_)
             {
+                one_cap_ += inc;
+                uint32_t* new_one_ = new uint32_t [ one_cap_ ];
+                //size_t* new_one_ = new size_t [ one_cap_ ];
+                memcpy(new_one_, one_, one_size_ * sizeof(uint32_t));
+                //memcpy(new_one_, one_, one_size_ * sizeof(size_t));
                 delete [] one_;
-                one_ = new uint32_t [ sr.one_size_ ];
-                //one_ = new size_t [ sr.one_size_ ];
-                if (!one_)
-                {
-                    std::cerr << "operator new failed!" << std::endl;
-                    std::exit(0);
-                }
-                one_cap_ = sr.one_size_;
-            }
-            one_size_ = sr.one_size_;
-            memcpy(one_, sr.one_, one_size_ * sizeof(uint32_t));
-            //memcpy(one_, sr.one_, one_size_ * sizeof(long int));
-            return *this;
-        }
-        friend std::ostream& operator<<(std::ostream& os, const SparseRow& r);
-        long int highest_column() const
-        {
-            if (one_size_ == 0) return -1;
-            return static_cast<long int>(one_[one_size_ - 1]);
-        }
-        void clear()
-        {
-            one_size_ = 0;
-        }
-
-        static char* begin_parse(const std::string& str, long int& column_count)
-        {
-            // This function gets the column count from str using strtok(buf, " "),
-            // and returns a char* buf suitable for subsequent calls to strtok(0, " ")
-            static char* buf = 0;
-            static std::string::size_type buflen = 0;
-            column_count = 0;
-            if (str.empty()) return 0;
-            if (str.size() > buflen)
-            {
-                delete [] buf;
-                buflen = str.size();
-                buf = new char [ buflen + 1 ];
-            }
-            strcpy(buf, str.c_str());
-            char* s = strtok(buf, " ");
-            column_count = std::atol(s);
-            return buf;
-        }
-
-        void compress();
-    private:
-        SparseRow(const SparseRow& sr);
-        bool operator==(const SparseRow& sr) const;
-        bool operator!=(const SparseRow& sr) const;
-
-        void extend(int inc = default_inc)
-        {
-            try
-            {
-                if (one_cap_ <= one_size_)
-                {
-                    one_cap_ += inc;
-                    uint32_t* new_one_ = new uint32_t [ one_cap_ ];
-                    //size_t* new_one_ = new size_t [ one_cap_ ];
-                    memcpy(new_one_, one_, one_size_ * sizeof(uint32_t));
-                    //memcpy(new_one_, one_, one_size_ * sizeof(size_t));
-                    delete [] one_;
-                    one_ = new_one_;
-                }
-            }
-            catch (std::bad_alloc& e)
-            {
-                std::ostringstream oss;
-                oss << "SparseRow::extend() : Bad allocation - tried to allocate " << static_cast<unsigned int>(one_cap_) << " long ints : " << e.what();
-                throw oss.str();
+                one_ = new_one_;
             }
         }
-
-        void append(size_t col, int inc = default_inc)
+        catch (std::bad_alloc& e)
         {
-            extend(inc);
+            std::ostringstream oss;
+            oss << "SparseRow::extend() : Bad allocation - tried to allocate " << static_cast<unsigned int>(one_cap_) << " long ints : " << e.what();
+            throw oss.str();
+        }
+    }
+
+    void append(size_t col, int inc = default_inc)
+    {
+        extend(inc);
+        one_[one_size_] = col;
+        ++one_size_;
+    }
+
+    void insert(size_t col, size_t pos, int inc = default_inc)
+    {
+        extend(inc);
+        size_t j = one_size_;
+        while (j > pos)
+        {
+            one_[j] = one_[j - 1];
+            --j;
+        }
+        one_[pos] = col;
+        ++one_size_;
+    }
+
+    void remove(size_t col, size_t pos)
+    {
+        //std::cerr << "remove(" << col << "," << pos << ")" << std::endl;
+        while (pos < one_size_ - 1)
+        {
+            one_[pos] = one_[pos + 1];
+            ++pos;
+        }
+        --one_size_;
+    }
+
+    bool add(size_t col)
+    {
+        if (one_size_ > 0 && col <= one_[one_size_ - 1]) return false;
+        append(col);
+        return true;
+    }
+
+    //public:
+
+    void set_row(const int* first_col, int col_count)
+    {
+        if (col_count > (int)one_cap_)
+        {
+            one_cap_ = col_count;
+            delete [] one_;
+            one_ = new uint32_t [ one_cap_ ];
+        }
+        one_size_ = 0;
+        for (const int* it = first_col;
+                it != first_col + col_count;
+                ++it)
+        {
+            one_[one_size_] = *it;
+            ++one_size_;
+        }
+        std::sort(one_, one_ + one_size_);
+    }
+
+    void set_row(const std::vector<size_t>& columns)
+    {
+        if (columns.size() > one_cap_)
+        {
+            one_cap_ = columns.size();
+            delete [] one_;
+            one_ = new uint32_t [ one_cap_ ];
+        }
+        one_size_ = 0;
+        for (auto& col: columns)
+        {
             one_[one_size_] = col;
             ++one_size_;
         }
+        std::sort(one_, one_ + one_size_);
+    }
 
-        void insert(size_t col, size_t pos, int inc = default_inc)
+    ISparseRow::xor_status xor(size_t col)
+    {
+        // Note that we must keep columns in one_ sorted.
+        // one_ = 2 3 4 9 10
+        // one_size_ = 5
+        // Case (i) xor(3)
+        // Case (ii) xor(6)
+        // Case (iii) xor(11)
+        // stop search when one_[i] >= col
+        const int inc = default_inc;
+        //if (col < 0L) return ISparseRow::XOR_FAILED;
+
+        // Optimisation, check for append first, since
+        // we're likely to do this often.
+        if (one_size_ && col > one_[one_size_ - 1])
         {
-            extend(inc);
-            size_t j = one_size_;
-            while (j > pos)
-            {
-                one_[j] = one_[j - 1];
-                --j;
-            }
-            one_[pos] = col;
-            ++one_size_;
-        }
-
-        void remove(size_t col, size_t pos)
-        {
-            //std::cerr << "remove(" << col << "," << pos << ")" << std::endl;
-            while (pos < one_size_ - 1)
-            {
-                one_[pos] = one_[pos + 1];
-                ++pos;
-            }
-            --one_size_;
-        }
-
-        bool add(size_t col)
-        {
-            if (one_size_ > 0 && col <= one_[one_size_ - 1]) return false;
-            append(col);
-            return true;
-        }
-
-        //public:
-
-        void set_row(const int* first_col, int col_count) 
-        {
-            if (col_count > (int)one_cap_)
-            {
-                one_cap_ = col_count;
-                delete [] one_;
-                one_ = new uint32_t [ one_cap_ ];
-            }
-            one_size_ = 0;
-            for (const int* it = first_col;
-                 it != first_col + col_count;
-                 ++it)
-            {
-                one_[one_size_] = *it;
-                ++one_size_;
-            }
-            std::sort(one_, one_ + one_size_);
-        }
-
-        void set_row(const std::vector<size_t>& columns)
-        {
-            if (columns.size() > one_cap_)
-            {
-                one_cap_ = columns.size();
-                delete [] one_;
-                one_ = new uint32_t [ one_cap_ ];
-            }
-            one_size_ = 0;
-            for (auto& col: columns)
-            {
-                one_[one_size_] = col;
-                ++one_size_;
-            }
-            std::sort(one_, one_ + one_size_);
-        }
-
-        ISparseRow::xor_status xor(size_t col)
-        {
-            // Note that we must keep columns in one_ sorted.
-            // one_ = 2 3 4 9 10
-            // one_size_ = 5
-            // Case (i) xor(3)
-            // Case (ii) xor(6)
-            // Case (iii) xor(11)
-            // stop search when one_[i] >= col
-            const int inc = default_inc;
-            //if (col < 0L) return ISparseRow::XOR_FAILED;
-
-            // Optimisation, check for append first, since
-            // we're likely to do this often.
-            if (one_size_ && col > one_[one_size_ - 1])
-            {
-                append(col, inc);
-                return ISparseRow::XOR_ADDED;
-            }
-
-            uint32_t* pos = std::lower_bound(one_, one_ + one_size_, col);
-            //size_t* pos = std::lower_bound(one_, one_ + one_size_, col);
-            size_t i = static_cast<long int>(pos - one_);
-            // i is now the position for col in one_
-            if (i >= one_size_)
-            {
-                append(col, inc);
-                return ISparseRow::XOR_ADDED;
-            }
-
-            if (one_[i] == col)
-            {
-                remove(col, i);
-                return ISparseRow::XOR_REMOVED;
-            }
-
-            insert(col, i, inc);
+            append(col, inc);
             return ISparseRow::XOR_ADDED;
         }
-        // NOTE: this is an optimisation - only call add(col) if you know that
-        // (a) enough space is already allocated for the row
-        // (b) the columns are being added in the correct order
-        ISparseRow::xor_status add_next(size_t col)
+
+        uint32_t* pos = std::lower_bound(one_, one_ + one_size_, col);
+        //size_t* pos = std::lower_bound(one_, one_ + one_size_, col);
+        size_t i = static_cast<long int>(pos - one_);
+        // i is now the position for col in one_
+        if (i >= one_size_)
         {
-            one_[one_size_] = col;
-            ++one_size_;
+            append(col, inc);
             return ISparseRow::XOR_ADDED;
         }
+
+        if (one_[i] == col)
+        {
+            remove(col, i);
+            return ISparseRow::XOR_REMOVED;
+        }
+
+        insert(col, i, inc);
+        return ISparseRow::XOR_ADDED;
+    }
+    // NOTE: this is an optimisation - only call add(col) if you know that
+    // (a) enough space is already allocated for the row
+    // (b) the columns are being added in the correct order
+    ISparseRow::xor_status add_next(size_t col)
+    {
+        one_[one_size_] = col;
+        ++one_size_;
+        return ISparseRow::XOR_ADDED;
+    }
 public:
-        const_iterator begin() const
-        {
-            return SparseRowIterator(one_);
-        }
-        const_iterator end() const
-        {
-            return SparseRowIterator(one_ + one_size_);
-        }
+    const_iterator begin() const
+    {
+        return SparseRowIterator(one_);
+    }
+    const_iterator end() const
+    {
+        return SparseRowIterator(one_ + one_size_);
+    }
 private:
-        size_t size() const
-        {
-            return one_size_;
-        }
-        size_t memory_usage()
-        {
-            size_t s = sizeof(*this);
-            s += one_cap_ * sizeof(uint32_t);
-            //s += one_cap_ * sizeof(long int);
-            return s;
-        }
-    private:
-        uint32_t* one_;
-        size_t one_size_;
-        size_t one_cap_;
+    size_t size() const
+    {
+        return one_size_;
+    }
+    size_t memory_usage()
+    {
+        size_t s = sizeof(*this);
+        s += one_cap_ * sizeof(uint32_t);
+        //s += one_cap_ * sizeof(long int);
+        return s;
+    }
+private:
+    uint32_t* one_;
+    size_t one_size_;
+    size_t one_cap_;
 };
 
 #include "FileBasedSparseMatrix.h"
@@ -744,263 +744,312 @@ void kernel(std::vector<BitMatrix64>& M, BitMatrix64& kerM);
 
 class ISparseMatrix
 {
-    public:
-        virtual ~ISparseMatrix() {}
-        virtual void set_size(int rows, int cols) = 0;
-        virtual void clear() = 0;
-        virtual size_t rows() const = 0;
-        virtual size_t cols() const = 0;
-        virtual ISparseRow::xor_status xor(size_t row, size_t col) = 0;
-        virtual void set_row(size_t row, const std::vector<size_t>& columns) = 0;
-        virtual void set_row(size_t row, const int* first_col, int col_count) = 0;
-        virtual ISparseRow::const_iterator begin(long int i) const = 0;
-        virtual ISparseRow::const_iterator end(long int i) const = 0;
-        virtual size_t row_size(long int i) const = 0;
-        virtual void removeEmptyRows() = 0;
-        virtual void clear_row(long int row) = 0;
-        virtual void set_cols() = 0;
-        virtual void set_write_row_count(bool write) = 0;
+public:
+    virtual ~ISparseMatrix() {}
+    virtual void set_size(int rows, int cols) = 0;
+    virtual void clear() = 0;
+    virtual size_t rows() const = 0;
+    virtual size_t cols() const = 0;
+    virtual ISparseRow::xor_status xor(size_t row, size_t col) = 0;
+    virtual void set_row(size_t row, const std::vector<size_t>& columns) = 0;
+    virtual void set_row(size_t row, const int* first_col, int col_count) = 0;
+    virtual ISparseRow::const_iterator begin(long int i) const = 0;
+    virtual ISparseRow::const_iterator end(long int i) const = 0;
+    virtual size_t row_size(long int i) const = 0;
+    virtual void removeEmptyRows() = 0;
+    virtual void clear_row(long int row) = 0;
+    virtual void set_cols() = 0;
+    virtual void set_write_row_count(bool write) = 0;
 };
 
 //#define FILE_BASED_SPARSE_MATRIX 1
 
 class SparseMatrix : public ISparseMatrix
 {
-    public:
-        SparseMatrix() 
-            : rows_(0), allocated_rows_(0), cols_(0), sparse_row_(0), write_row_count_(true)
+public:
+    SparseMatrix()
+        : rows_(0), allocated_rows_(0), cols_(0), sparse_row_(0), write_row_count_(true)
 #ifdef FILE_BASED_SPARSE_MATRIX
-              ,first_row_allocated_on_disc_(-1), fbsrm_(0), max_rows_in_memory_(2000000)
+        ,first_row_allocated_on_disc_(-1), fbsrm_(0), max_rows_in_memory_(2000000)
 #endif
-        {}
-        SparseMatrix(int rows, int cols = 0) 
-            : rows_(rows), cols_(cols), write_row_count_(true)
+    {}
+    SparseMatrix(int rows, int cols = 0)
+        : rows_(rows), cols_(cols), write_row_count_(true)
 #ifdef FILE_BASED_SPARSE_MATRIX
-              ,first_row_allocated_on_disc_(-1), fbsrm_(0), max_rows_in_memory_(2000000)
+        ,first_row_allocated_on_disc_(-1), fbsrm_(0), max_rows_in_memory_(2000000)
 #endif
-        {
-            allocate();
-        }
+    {
+        allocate();
+    }
 #ifdef FILE_BASED_SPARSE_MATRIX
-        void set_max_rows_in_memory(size_t max_rows_in_memory)
-        {
-            max_rows_in_memory_ = max_rows_in_memory;
-        }
+    void set_max_rows_in_memory(size_t max_rows_in_memory)
+    {
+        max_rows_in_memory_ = max_rows_in_memory;
+    }
 #endif
-        ~SparseMatrix()
-        {
-            if (sparse_row_)
-            {
-                for (size_t row = 0; row < rows_; row++)
-                {
-                    delete sparse_row_[row];
-                }
-                delete [] sparse_row_;
-            }
-#ifdef FILE_BASED_SPARSE_MATRIX
-            delete fbsrm_;
-#endif
-        }
-
-        void set_size(int rows, int cols)
-        {
-            this->clear();
-            rows_ = rows;
-            cols_ = cols;
-            allocate();
-        }
-
-        void clear()
+    ~SparseMatrix()
+    {
+        if (sparse_row_)
         {
             for (size_t row = 0; row < rows_; row++)
             {
                 delete sparse_row_[row];
             }
             delete [] sparse_row_;
-            sparse_row_ = 0;
-            rows_ = 0;
-            allocated_rows_ = 0;
-            cols_ = 0;
+        }
 #ifdef FILE_BASED_SPARSE_MATRIX
-            delete fbsrm_;
-            fbsrm_ = 0;
-            first_row_allocated_on_disc_ = -1;
+        delete fbsrm_;
 #endif
-        }
-        size_t rows() const
-        {
-            return rows_;
-        }
-        size_t cols() const
-        {
-            return cols_;
-        }
+    }
 
-        ISparseRow::xor_status xor(size_t row, size_t col)
+    void set_size(int rows, int cols)
+    {
+        this->clear();
+        rows_ = rows;
+        cols_ = cols;
+        allocate();
+    }
+
+    void clear()
+    {
+        for (size_t row = 0; row < rows_; row++)
         {
-            //if (row < 0) return SparseRow::XOR_FAILED;
-            extend(row + 1);
-            //ISparseRow::xor_status rc = sparse_row_[row]->xor(col);
-            ISparseRow::xor_status rc;
+            delete sparse_row_[row];
+        }
+        delete [] sparse_row_;
+        sparse_row_ = 0;
+        rows_ = 0;
+        allocated_rows_ = 0;
+        cols_ = 0;
 #ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
-            {
-                rc = fbsrm_->row(row).xor(col);
-            }
-            else
+        delete fbsrm_;
+        fbsrm_ = 0;
+        first_row_allocated_on_disc_ = -1;
 #endif
-            {
-                rc = sparse_row_[row]->xor(col);
-            }
-            if (SparseRow::XOR_ADDED == rc)
-            {
-                if (col + 1 > cols_) cols_ = col + 1;
-            }
-            return rc;
+    }
+    size_t rows() const
+    {
+        return rows_;
+    }
+    size_t cols() const
+    {
+        return cols_;
+    }
+
+    ISparseRow::xor_status xor(size_t row, size_t col)
+    {
+        //if (row < 0) return SparseRow::XOR_FAILED;
+        extend(row + 1);
+        //ISparseRow::xor_status rc = sparse_row_[row]->xor(col);
+        ISparseRow::xor_status rc;
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
+        {
+            rc = fbsrm_->row(row).xor(col);
+        }
+        else
+#endif
+        {
+            rc = sparse_row_[row]->xor(col);
+        }
+        if (SparseRow::XOR_ADDED == rc)
+        {
+            if (col + 1 > cols_) cols_ = col + 1;
+        }
+        return rc;
+    }
+
+    void set_row(size_t row, const int* first_col, int col_count)
+    {
+        extend(row + 1);
+        int highest_col = -1;
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
+        {
+            fbsrm_->set_row(row, first_col, col_count);
+            highest_col = fbsrm_->row(row).highest_column();
+        }
+        else
+#endif
+        {
+            sparse_row_[row]->set_row(first_col, col_count);
+            highest_col = sparse_row_[row]->highest_column();
         }
 
-        void set_row(size_t row, const int* first_col, int col_count)
+        if (col_count)
         {
-            extend(row + 1);
-            int highest_col = -1;
-#ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
-            {
-                fbsrm_->set_row(row, first_col, col_count);
-                highest_col = fbsrm_->row(row).highest_column();
-            }
-            else
-#endif
-            {
-                sparse_row_[row]->set_row(first_col, col_count);
-                highest_col = sparse_row_[row]->highest_column();
-            }
+            if (highest_col + 1 > (int)cols_) cols_ = highest_col + 1;
+        }
+    }
 
-            if (col_count)
-            {
-                if (highest_col + 1 > (int)cols_) cols_ = highest_col + 1;
-            }
+    void set_row(size_t row, const std::vector<size_t>& columns)
+    {
+        extend(row + 1);
+        int highest_col = -1;
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
+        {
+            fbsrm_->set_row(row, columns);
+            highest_col = sparse_row_[row]->highest_column();
+        }
+        else
+#endif
+        {
+            sparse_row_[row]->set_row(columns);
+            highest_col = sparse_row_[row]->highest_column();
         }
 
-        void set_row(size_t row, const std::vector<size_t>& columns)
+        if (!columns.empty())
         {
-            extend(row + 1);
-            int highest_col = -1;
-#ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
-            {
-                fbsrm_->set_row(row, columns);
-                highest_col = sparse_row_[row]->highest_column();
-            }
-            else
-#endif
-            {
-                sparse_row_[row]->set_row(columns);
-                highest_col = sparse_row_[row]->highest_column();
-            }
+            if (highest_col + 1 > (int)cols_) cols_ = highest_col + 1;
+        }
+    }
 
-            if (!columns.empty())
+    //friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size = 0, bool clear_A = false);
+    friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size, bool clear_A);
+    friend std::ostream& operator<<(std::ostream& os, const SparseMatrix& A);
+    friend std::istream& operator>>(std::istream& is, SparseMatrix& A);
+
+    ISparseRow::const_iterator begin(long int i) const
+    {
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
+        {
+            return fbsrm_->row(i).begin();
+        }
+#endif
+
+        return sparse_row_[i]->begin();
+    }
+
+    ISparseRow::const_iterator end(long int i) const
+    {
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
+        {
+            return fbsrm_->row(i).end();
+        }
+#endif
+
+        return sparse_row_[i]->end();
+    }
+
+    size_t row_size(long int i) const
+    {
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
+        {
+            return fbsrm_->row(i).size();
+        }
+#endif
+        if (!sparse_row_ || !sparse_row_[i]) return 0;
+        return sparse_row_[i]->size();
+    }
+
+    void copy_row(long int i, ISparseRow& copy_of_row) const
+    {
+#ifdef FILE_BASED_SPARSE_MATRIX
+        if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
+        {
+            fbsrm_->row(i).copy(copy_of_row);
+            return;
+        }
+#endif
+        if (sparse_row_ && sparse_row_[i])
+        {
+            for (auto it = sparse_row_[i]->begin();
+                    it != sparse_row_[i]->end();
+                    ++it)
             {
-                if (highest_col + 1 > (int)cols_) cols_ = highest_col + 1;
+                copy_of_row.add_next(*it);
             }
         }
+    }
 
-        //friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size = 0, bool clear_A = false);
-        friend void transpose(const SparseMatrix& A, SparseMatrix& A_t, long int max_row_size, bool clear_A);
-        friend std::ostream& operator<<(std::ostream& os, const SparseMatrix& A);
-        friend std::istream& operator>>(std::istream& is, SparseMatrix& A);
-
-        ISparseRow::const_iterator begin(long int i) const
-        {
+    void removeEmptyRows();
+    void clear_row(long int row)
+    {
 #ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
-            {
-                return fbsrm_->row(i).begin();
-            }
-#endif
-
-            return sparse_row_[i]->begin();
+        if (first_row_allocated_on_disc_ >= 0 && row >= first_row_allocated_on_disc_)
+        {
+            fbsrm_->row(row).clear();
+            return;
         }
+#endif
+        sparse_row_[row]->clear();
+    }
 
-        ISparseRow::const_iterator end(long int i) const
+    size_t memory_usage(const char* s = "");
+
+    void compress();
+    void set_cols();
+    void read(MemoryMappedFile& is);
+
+    void set_write_row_count(bool write)
+    {
+        write_row_count_ = write;
+    }
+
+private:
+    SparseMatrix(const SparseMatrix& sm);
+    SparseMatrix& operator=(const SparseMatrix& sm);
+    bool operator==(const SparseMatrix& A) const;
+    bool operator!=(const SparseMatrix& A) const;
+
+    void allocate()
+    {
+        allocated_rows_ = 2 * rows_;
+        sparse_row_ = new ISparseRow* [ allocated_rows_ ];
+        for (size_t row = 0; row < rows_; row++)
         {
 #ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
+            try
             {
-                return fbsrm_->row(i).end();
-            }
-#endif
-
-            return sparse_row_[i]->end();
-        }
-
-        size_t row_size(long int i) const
-        {
-#ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
-            {
-                return fbsrm_->row(i).size();
-            }
-#endif
-            if (!sparse_row_ || !sparse_row_[i]) return 0;
-            return sparse_row_[i]->size();
-        }
-
-        void copy_row(long int i, ISparseRow& copy_of_row) const
-        {
-#ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && i >= first_row_allocated_on_disc_)
-            {
-                fbsrm_->row(i).copy(copy_of_row);
-                return;
-            }
-#endif
-            if (sparse_row_ && sparse_row_[i])
-            {
-                for (auto it = sparse_row_[i]->begin();
-                     it != sparse_row_[i]->end();
-                     ++it)
+                if (first_row_allocated_on_disc_ >= 0)
                 {
-                    copy_of_row.add_next(*it);
+                    sparse_row_[row] = 0;
+                }
+                else
+#endif
+                {
+#ifdef FILE_BASED_SPARSE_MATRIX
+                    if (row >= max_rows_in_memory_)
+                    {
+                        allocate_fbsrm(row);
+                    }
+                    else
+#endif
+                    {
+                        sparse_row_[row] = new SparseRow(20L);
+                    }
                 }
             }
-        }
-
-        void removeEmptyRows();
-        void clear_row(long int row)
-        {
 #ifdef FILE_BASED_SPARSE_MATRIX
-            if (first_row_allocated_on_disc_ >= 0 && row >= first_row_allocated_on_disc_)
+            catch (const std::bad_alloc& e)
             {
-                fbsrm_->row(row).clear();
-                return;
+                allocate_fbsrm(row);
             }
+        }
 #endif
-            sparse_row_[row]->clear();
-        }
+    }
 
-        size_t memory_usage(const char* s = "");
-
-        void compress();
-        void set_cols();
-        void read(MemoryMappedFile& is);
-
-        void set_write_row_count(bool write)
+    void extend(size_t rows)
+    {
+        const long int extra = 1000L;
+        if (rows > allocated_rows_)
         {
-            write_row_count_ = write;
+            allocated_rows_ = rows + extra;
+            ISparseRow** new_row = new ISparseRow* [ allocated_rows_ ];
+            for (size_t row = 0; row < rows_; ++row)
+            {
+                new_row[row] = sparse_row_[row];
+            }
+            delete [] sparse_row_;
+            sparse_row_ = new_row;
         }
-
-    private:
-        SparseMatrix(const SparseMatrix& sm);
-        SparseMatrix& operator=(const SparseMatrix& sm);
-        bool operator==(const SparseMatrix& A) const;
-        bool operator!=(const SparseMatrix& A) const;
-
-        void allocate()
+        if (rows > rows_)
         {
-            allocated_rows_ = 2 * rows_;
-            sparse_row_ = new ISparseRow* [ allocated_rows_ ];
-            for (size_t row = 0; row < rows_; row++)
+            for (size_t row = rows_; row < rows; ++row)
             {
 #ifdef FILE_BASED_SPARSE_MATRIX
                 try
@@ -1020,7 +1069,7 @@ class SparseMatrix : public ISparseMatrix
                         else
 #endif
                         {
-                            sparse_row_[row] = new SparseRow(20L);
+                            sparse_row_[row] = new SparseRow;
                         }
                     }
                 }
@@ -1031,101 +1080,52 @@ class SparseMatrix : public ISparseMatrix
                 }
             }
 #endif
+            rows_ = rows;
         }
-
-        void extend(size_t rows)
-        {
-            const long int extra = 1000L;
-            if (rows > allocated_rows_)
-            {
-                allocated_rows_ = rows + extra;
-                ISparseRow** new_row = new ISparseRow* [ allocated_rows_ ];
-                for (size_t row = 0; row < rows_; ++row)
-                {
-                    new_row[row] = sparse_row_[row];
-                }
-                delete [] sparse_row_;
-                sparse_row_ = new_row;
-            }
-            if (rows > rows_)
-            {
-                for (size_t row = rows_; row < rows; ++row)
-                {
-#ifdef FILE_BASED_SPARSE_MATRIX
-                    try
-                    {
-                        if (first_row_allocated_on_disc_ >= 0)
-                        {
-                            sparse_row_[row] = 0;
-                        }
-                        else
-#endif
-                        {
-#ifdef FILE_BASED_SPARSE_MATRIX
-                            if (row >= max_rows_in_memory_)
-                            {
-                                allocate_fbsrm(row);
-                            }
-                            else
-#endif
-                            {
-                                sparse_row_[row] = new SparseRow;
-                            }
-                        }
-                    }
-#ifdef FILE_BASED_SPARSE_MATRIX
-                    catch (const std::bad_alloc& e)
-                    {
-                        allocate_fbsrm(row);
-                    }
-                }
-#endif
-                rows_ = rows;
-            }
-        }
+    }
 
 #ifdef FILE_BASED_SPARSE_MATRIX
-        void allocate_fbsrm(size_t row)
+    void allocate_fbsrm(size_t row)
+    {
+        if (first_row_allocated_on_disc_ < 0)
         {
-            if (first_row_allocated_on_disc_ < 0)
-            {
-                first_row_allocated_on_disc_ = row;
-                std::string fbsrm_filename(get_tmp_filename());
-                fbsrm_ = new FileBasedSparseRowManager(fbsrm_filename, first_row_allocated_on_disc_, 1000);
-                sparse_row_[row] = 0;
-            }
+            first_row_allocated_on_disc_ = row;
+            std::string fbsrm_filename(get_tmp_filename());
+            fbsrm_ = new FileBasedSparseRowManager(fbsrm_filename, first_row_allocated_on_disc_, 1000);
+            sparse_row_[row] = 0;
         }
+    }
 #endif
-       
+
 #ifdef FILE_BASED_SPARSE_MATRIX
-        static std::string get_tmp_filename()
-        {
+    static std::string get_tmp_filename()
+    {
 #ifdef WIN32
-            char str[MAX_PATH];
-            ::GetTempFileName(".", "", 0, str);
-            std::cerr << "get_tmp_filename() : str = " << str << std::endl;
-            return str;
+        char str[MAX_PATH];
+        ::GetTempFileName(".", "", 0, str);
+        std::cerr << "get_tmp_filename() : str = " << str << std::endl;
+        return str;
 #else
-            uuid_t uuid;
-            uuid_generate(uuid);
-            char uuid_str[37];
-            uuid_unparse(uuid, uuid_str);
-            return std::string(uuid_str);
+        uuid_t uuid;
+        uuid_generate(uuid);
+        char uuid_str[37];
+        uuid_unparse(uuid, uuid_str);
+        return std::string(uuid_str);
 #endif
-        }
+    }
 #endif
 
-        void read(std::istream& is);
-        void parse(const std::string& str, size_t row);
-        size_t rows_;
-        size_t allocated_rows_;
-        size_t cols_;
-        ISparseRow** sparse_row_;
-        bool write_row_count_;
+    void read(std::istream& is);
+    void parse(const std::string& str, size_t row);
+    size_t rows_;
+    size_t allocated_rows_;
+    size_t cols_;
+    ISparseRow** sparse_row_;
+    bool write_row_count_;
 #ifdef FILE_BASED_SPARSE_MATRIX
-        long int first_row_allocated_on_disc_;
-        FileBasedSparseRowManager* fbsrm_;
-        size_t max_rows_in_memory_;
+    long int first_row_allocated_on_disc_;
+    FileBasedSparseRowManager* fbsrm_;
+    size_t max_rows_in_memory_;
 #endif
 };
 inline SparseRowIterator& SparseRowIterator::operator++()
@@ -1162,108 +1162,108 @@ inline void SparseRow::compress()
 class SparseMatrix3;
 class SparseMatrix2
 {
-        friend class SparseMatrix3;
-    public:
-        SparseMatrix2();
-        SparseMatrix2(size_t allocated_points);
-        SparseMatrix2(const std::string& file, bool split = false);
-        SparseMatrix2(const std::vector<long int>& points, long int rows, long int columns);
-        ~SparseMatrix2();
-        void add_row(size_t row, const std::string& str);
-        void add_row(size_t row, size_t num_cols, char* s);
-        friend void multiply(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AX);
-        friend void multiply(const SparseMatrix2& A, const BitMatrix64& X, BitMatrix64& AX);
-        friend void multiplyt(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AtX);
-        friend void multiplyt(const SparseMatrix2& A, const BitMatrix64& X, BitMatrix64& AtX);
-        friend void sym_multiply(const SparseMatrix2& B, const BitMatrix& X, BitMatrix& AX);
-        friend void sym_multiply(const SparseMatrix2& B, const BitMatrix64& X, BitMatrix64& AX);
-        friend std::ostream& operator<<(std::ostream& os, const SparseMatrix2& sm);
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
-        void clear();
-        size_t rows() const
-        {
-            return rows_;
-        }
-        size_t cols() const
-        {
-            return cols_;
-        }
+    friend class SparseMatrix3;
+public:
+    SparseMatrix2();
+    SparseMatrix2(size_t allocated_points);
+    SparseMatrix2(const std::string& file, bool split = false);
+    SparseMatrix2(const std::vector<long int>& points, long int rows, long int columns);
+    ~SparseMatrix2();
+    void add_row(size_t row, const std::string& str);
+    void add_row(size_t row, size_t num_cols, char* s);
+    friend void multiply(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AX);
+    friend void multiply(const SparseMatrix2& A, const BitMatrix64& X, BitMatrix64& AX);
+    friend void multiplyt(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AtX);
+    friend void multiplyt(const SparseMatrix2& A, const BitMatrix64& X, BitMatrix64& AtX);
+    friend void sym_multiply(const SparseMatrix2& B, const BitMatrix& X, BitMatrix& AX);
+    friend void sym_multiply(const SparseMatrix2& B, const BitMatrix64& X, BitMatrix64& AX);
+    friend std::ostream& operator<<(std::ostream& os, const SparseMatrix2& sm);
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
+    void clear();
+    size_t rows() const
+    {
+        return rows_;
+    }
+    size_t cols() const
+    {
+        return cols_;
+    }
 
-    private:
-        void write_dense_row(const std::string& str);
-        std::fstream* dense_file_;
-        bool split_;
-        bool parse(const std::string& str, size_t row);
-        void extend(size_t row, size_t cols);
-        size_t rows_;
-        size_t cols_;
-        size_t allocated_points_;
-        size_t dense_rows_;
-        typedef long int Point;
-        mutable Point* set_points_;
-        Point* next_point_;
-        Point* last_point_;
-        friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
-        friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
+private:
+    void write_dense_row(const std::string& str);
+    std::fstream* dense_file_;
+    bool split_;
+    bool parse(const std::string& str, size_t row);
+    void extend(size_t row, size_t cols);
+    size_t rows_;
+    size_t cols_;
+    size_t allocated_points_;
+    size_t dense_rows_;
+    typedef long int Point;
+    mutable Point* set_points_;
+    Point* next_point_;
+    Point* last_point_;
+    friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
+    friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
 };
 
 class SparseMatrix4
 {
-        friend class SparseMatrix3;
-        friend std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm);
-    public:
-        SparseMatrix4();
-        SparseMatrix4(size_t rows, size_t allocated_points);
-        SparseMatrix4(const std::string& file, bool split = false);
-        SparseMatrix4(const std::vector<long int>& points, long int rows, long int columns);
-        ~SparseMatrix4();
-        void add_row(size_t row, const std::string& str);
-        void add_row(size_t row, size_t num_cols, char* s);
-        friend void multiply(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AX);
-        friend void multiply(const SparseMatrix4& A, const BitMatrix64& X, BitMatrix64& AX);
-        friend void multiplyt(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AtX);
-        friend void multiplyt(const SparseMatrix4& A, const BitMatrix64& X, BitMatrix64& AtX);
-        friend void sym_multiply(const SparseMatrix4& B, const BitMatrix& X, BitMatrix& AX);
-        friend void sym_multiply(const SparseMatrix4& B, const BitMatrix64& X, BitMatrix64& AX);
-        friend std::ostream& operator<<(std::ostream& os, const SparseMatrix4& sm);
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
-        void clear();
-        size_t rows() const
-        {
-            return rows_;
-        }
-        size_t cols() const
-        {
-            return cols_;
-        }
+    friend class SparseMatrix3;
+    friend std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm);
+public:
+    SparseMatrix4();
+    SparseMatrix4(size_t rows, size_t allocated_points);
+    SparseMatrix4(const std::string& file, bool split = false);
+    SparseMatrix4(const std::vector<long int>& points, long int rows, long int columns);
+    ~SparseMatrix4();
+    void add_row(size_t row, const std::string& str);
+    void add_row(size_t row, size_t num_cols, char* s);
+    friend void multiply(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AX);
+    friend void multiply(const SparseMatrix4& A, const BitMatrix64& X, BitMatrix64& AX);
+    friend void multiplyt(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AtX);
+    friend void multiplyt(const SparseMatrix4& A, const BitMatrix64& X, BitMatrix64& AtX);
+    friend void sym_multiply(const SparseMatrix4& B, const BitMatrix& X, BitMatrix& AX);
+    friend void sym_multiply(const SparseMatrix4& B, const BitMatrix64& X, BitMatrix64& AX);
+    friend std::ostream& operator<<(std::ostream& os, const SparseMatrix4& sm);
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
+    void clear();
+    size_t rows() const
+    {
+        return rows_;
+    }
+    size_t cols() const
+    {
+        return cols_;
+    }
 
-    private:
-        void write_dense_row(const std::string& str);
-        std::fstream* dense_file_;
-        bool split_;
-        bool parse(const std::string& str, size_t row);
-        void extend(long int cols);
-        long int rows_;
-        long int rows_added_;
-        long int cols_;
-        long int allocated_points_;
-        size_t dense_rows_;
-        typedef long int Point;
-        mutable Point* set_points_;
-        Point* next_point_;
-        Point* last_point_;
-        friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
-        friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
+private:
+    void write_dense_row(const std::string& str);
+    std::fstream* dense_file_;
+    bool split_;
+    bool parse(const std::string& str, size_t row);
+    void extend(long int cols);
+    long int rows_;
+    long int rows_added_;
+    long int cols_;
+    long int allocated_points_;
+    size_t dense_rows_;
+    typedef long int Point;
+    mutable Point* set_points_;
+    Point* next_point_;
+    Point* last_point_;
+    friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
+    friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
 };
 
 // Sparse matrix implementation where the columns are divided into stripes in order
@@ -1271,57 +1271,57 @@ class SparseMatrix4
 //
 class SparseMatrix3
 {
-    public:
-        SparseMatrix3(const std::string& file, bool split = false);
-        ~SparseMatrix3();
-        void clear();
-        size_t rows() const
-        {
-            //return rows_ + very_dense_count_;
-            return rows_;
-        }
-        size_t cols() const
-        {
-            return cols_;
-        }
+public:
+    SparseMatrix3(const std::string& file, bool split = false);
+    ~SparseMatrix3();
+    void clear();
+    size_t rows() const
+    {
+        //return rows_ + very_dense_count_;
+        return rows_;
+    }
+    size_t cols() const
+    {
+        return cols_;
+    }
 
-        friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
-        friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
-        friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
-        friend void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX);
-        friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX);
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
-        void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
+    friend void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX);
+    friend void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX);
+    friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
+    friend void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX);
+    friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX);
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
+    void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, const BitMatrix64& R, BitMatrix64& BL, BitMatrix64& BR) const;
 
-        friend std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm);
+    friend std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm);
 
-    private:
-        size_t rows_;
-        size_t cols_;
-        // The really sparse rows
-        SparseMatrix2* sparse_;
-        size_t sparse_count_;
-        size_t sparse_allocated_points_;
+private:
+    size_t rows_;
+    size_t cols_;
+    // The really sparse rows
+    SparseMatrix2* sparse_;
+    size_t sparse_count_;
+    size_t sparse_allocated_points_;
 
-        // Rows which are fairly sparse, divided into a number of stripes
-        std::vector<SparseMatrix4* > medium_;
-        size_t medium_count_;
-        size_t number_of_stripes_;
-        std::unordered_map<size_t, size_t> stripe_allocated_points_;
+    // Rows which are fairly sparse, divided into a number of stripes
+    std::vector<SparseMatrix4* > medium_;
+    size_t medium_count_;
+    size_t number_of_stripes_;
+    std::unordered_map<size_t, size_t> stripe_allocated_points_;
 
-        // Very dense rows which are to be processed later
-        std::fstream* very_dense_file_;
-        size_t very_dense_count_;
+    // Very dense rows which are to be processed later
+    std::fstream* very_dense_file_;
+    size_t very_dense_count_;
 
-    private:
-        bool parse(const std::string& str, size_t row);
-        bool parse_for_sizing(const std::string& str, long int row);
-        void write_very_dense_row(const std::string& str);
-        void add_to_medium_dense_rows(long int num_cols, char* s);
-        void add_to_size_of_medium_dense_rows(long int num_cols, char* s);
-        void extend_dense(size_t stripe);
+private:
+    bool parse(const std::string& str, size_t row);
+    bool parse_for_sizing(const std::string& str, long int row);
+    void write_very_dense_row(const std::string& str);
+    void add_to_medium_dense_rows(long int num_cols, char* s);
+    void add_to_size_of_medium_dense_rows(long int num_cols, char* s);
+    void extend_dense(size_t stripe);
 };
 #endif

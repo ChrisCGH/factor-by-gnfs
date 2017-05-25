@@ -82,9 +82,9 @@ long int r; \
 
 inline long int modasm(long long int ll, long int p)
 {
-   long int r;
-   modasm1(ll, p, r);
-   return r;
+    long int r;
+    modasm1(ll, p, r);
+    return r;
 }
 
 #ifndef WIN32
@@ -147,9 +147,9 @@ long int r; \
 
 inline long int mulmodasm(long int l1, long int l2, long int p)
 {
-   long int r;
-   mulmodasm2(l1, l2, p, r);
-   return r;
+    long int r;
+    mulmodasm2(l1, l2, p, r);
+    return r;
 }
 #ifdef DEFINEDWIN32
 #undef WIN32

@@ -15,7 +15,7 @@ public:
     SieveError(long int p, long int e, long int f, long int c, long int d,
                std::pair<long int, long int> e1,
                std::pair<long int, long int> e2)
-            : p_(p), e_(e), f_(f), c_(c), d_(d), e1_(e1), e2_(e2)
+        : p_(p), e_(e), f_(f), c_(c), d_(d), e1_(e1), e2_(e2)
     {}
     friend std::ostream& operator<<(std::ostream& os, SieveError& se)
     {
@@ -121,14 +121,14 @@ long int inverse(long int a, long int modulus)
         return (modulus - ps1);
 }
 #endif
-    bool verbose()
+bool verbose()
+{
+    if (std::getenv("LATTICE_SIEVER_VERBOSE"))
     {
-        if (std::getenv("LATTICE_SIEVER_VERBOSE"))
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
+}
 }
 //LatticeSiever::IPrimeFactorList* LatticeSiever::SieveCacheItem::pf_list_ = 0;
 LatticeSiever::PrimeFactorList* LatticeSiever::SieveCacheItem::pf_list_ = 0;
@@ -200,15 +200,15 @@ long int max_total_relations = 25000L;
 };
 
 LatticeSiever::LatticeSiever(const std::string& config_file)
-        : relfile_(0), alg_factor_base_(0), rat_factor_base_(0),
-        potentially_smooth_point_(0), number_potentially_smooth_(0),
-        c1_(std::make_pair<long int, long int>(0L, 0L)),
-        c2_(std::make_pair<long int, long int>(0L, 0L)),
-        c_region_(Point<double>(min_c, min_d), Point<double>(max_c, min_d), Point<double>(min_c, max_d)),
-        rat_pf_list_(rat_pf_list_size, fixed_sieve_array_),
-        alg_pf_list_(alg_pf_list_size, fixed_sieve_array_),
-        sieveCache_(fixed_sieve_array_, sieve_bit_array_),
-        timer_("sieve.tim")
+    : relfile_(0), alg_factor_base_(0), rat_factor_base_(0),
+      potentially_smooth_point_(0), number_potentially_smooth_(0),
+      c1_(std::make_pair<long int, long int>(0L, 0L)),
+      c2_(std::make_pair<long int, long int>(0L, 0L)),
+      c_region_(Point<double>(min_c, min_d), Point<double>(max_c, min_d), Point<double>(min_c, max_d)),
+      rat_pf_list_(rat_pf_list_size, fixed_sieve_array_),
+      alg_pf_list_(alg_pf_list_size, fixed_sieve_array_),
+      sieveCache_(fixed_sieve_array_, sieve_bit_array_),
+      timer_("sieve.tim")
 {
     SieveConfig config(config_file.c_str());
     if (debug_)
@@ -320,7 +320,7 @@ long int LatticeSiever::check_interval1(long int q)
             std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
             std::cerr << "1. (c,d) = (" << cd.first << "," << cd.second << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff0 = " << cutoff0 << std::endl;
         }
-        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_)) 
+        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
         {
             if ((int)(*sieve_ptr) >= cutoff0)
             {
@@ -337,7 +337,7 @@ long int LatticeSiever::check_interval1(long int q)
                     std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
                     std::cerr << "2. (c,d) = (" << cd.first << "," << cd.second << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
                 }
-    
+
                 if ((int)(*sieve_ptr) > cutoff)
                 {
                     if (debug_)
@@ -350,7 +350,7 @@ long int LatticeSiever::check_interval1(long int q)
                     ++potential;
                 }
             }
-    
+
             if (val < 0)
             {
                 sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
@@ -389,7 +389,7 @@ void LatticeSiever::check_interval2()
     int cutoff0 = 0;
     while (sieve_ptr < sieve_end_ptr)
     {
-        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_)) 
+        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
         {
             if ((int)(*sieve_ptr) >= cutoff0)
             {
@@ -637,7 +637,7 @@ void LatticeSiever::remove_sieved_factors1()
     PrimeFactor* pf_iter = alg_pf_list_.begin();
     while (pf_iter != alg_pf_list_.end())
     {
-        if (!sieve_bit_array_.isSet(pf_iter->offset_)) 
+        if (!sieve_bit_array_.isSet(pf_iter->offset_))
         {
             PotentiallySmoothPoint* psp = psp_hash_table.find((pf_iter->offset_ + fixed_sieve_array_));
             if (psp)
@@ -1092,7 +1092,7 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     std::pair<int32_t, int32_t> e2;
     generate_ef_lattice(iter->get_p(), r1, e1, e2);
     int32_t e12 = e1.first + (e1.second << c_span_bits);
-    int32_t e22 = e2.first + (e2.second << c_span_bits); 
+    int32_t e22 = e2.first + (e2.second << c_span_bits);
 
     Parallelogram E_region(c_region_, e1, e2);
     int32_t e_min = static_cast<int32_t>(std::ceil(E_region.min_x()));
@@ -1441,8 +1441,8 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
         std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
         std::cout << " (" << running_average_relations_per_second << "," << (int)running_average_relations_per_hour << "," << (int)running_average_relations_per_day << "),";
     }
-    if (prev_running_average_relations_per_day > 0 && 
-        running_average_relations_per_day / prev_running_average_relations_per_day < 0.5)
+    if (prev_running_average_relations_per_day > 0 &&
+            running_average_relations_per_day / prev_running_average_relations_per_day < 0.5)
     {
         std::cerr << "!!!! relation rate just reduced" << std::endl;
         std::cerr << "prev_total_sieving_time = " << prev_total_sieving_time << std::endl;
@@ -1452,11 +1452,11 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     }
     prev_running_average_relations_per_day = running_average_relations_per_day;
     prev_total_sieving_time = total_sieving_time_;
-   
-   if (verbose()) 
-   {
-       std::cout << std::endl;
-   }
+
+    if (verbose())
+    {
+        std::cout << std::endl;
+    }
 }
 
 // Lattice sieving for NFS

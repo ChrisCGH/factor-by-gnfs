@@ -214,7 +214,7 @@ public:
         CPPUNIT_ASSERT(c3(1) == 2);
         CPPUNIT_ASSERT(c3(2) == 3);
         CPPUNIT_ASSERT(c3(3) == 5);
-        CPPUNIT_ASSERT(c3.next()); 
+        CPPUNIT_ASSERT(c3.next());
         CPPUNIT_ASSERT(c3.next());
         CPPUNIT_ASSERT(c3.next());
         CPPUNIT_ASSERT(c3.next());

@@ -16,7 +16,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testBitMatrix64);
     CPPUNIT_TEST_SUITE_END();
 
-    public:
+public:
     void setUp()
     {
     }
@@ -27,7 +27,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
 
     void check_row_operations(FileBasedSparseRow& row)
     {
-        
+
         CPPUNIT_ASSERT(row.highest_column() == -1);
         CPPUNIT_ASSERT(row.xor(2) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 2);
@@ -41,11 +41,16 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(row.highest_column() == 10);
         CPPUNIT_ASSERT(row.size() == 5);
         auto it = row.begin();
-        CPPUNIT_ASSERT(*it == 2); ++it;
-        CPPUNIT_ASSERT(*it == 3); ++it;
-        CPPUNIT_ASSERT(*it == 4); ++it;
-        CPPUNIT_ASSERT(*it == 9); ++it;
-        CPPUNIT_ASSERT(*it == 10); ++it;
+        CPPUNIT_ASSERT(*it == 2);
+        ++it;
+        CPPUNIT_ASSERT(*it == 3);
+        ++it;
+        CPPUNIT_ASSERT(*it == 4);
+        ++it;
+        CPPUNIT_ASSERT(*it == 9);
+        ++it;
+        CPPUNIT_ASSERT(*it == 10);
+        ++it;
         CPPUNIT_ASSERT(it == row.end());
         CPPUNIT_ASSERT(row.xor(4) == ISparseRow::XOR_REMOVED);
         CPPUNIT_ASSERT(row.size() == 4);
@@ -53,18 +58,18 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(row.xor(10) == ISparseRow::XOR_REMOVED);
         CPPUNIT_ASSERT(row.size() == 3);
         CPPUNIT_ASSERT(row.highest_column() == 9);
- 
+
         for (size_t i = 0; i < 17; ++i)
         {
             CPPUNIT_ASSERT(row.xor(i + 1000) == ISparseRow::XOR_ADDED);
-        }        
+        }
         CPPUNIT_ASSERT(row.size() == 20);
         CPPUNIT_ASSERT(row.highest_column() == 1016);
         static size_t expected_row_data[] = { 2, 3, 9, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016 };
         size_t j = 0;
         for (auto it = row.begin();
-            it != row.end();
-            ++it, ++j)
+                it != row.end();
+                ++it, ++j)
         {
             CPPUNIT_ASSERT(*it == expected_row_data[j]);
         }
@@ -75,8 +80,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
         static size_t expected_row_data1[] = { 2, 3, 9, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017 };
         j = 0;
         for (auto it = row.begin();
-            it != row.end();
-            ++it, ++j)
+                it != row.end();
+                ++it, ++j)
         {
             CPPUNIT_ASSERT(*it == expected_row_data1[j]);
         }
@@ -85,8 +90,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
         row.copy(sr);
         j = 0;
         for (auto it = sr.begin();
-            it != sr.end();
-            ++it, ++j)
+                it != sr.end();
+                ++it, ++j)
         {
             CPPUNIT_ASSERT(*it == expected_row_data1[j]);
         }
@@ -141,7 +146,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT(fbsrm1.extend(109996, 50) == 17605408ull);
 
 #else
-#if 0        
+#if 0
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 20) == " << fbsrm1.extend(210001, 20) << "ull);" << std::endl;
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 50) == " << fbsrm1.extend(210001, 50) << "ull);" << std::endl;
         std::cout << "        CPPUNIT_ASSERT(fbsrm1.extend(210001, 1000) == " << fbsrm1.extend(210001, 1000) << "ull);" << std::endl;
@@ -308,7 +313,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
         sm1.removeEmptyRows();
         CPPUNIT_ASSERT(sm1.rows() == 2);
         CPPUNIT_ASSERT(sm1.cols() == 21);
-        
+
         sm1.set_cols();
         CPPUNIT_ASSERT(sm1.rows() == 2);
         CPPUNIT_ASSERT(sm1.cols() == 6);
@@ -454,8 +459,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix(100, 30));
         CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix(2000, 1000), char*);
         std::ostringstream oss;
-        oss << "32" << std::endl;       
-        oss << "32" << std::endl;       
+        oss << "32" << std::endl;
+        oss << "32" << std::endl;
         oss << "11101100011001010000111101110010" << std::endl;
         oss << "11101110111000000001010010000001" << std::endl;
         oss << "11100011100111101100111011101010" << std::endl;
@@ -508,8 +513,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", BitMatrix64(100, 30));
         CPPUNIT_ASSERT_THROW_MESSAGE("", BitMatrix64(2000, 1000), char*);
         std::ostringstream oss;
-        oss << "64" << std::endl;       
-        oss << "64" << std::endl;       
+        oss << "64" << std::endl;
+        oss << "64" << std::endl;
         oss << "1110110001100101000011110111001011101100011001010000111101110010" << std::endl;
         oss << "1110111011100000000101001000000111101110111000000001010010000001" << std::endl;
         oss << "1110001110011110110011101110101011100011100111101100111011101010" << std::endl;
@@ -591,8 +596,8 @@ class SparseMatrixTest : public CppUnit::TestFixture
 
 int main()
 {
-   CppUnit::TextUi::TestRunner runner;
-   runner.addTest(SparseMatrixTest::suite());
-   runner.run();
-   return 0;
+    CppUnit::TextUi::TestRunner runner;
+    runner.addTest(SparseMatrixTest::suite());
+    runner.run();
+    return 0;
 }
