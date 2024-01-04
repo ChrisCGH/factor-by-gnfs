@@ -1499,7 +1499,7 @@ int find_roots_over_C_q(const Polynomial<complex<FLOAT > >& P, std::vector<compl
         lambda_c = Q.evaluate(x) * Q2.evaluate(x);
         lambda = lambda / sqrt(norm(lambda_c));
         //cout << "lambda = " << lambda << endl;
-        int tries = 1000000;
+        //int tries = 1000000;
         while (!done)
         {
             // Step 3. [Initialize recursion]
@@ -1560,7 +1560,7 @@ int find_roots_over_C_q(const Polynomial<complex<FLOAT > >& P, std::vector<compl
             {
                 done = 1;
             }
-            tries--;
+            //tries--;
         }
 
         // Step 5. [Polish root]

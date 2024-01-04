@@ -327,7 +327,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
         j0_array = new short [ MAX_J0 ];
     }
     unsigned long int p_k;  // p^k
-    long int k = 0;
+    //long int k = 0;
 
     memset((char*)cont_array_data, 0, cont_array_data_size * sizeof(short));
     long int p = zpnextb(2);
@@ -336,16 +336,16 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
     while (p < MAX_SMALL_PRIME)
     {
         p_k = p;
-        k = 1;
+        //k = 1;
         int projective_root = (leading_coefficient % p == 0L);
         double logp = log((double)p);
         while (p_k < MAX_P_K)
         {
             p_k *= p;
-            k++;
+            //k++;
         }
         p_k /= p;
-        k--;
+        //k--;
         //cout << "p^k = " << p_k << endl;
 
         double prob_here = (double)p / (p_k * (p + 1.0));

@@ -1140,7 +1140,7 @@ zmulmod26(
 }
 #endif
 
-extern void *calloc();
+//extern void *calloc();
 
 /* global variables */
 
@@ -5168,7 +5168,7 @@ zexp(
    long sa;
    verylong b = (*bb);
    STATIC verylong temp = 0;
-   extern double log10();
+   //extern double log10();
 
    if (ALLOCATE && !e)
    {
@@ -7361,7 +7361,7 @@ zfread(
    register long return_value = 1;
    verylong a = *aa;
    verylong digit = &glosho[1];
-   extern double log();
+   //extern double log();
 
    if (log10rad < 0)
       log10rad = log((double)RADIX) / log((double)10);
@@ -7445,7 +7445,7 @@ zfwrite_c(
    long zeros;
    long strlen1 = (long)strlen(str1);
    long strlen2 = (long)strlen(str2);
-   extern double log();
+   //extern double log();
 
    if (log10rad < 0)
       log10rad = log((double)RADIX) / log((double)10);
@@ -7899,7 +7899,7 @@ zhsread(
    register long d = 0;
    register long anegative = 0;
    verylong a = *aa;
-   extern double log();
+   //extern double log();
 
    if (log16rad < 0)
       log16rad = log((double)RADIX) / log((double)16);
@@ -7957,7 +7957,7 @@ zsread(
    register long return_value = 1;
    verylong a = *aa;
    verylong digit = &glosho[1];
-   extern double log();
+   //extern double log();
 
    if (log10rad < 0)
       log10rad = log((double)RADIX) / log((double)10);
@@ -8029,7 +8029,7 @@ zswrite(
    long sa;
    long result;
    long zeros;
-   extern double log();
+   //extern double log();
 
    if (log10rad < 0)
       log10rad = log((double)RADIX) / log((double)10);
@@ -8649,7 +8649,7 @@ zln(
    verylong a
 )
 {
-   extern double log();
+   //extern double log();
    static double log_2 = -1.0;
    register long sa;
 
@@ -8681,7 +8681,7 @@ zlln(
    verylong a
 )
 {
-   extern double log(double);
+   //extern double log(double);
    static long double log_2 = -1.0;
    register long sa;
 
@@ -8723,7 +8723,7 @@ zslog(
    long b
 )
 {
-   extern double log();
+   //extern double log();
 
    return (zln(a) / log((double)b));
 }
@@ -8734,7 +8734,7 @@ zdlog(
    double b
 )
 {
-   extern double log();
+   //extern double log();
 
    return (zln(a) / log(b));
 }

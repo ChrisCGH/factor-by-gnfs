@@ -121,7 +121,7 @@ DOUBLE minimize_I_over_s_1(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUB
     // min_value = I(f, m, c0, c1, t, s);
     // return s;
     int done = 0;
-    int iterations = 0;
+    //int iterations = 0;
 
     while (!done)
     {
@@ -146,7 +146,7 @@ DOUBLE minimize_I_over_s_1(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUB
         last_s = s;
 
         const DOUBLE epsilon = 1.0;
-        iterations++;
+        //iterations++;
         if (s_diff < epsilon && s_delta < (DOUBLE)1.0) done = 1;
     }
     VeryLong s_vl(s);
@@ -734,7 +734,7 @@ DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE
     DOUBLE c1 = 0.0;
     DOUBLE min_value = J(f, a, b, c0, c1, t, s);
     int done = 0;
-    int iterations = 0;
+    //int iterations = 0;
 
     while (!done)
     {
@@ -758,7 +758,7 @@ DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE
         last_t = t;
 
         const DOUBLE epsilon = 1.0;
-        iterations++;
+        //iterations++;
         if (t_diff < epsilon && t_delta < 1.0) done = 1;
     }
     DOUBLE value1;
@@ -794,7 +794,7 @@ DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE
     DOUBLE min_value = I(f, a, b, c0, c1, t, s);
     //std::cout << "A. min_value = " << min_value << std::endl;
     int done = 0;
-    int iterations = 0;
+    //int iterations = 0;
 
     while (!done)
     {
@@ -820,7 +820,7 @@ DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE
         last_t = t;
 
         const DOUBLE epsilon = 1.0;
-        iterations++;
+        //iterations++;
         if (t_diff < epsilon && t_delta < (DOUBLE)1.0) done = 1;
     }
     DOUBLE value1;

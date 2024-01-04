@@ -120,7 +120,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
         if (!first_pass) adjustment = SIEVE_BOUND_ADJUSTMENT2_;
         long int a = a1;
         SIEVE_TYPE* sieve_ptr = &sieve_array_[a - min_A];
-        int count = 0;
+        //int count = 0;
         int chunk = 0;
         for (chunk = 0; chunk < cache_chunks_ && a >= first_a_[chunk]; chunk++)
         {}
@@ -210,7 +210,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
         if (!first_pass) adjustment = SIEVE_BOUND_ADJUSTMENT2_;
         long int a = a1;
         SIEVE_TYPE* sieve_ptr = &sieve_array_[a - min_A];
-        int count = 0;
+        //int count = 0;
         int chunk = 0;
         for (chunk = 0; chunk < cache_chunks_ && a >= first_a_[chunk]; chunk++)
         {}
@@ -226,7 +226,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
                 if (RESIEVE_ && SMALL_PRIME_BOUND_ > 0)
                 {
                     //std::cout << "a = " << a << ", cutoff = " << cutoff << ", c-a = " << cutoff - adjustment << ", sieve_array_[a] = " << (int)sieve_array_[a - min_A] << std::endl;
-                    count++;
+                    //count++;
                     long int p = 0;
                     long int r = 0;
                     long int br = 0;
@@ -331,7 +331,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
     if (!first_pass) adjustment = SIEVE_BOUND_ADJUSTMENT2_;
     long int a = a1;
     SIEVE_TYPE* sieve_ptr = &sieve_array_[a - min_A];
-    int count = 0;
+    //int count = 0;
     int chunk = 0;
     for (chunk = 0; chunk < cache_chunks_ && a >= first_a_[chunk]; chunk++)
     {}
@@ -354,7 +354,7 @@ int Siever::check_interval(const Polynomial<double>& f, long int L, long int LP,
             if (SMALL_PRIME_BOUND_ > 0)
             {
                 //std::cout << "a = " << a << ", cutoff = " << cutoff << ", c-a = " << cutoff - adjustment << ", sieve_array_[a] = " << (int)sieve_array_[a - min_A] << std::endl;
-                count++;
+                //count++;
                 long int p = 0;
                 long int r = 0;
                 long int br = 0;
@@ -472,7 +472,7 @@ int Siever::check_interval(int cutoff, long int a1, long int a2, long int b,
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
     if (!first_pass) adjustment = SIEVE_BOUND_ADJUSTMENT2_;
     long int a = a1;
-    int count = 0;
+    //int count = 0;
 
     while (a < a2)
     {
@@ -480,7 +480,7 @@ int Siever::check_interval(int cutoff, long int a1, long int a2, long int b,
         {
             if (SMALL_PRIME_BOUND_ > 0)
             {
-                count++;
+                //count++;
                 long int p = 0;
                 long int r = 0;
                 long int br = 0;

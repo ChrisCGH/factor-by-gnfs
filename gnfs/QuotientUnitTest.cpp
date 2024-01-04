@@ -41,7 +41,7 @@ public:
         CPPUNIT_ASSERT(q3.numerator() == 22L);
         CPPUNIT_ASSERT(q3.denominator() == 7L);
 
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Quotient<long int>(q3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Quotient<long int>(q3)));
         Quotient<long int> q4(q3);
         CPPUNIT_ASSERT(!q4.is_zero());
         CPPUNIT_ASSERT(q3 == q4);
@@ -118,7 +118,7 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", (q21 /= Quotient<long int>(0L)), std::string);
         Quotient<long int> q22(0L);
         CPPUNIT_ASSERT_THROW_MESSAGE("", (q22 /= Quotient<long int>(0L)), std::string);
-        q21 /= q21;
+        q21 /= Quotient<long int>(q21);
         CPPUNIT_ASSERT(q21 == 1L);
         Quotient<long int> q23(100L, 3L);
         q23 /= Quotient<long int>(10L, 3L);
@@ -147,7 +147,7 @@ public:
         CPPUNIT_ASSERT(q3.numerator() == VeryLong(22L));
         CPPUNIT_ASSERT(q3.denominator() == VeryLong(7L));
 
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Quotient<VeryLong>(q3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Quotient<VeryLong>(q3)));
         Quotient<VeryLong> q4(q3);
         CPPUNIT_ASSERT(!q4.is_zero());
         CPPUNIT_ASSERT(q3 == q4);
@@ -224,7 +224,7 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", (q21 /= Quotient<VeryLong>(VeryLong(0L))), std::string);
         Quotient<VeryLong> q22(VeryLong(0L));
         CPPUNIT_ASSERT_THROW_MESSAGE("", (q22 /= Quotient<VeryLong>(VeryLong(0L))), std::string);
-        q21 /= q21;
+        q21 /= Quotient<VeryLong>(q21);
         CPPUNIT_ASSERT(q21 == VeryLong(1L));
         Quotient<VeryLong> q23(VeryLong(100L), VeryLong(3L));
         q23 /= Quotient<VeryLong>(VeryLong(10L), VeryLong(3L));

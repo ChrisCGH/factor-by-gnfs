@@ -569,7 +569,7 @@ public:
     {
         if (faster_) return (vl != VeryLong(l_));
         if (fast_) return (vl != VeryLong(ll_));
-        return (vl != *this);
+        return (vl != static_cast<const VeryLong&>(*this));
     }
 
     bool operator==(const FastVeryLong& fvl) const
@@ -584,7 +584,7 @@ public:
         }
         else
         {
-            return !fvl.faster_ && !fvl.fast_ && vl_ == fvl.vl_;
+            return !fvl.faster_ && !fvl.fast_ && +vl_ == +fvl.vl_;
         }
     }
 

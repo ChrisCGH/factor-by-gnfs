@@ -17,8 +17,9 @@
 #include "gcd.h"
 #include <math.h>
 #include <set>
+#include <cmath>
 
-//#define CHECK 1
+#define CHECK 1
 
 namespace
 {
@@ -138,7 +139,7 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
         j0_array = new short [ MAX_J0 ];
     }
     unsigned long int p_k;  // p^k
-    long int k = 0;
+    //long int k = 0;
 
     memset((char*)cont_array_data, 0, cont_array_data_size * sizeof(short));
     long int p = zpnextb(2);
@@ -147,16 +148,16 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
     while (p < MAX_SMALL_PRIME)
     {
         p_k = p;
-        k = 1;
+        //k = 1;
         int projective_root = (leading_coefficient % p == 0L);
         double logp = log((double)p);
         while (p_k < MAX_P_K)
         {
             p_k *= p;
-            k++;
+            //k++;
         }
         p_k /= p;
-        k--;
+        //k--;
         //cout << "p^k = " << p_k << std::endl;
 
         double prob_here = (double)p / (p_k * (p + 1.0));
@@ -820,14 +821,20 @@ private:
             size_t slot = (-item.sum_ + 0.5) * S;
             if (slot >= S)
                 slot = S - 1;
-            //std::cout << "Looking for match in slot " << slot << " for item : ";
-            //item.display(degree, flist1_mu_length);
+            if (debug)
+            {
+                std::cout << "Looking for match in slot " << slot << " for item : ";
+                item.display(degree, flist1_mu_length);
+            }
             flist_list& fl = hash_table_[slot];
-            //if (fl.item_count_ > 0)
-            //{
-            //std::cout << "Slot " << slot << std::endl;
-            //fl.display();
-            //}
+            if (debug)
+            {
+                if (fl.item_count_ > 0)
+                {
+                    std::cout << "Slot " << slot << std::endl;
+                    fl.display();
+                }
+            }
             for (flist_item* it = fl.item_;
                     it != fl.item_ + fl.item_count_;
                     ++it)
@@ -895,21 +902,21 @@ private:
 
     typedef flist_hash_table_<number_of_slots, max_items> flist_hash_table;
 
-    static void make_flist_hash_table(size_t u, long int offset, const std::vector<std::vector<double> >& f, double base, long int d, flist_hash_table& hash_table);
-
     typedef std::vector<flist_item> flist_collection;
 
     static double modZ(double d)
     {
         double f = ::fmod(d, 1.0);
         if (::fabs(f) < 0.5)
+        {
             return f;
+        }
         if (f >= 0.5)
+        {
             return f - 1.0;
+        }
         return f + 1.0;
     }
-
-    static void make_flist(size_t u, const std::vector<std::vector<double> >& f, double base, long int d, flist_collection& flist);
 
     static VeryLong calculate_c_d_1(const VeryLong& N,
                                     const VeryLong& c_d,
@@ -977,132 +984,6 @@ private:
     mutable int count_;
     mutable bool debug_;
 };
-
-void PolynomialPairCalculator::make_flist_hash_table(size_t u, long int offset, const std::vector<std::vector<double> >& f, double base, long int d, flist_hash_table& hash_table)
-{
-    std::vector<long int> mu(u, 0L);
-
-    double sum = base;
-    for (size_t i = 0; i < mu.size(); ++i)
-    {
-        sum += f[i + offset][0];
-    }
-
-    size_t index = 0;
-    hash_table.add(flist_item(modZ(sum), index));
-    size_t j = 0;
-    while (j < mu.size())
-    {
-        j = 0;
-        bool carry = false;
-        do
-        {
-            if (mu[j] < (long int)f[j + offset].size())
-            {
-                sum -= f[j + offset][mu[j]];
-            }
-            mu[j]++;
-            carry = false;
-            if (mu[j] >= d)
-            {
-                mu[j] = 0;
-                sum += f[j + offset][mu[j]];
-                carry = true;
-                ++j;
-            }
-            else
-            {
-                if (mu[j] < (long int)f[j + offset].size())
-                {
-                    sum += f[j + offset][mu[j]];
-                }
-            }
-        }
-        while (j < mu.size() && carry);
-        if (j < mu.size())
-        {
-            ++index;
-            bool valid = true;
-            for (size_t k = 0; k < mu.size(); ++k)
-            {
-                if (mu[k] >= (long int)f[k + offset].size())
-                {
-                    valid = false;
-                    break;
-                }
-            }
-            if (valid)
-            {
-                hash_table.add(flist_item(modZ(sum), index));
-            }
-        }
-    }
-}
-
-void PolynomialPairCalculator::make_flist(size_t u, const std::vector<std::vector<double> >& f, double base, long int d, flist_collection& flist)
-{
-    // iterate throught each mu. Each element of mu must be a number between 0 and d-1. If the ith element of mu is 0 <= j < d then it means we pick the jth
-    // root corresponding to the ith prime dividing a.
-    std::vector<long int> mu(u, 0L);
-
-    double sum = base;
-    for (size_t i = 0; i < mu.size(); ++i)
-    {
-        sum += f[i][0];
-    }
-
-    size_t index = 0;
-    flist.push_back(flist_item(modZ(sum), index));
-    size_t j = 0;
-    while (j < mu.size())
-    {
-        j = 0;
-        bool carry = false;
-        do
-        {
-            if (mu[j] < (long int)f[j].size())
-            {
-                sum -= f[j][mu[j]];
-            }
-            mu[j]++;
-            carry = false;
-            if (mu[j] >= d)
-            {
-                mu[j] = 0;
-                sum += f[j][mu[j]];
-                carry = true;
-                ++j;
-            }
-            else
-            {
-                if (mu[j] < (long int)f[j].size())
-                {
-                    sum += f[j][mu[j]];
-                }
-            }
-        }
-        while (j < mu.size() && carry);
-        // here if j >= mu.size() i.e. we've finished
-        // or if carry is false, i.e. we're at the next mu
-        if (j < mu.size())
-        {
-            ++index;
-            bool valid = true;
-            for (size_t k = 0; k < mu.size(); ++k)
-            {
-                if (mu[k] >= (long int)f[k].size())
-                {
-                    valid = false;
-                    break;
-                }
-            }
-            if (valid)
-            {
-                flist.push_back(flist_item(modZ(sum), index));
-            }
-        }
-    }
-}
 
 VeryLong PolynomialPairCalculator::calculate_c_d_1(const VeryLong& N,
         const VeryLong& c_d,
@@ -1353,7 +1234,7 @@ void PolynomialPairCalculator::XYZ::make_f()
     //  i,0
     //
     // e    = c                         - c              mod a
-    //  i,j    d-1,(0,...,0,j,0,....,0)    d-1,(0,...,0)
+    //  i,j    d-1,(0,...,0,j,0,....,0)    d-1,(0,...,0)             i > 0, j > 0
     //                      ^
     //                      i-th set to j
     //
@@ -1482,33 +1363,39 @@ void PolynomialPairCalculator::XYZ::make_flists()
     {
         --u;
     }
-
     flist1_mu_length_ = u;
-    if (ppc_.debug_)
-    {
-        std::cout << "flist1_mu_length = " << flist1_mu_length_ << std::endl;
-    }
+    flist2_mu_length_ = primes_to_combine_ - u;
+
+    long int d_u = std::pow(ppc_.d_, u);
+    long int d_l_u = std::pow(ppc_.d_, primes_to_combine_ - u);
     flist1_.clear();
-    flist1_.reserve(ppc_.d_powers_[flist1_mu_length_]);
-    PolynomialPairCalculator::make_flist(flist1_mu_length_, f_, f0_, ppc_.d_, flist1_);
+    flist1_.reserve(ppc_.d_powers_[u]);
+    flist2_.clear();
+    for (size_t n = 0; n < d_u; ++n)
+    {
+        double sum = f0_;
+        for (size_t i = 0; i < u; ++i)
+        {
+            sum += f_[i][(n / ppc_.d_powers_[i]) % ppc_.d_];
+        }
+        flist1_.push_back(flist_item(modZ(sum), n));
+    }
+    for (size_t n = 0; n < d_l_u; ++n)
+    {
+        double sum = 0.0;
+        for (size_t i = 0; i < primes_to_combine_ - u; ++i)
+        {
+            sum += f_[u + i][(n / ppc_.d_powers_[i]) % ppc_.d_];
+        }
+        flist2_.add(flist_item(modZ(sum), n));
+    }
     if (ppc_.debug_)
     {
         std::cout << "flist1 : " << std::endl;
         for (auto& i1: flist1_)
         {
-            i1.display(ppc_.d_, flist1_mu_length_);
+            i1.display(ppc_.d_, u);
         }
-    }
-    flist2_mu_length_ = primes_to_combine_ - u;
-    if (ppc_.debug_)
-    {
-        std::cout << "flist2_mu_length = " << flist2_mu_length_ << std::endl;
-    }
-
-    flist2_.clear();
-    PolynomialPairCalculator::make_flist_hash_table(flist2_mu_length_, u, f_, 0.0, ppc_.d_, flist2_);
-    if (ppc_.debug_)
-    {
         std::cout << "flist2 : " << std::endl;
         flist2_.display();
     }
@@ -1516,7 +1403,7 @@ void PolynomialPairCalculator::XYZ::make_flists()
 
 void PolynomialPairCalculator::XYZ::find_good_mu()
 {
-    const double fudge(100.0);
+    const double fudge(10.0);
     double epsilon = ppc_.c_d_2_max_.get_double() / m0_.get_double();
     epsilon /= fudge;
     if (ppc_.debug_)
@@ -1910,14 +1797,11 @@ bool PolynomialPairCalculator::generate(long int degree)
     // find b, such that c_d b^d = N mod a
     double ALS_MAX = Skewed_config.MAX_ALS();
     double min_als_max = 1000.0;
-    // const long int d = 5L;
     d_ = degree;
     // Some bounds
-    const long int small_prime_limit = 1500L;
-    const long int large_prime_min = 7490000L;
-    //const long int prime_limit = 400L;
-    const size_t max_primes_to_combine = 4;
-    // const size_t max_primes_to_combine = 6;
+    long int small_prime_limit = Skewed_config.SMALL_PRIME_LIMIT();
+    long int large_prime_min = Skewed_config.LARGE_PRIME_MIN();
+    size_t max_primes_to_combine = Skewed_config.MAX_PRIMES_TO_COMBINE();
     long int d_power(1L);
     for (size_t i = 0; i < max_primes_to_combine; ++i)
     {
@@ -1990,15 +1874,17 @@ bool PolynomialPairCalculator::generate(long int degree)
     // for each p in primes_, roots_mod_p_ is a vector containing the d roots of f(X) mod p
 
     long int p = VeryLong::firstPrime();
-    p = VeryLong::nextPrime();
+    //p = VeryLong::nextPrime();
     while (p < small_prime_limit)
     {
-        if (c_d_ % p != 0L)
+        if (p % d_ == 1L && c_d_ % p != 0L)
+        //if (c_d_ % p != 0L)
         {
             std::vector<LongModular> roots;
             find_roots_mod_p<VeryLong, long int, LongModular>(poly_, p, roots);
             //std::cout << "p = " << p << ", roots.size() = " << roots.size() << std::endl;
-            if (roots.size() > 0)
+            //if (roots.size() > 0)
+            if (static_cast<long int>(roots.size()) == d_)
             {
                 primes_.push_back(p);
                 roots_mod_p_.push_back(roots);
@@ -2010,15 +1896,21 @@ bool PolynomialPairCalculator::generate(long int degree)
     p = zpnextb(large_prime_min);
     while (p < large_prime_min + 200)
     {
-        if (c_d_ % p != 0L)
+        if (p % d_ == 1L && c_d_ % p != 0L)
+        //if (c_d_ % p != 0L)
         {
             std::vector<LongModular> roots;
             find_roots_mod_p<VeryLong, long int, LongModular>(poly_, p, roots);
             std::cout << "p = " << p << ", roots.size() = " << roots.size() << std::endl;
-            if (roots.size() > 0)
+            //if (roots.size() > 0)
+            if (static_cast<long int>(roots.size()) == d_)
             {
                 primes_.push_back(p);
                 roots_mod_p_.push_back(roots);
+            }
+            else if (static_cast<long int>(roots.size()) == 1L)
+            {
+                extra_primes_.push_back(p);
             }
         }
         p = zpnext();
@@ -2064,6 +1956,11 @@ bool PolynomialPairCalculator::generate(long int degree)
     long int primes_to_combine = std::min(max_primes_to_combine, primes_.size());
     for (Combinations combination(primes_to_combine, primes_.size()); !combination.done(); combination.next())
     {
+        if (debug_)
+        {
+            std::cout << "Combination : ";
+            combination.display();
+        }
         XYZ xyz(*this, combination, primes_to_combine);
         xyz.generate(top_polys_);
 
@@ -2285,7 +2182,7 @@ bool PolynomialPairCalculator::generate(long int degree)
         {
             VeryLong test_b = new_b;
             Polynomial<VeryLong> test_poly = iter->p;
-            std::cout << "Examining " << test_poly << std::endl;
+            std::cout << "Examining " << test_poly << ", (I_F_S = " << iter->I_F_S << ", alpha = " << iter->alpha << ", E_F = " << iter->I_F_S + iter->alpha << ")" << std::endl;
             VeryLong test_s = iter->s;
             VeryLong translated_b;
             VeryLong translated_s;
@@ -2381,7 +2278,7 @@ void skewed_polynomial_selection()
         23, 29, 31, 37, 41
     };
     int finished = 0;
-    long int try_count = 0;
+    //long int try_count = 0;
     //long int s; // best s for skewed region of integration
     VeryLong s_vl;
     Polynomial<VeryLong> min_poly;
@@ -2417,15 +2314,13 @@ void skewed_polynomial_selection()
         {
             if (Skewed_config.NON_MONIC())
             {
-                VeryLong aa(zero);
-                VeryLong bb(zero);
                 PolynomialPairCalculator ppc(N, ad, Output_file, Skewed_config.DEBUG());
                 ppc.generate(degree);
             }
             else
             {
                 VeryLong tmp = N / ad;
-                try_count++;
+                //try_count++;
                 // calculate x = (N - a_d m^d) / m^(d-1)
                 // then integer part is a_(d-1) and fractional part ~ a_(d-2) / m
                 VeryLong m;
@@ -2497,7 +2392,7 @@ void skewed_polynomial_selection()
                     }
                     else ad = new_ad;
 
-                    try_count = 0;
+                    //try_count = 0;
                     // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
                     // but only for degree 5 and above.
                     std::vector<VeryLong> ca_coeff;

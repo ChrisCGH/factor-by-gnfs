@@ -886,7 +886,7 @@ bool SQUFOF(long long int N, long int& factor)
         }
         if (!skip)
         {
-            int g_count = 0;
+            //int g_count = 0;
             infop->make_g();
 #ifdef DEBUG
             std::cout << "g = " << infop->g_ << std::endl;
@@ -895,7 +895,7 @@ bool SQUFOF(long long int N, long int& factor)
             {
                 //std::cout << "6. About to call reduce(), infop->g_.C_ = " << infop->g_.C() << std::endl;
                 infop->g_.reduce();
-                ++g_count;
+                //++g_count;
 #ifdef DEBUG
                 std::cout << g_count << " : g = " << infop->g_ << " (reducing)" << std::endl;
 #endif
@@ -997,7 +997,7 @@ bool SQUFOF(long long int N, long int& factor)
                 long int b1 = infop->g_.B();
                 //std::cout << "9. About to call reduce(), infop->g_.C_ = " << infop->g_.C() << std::endl;
                 infop->g_.reduce();
-                ++g_count;
+                //++g_count;
 #ifdef DEBUG
                 std::cout << g_count << " : g = " << infop->g_ << std::endl;
 #endif

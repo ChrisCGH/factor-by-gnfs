@@ -134,7 +134,7 @@ void FactorBase::read(const char* filename)
 
     // read factor base
     int32_t p = 0;
-    long int count = 0;
+    //long int count = 0;
     int fb_done = 0;
     static char* buffer = 0;
     static std::string::size_type buflen = 0;
@@ -153,11 +153,11 @@ void FactorBase::read(const char* filename)
         else if (buffer[0])
         {
             add(buffer);
-            count++;
+            //count++;
         }
     }
     // read inert primes
-    int icount = 0;
+    //int icount = 0;
     while (getline(file, str))
     {
         // format:
@@ -165,7 +165,7 @@ void FactorBase::read(const char* filename)
         if ("" != str)
         {
             p = atol(str.c_str());
-            icount++;
+            //icount++;
             inert_primes_.push_back(p);
         }
     }

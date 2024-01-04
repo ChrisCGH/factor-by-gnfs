@@ -1,4 +1,3 @@
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -12,6 +11,18 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/ui/text/TestRunner.h>
 
+template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
+template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
+template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
+template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
+template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
+template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
+template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
+template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
+template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
+template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
+template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
+template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
 class AlgebraicNumberTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE( AlgebraicNumberTest );
@@ -671,7 +682,7 @@ public:
 
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4"));
         AlgebraicNumber an3 = AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4");
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(an3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (AlgebraicNumber_in_O_pO(an3)));
         AlgebraicNumber_in_O_pO an4(an3);
         AlgebraicNumber_in_O_pO an5(0, 4);
         CPPUNIT_ASSERT(an4 == an5);
@@ -937,7 +948,7 @@ public:
 
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4"));
         AlgebraicNumber an3 = AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4");
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(an3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (AlgebraicNumber_in_O_pO_1(an3)));
         AlgebraicNumber_in_O_pO_1 an4(an3);
         AlgebraicNumber_in_O_pO_1 an5(0, 4);
         CPPUNIT_ASSERT(an4 == an5);
@@ -1171,8 +1182,8 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), VeryLong(2L)), std::string);
         CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), AlgebraicNumber(2L)), std::string);
         CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(AlgebraicNumber(2L)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(mvl), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(van), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(mvl)), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(van)), std::string);
         CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(mvl, VeryLong(1L)), std::string);
 
         NumberField nf(f, "nf.fb.dat");
@@ -1187,7 +1198,7 @@ public:
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Ideal(Matrix<VeryLong>(5, 5)));
         std::vector<AlgebraicNumber> van1;
         van1.push_back(AlgebraicNumber(2L));
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Ideal(van1));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Ideal(van1)));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Ideal(Matrix<VeryLong>(5, 5), VeryLong(1L)));
 
         Ideal i1(VeryLong(23L), VeryLong(19L));

@@ -22,7 +22,7 @@ public:
     ~VeryLongModular();
     int operator== (const VeryLongModular& vl) const;
     int operator== (const VeryLong& vl) const;
-    int operator== (const long int li) const
+    bool operator== (const long int li) const
     {
         return (*this == VeryLong(li));
     }

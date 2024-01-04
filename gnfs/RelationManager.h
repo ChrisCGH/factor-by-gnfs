@@ -321,7 +321,7 @@ private:
     long int prime_count_;
 };
 
-struct RelationSetWeight : public std::binary_function<long int, long int, double>
+struct RelationSetWeight
 {
     double operator() (long int rs1, long int rs2)
     {

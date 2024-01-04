@@ -23,7 +23,7 @@ private:
     {
         SIEVE_MAX_VALUE = 65535
     };
-#elsif UNSIGNED_SIEVE
+#elif UNSIGNED_SIEVE
     typedef unsigned char SIEVE_TYPE;
     typedef short BIGGER_THAN_SIEVE_TYPE;
     enum

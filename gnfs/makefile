@@ -173,6 +173,21 @@ cleantestfactor:
 	rm -rf $(OUTPUTDIR)/testfactor $(TESTFACTOR_OBJS)
 
 
+FACTOR_POLYNO_CPP_SRCS = factorpoly.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp Logger.cpp
+
+include $(FACTOR_POLYNO_CPP_SRCS:.cpp=.d)
+
+FACTOR_POLYNO_OBJS = $(FACTOR_POLYNO_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
+
+factorpoly : $(OUTPUTDIR) $(OUTPUTDIR)/factorpoly
+	
+
+$(OUTPUTDIR)/factorpoly : $(FACTOR_POLYNO_OBJS) 
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/factorpoly $(FACTOR_POLYNO_OBJS) $(TEST_LIBS)
+
+cleanfactorpoly: 
+	rm -rf $(OUTPUTDIR)/factorpoly $(FACTOR_POLYNO_OBJS)
+
 POLYNOMIAL_UT_CPP_SRCS = PolynomialUnitTest.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp Logger.cpp
 
 include $(POLYNOMIAL_UT_CPP_SRCS:.cpp=.d)

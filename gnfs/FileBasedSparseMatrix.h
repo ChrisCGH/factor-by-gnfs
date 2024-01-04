@@ -242,11 +242,11 @@ public:
             extend_file(index);
         }
         extend(r, col_count);
-        if (r == 8001489)
-        {
-            int x = 0;
-            ++x;
-        }
+        //if (r == 8001489)
+        //{
+        //    int x = 0;
+        //    ++x;
+        //}
         FileBasedSparseRow sr(*this, mmf_, r, row_index_[index]);
         for (const int* it = first_col;
                 it != first_col + col_count;

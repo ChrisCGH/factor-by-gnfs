@@ -1,4 +1,3 @@
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
 #include "NumberField.h"
 #include "AlgebraicNumber.h"
 #include "AlgebraicNumber_in_O_pO.h"
@@ -13,6 +12,20 @@
 #include "RootConfig.h"
 #include <string>
 #include <ostream>
+
+template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
+template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
+template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
+template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
+template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
+template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
+template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
+template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
+template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
+template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
+template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
+template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
+
 namespace
 {
 long long strtoll(const char* str)
@@ -113,7 +126,7 @@ int main(int argc, char** argv)
             {
                 std::cerr << "Problem: bad format in line " << line << ":" << std::endl;
                 std::cerr << "[" << buf << "]" << std::endl;
-                return false;
+                return 0;
             }
             *c = '\0';
             c++;

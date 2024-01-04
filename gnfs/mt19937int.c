@@ -54,8 +54,8 @@ static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
 /* Initializing the array with a seed */
 void
-sgenrand(seed)
-unsigned long seed;
+sgenrand(unsigned long seed)
+//unsigned long seed;
 {
    int i;
 
@@ -79,8 +79,8 @@ unsigned long seed;
 /*  (seed_array[0]&UPPER_MASK), seed_array[1], ..., seed_array[N-1]  */
 /* can take any values except all zeros.                             */
 void
-lsgenrand(seed_array)
-unsigned long seed_array[];
+lsgenrand(long seed_array[])
+// long seed_array[];
 /* the length of seed_array[] must be at least N */
 {
    int i;

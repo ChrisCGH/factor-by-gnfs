@@ -123,7 +123,7 @@ bool RelationSetManager::check(long int rs)
     return true;
 }
 
-struct xorer : public std::binary_function<size_t, size_t, ISparseRow::xor_status>
+struct xorer
 {
     xorer(SparseMatrix& sm): sm_(sm) {}
     ISparseRow::xor_status operator() (size_t row, size_t col) const

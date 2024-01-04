@@ -43,7 +43,7 @@ public:
         CPPUNIT_ASSERT(p.coefficient(0) == 0L);
 
         long int li(10L);
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Polynomial<long int>(li));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Polynomial<long int>(li)));
         Polynomial<long int> p1(li);
         CPPUNIT_ASSERT(p1.deg() == 0);
         CPPUNIT_ASSERT(p1.content() == 10L);
@@ -67,7 +67,7 @@ public:
         c3.push_back(2);
         c3.push_back(4);
         c3.push_back(6);
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Polynomial<long int>(c3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Polynomial<long int>(c3)));
         Polynomial<long int> p3(c3);
         CPPUNIT_ASSERT(p3.deg() == 2);
         CPPUNIT_ASSERT(p3.content() == 2L);
@@ -75,7 +75,7 @@ public:
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", p3.coefficient(3));
         CPPUNIT_ASSERT(p3.coefficient(3) == 0L);
 
-        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", Polynomial<long int>(p3));
+        CPPUNIT_ASSERT_NO_THROW_MESSAGE("", (Polynomial<long int>(p3)));
         Polynomial<long int> p4(p3);
         CPPUNIT_ASSERT(p4.deg() == 2);
         CPPUNIT_ASSERT(p4.content() == 2L);

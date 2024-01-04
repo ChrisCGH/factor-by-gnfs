@@ -275,7 +275,7 @@ public:
 
         return x;
     }
-    int operator==(const AlgebraicNumber_in_O_pO_& a)
+    int operator==(const AlgebraicNumber_in_O_pO_& a) const
     {
         if (this == &a) return 1;
         for (int i = 0; i < AlgebraicNumber::degree(); i++)
@@ -284,7 +284,7 @@ public:
         }
         return 1;
     }
-    int operator!=(const AlgebraicNumber_in_O_pO_& a)
+    int operator!=(const AlgebraicNumber_in_O_pO_& a) const
     {
         return !(*this == a);
     }

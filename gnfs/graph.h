@@ -9,7 +9,7 @@
 #include <typeinfo>
 
 template <class T>
-struct Weight : public std::binary_function<T, T, double>
+struct Weight
 {
     double operator() (const T& t1, const T& t2) const
     {
@@ -216,7 +216,7 @@ public:
     }
 
 private:
-    struct Node_less : public std::binary_function <Node*, Node*, bool>
+    struct Node_less
     {
         bool operator() (const Node* _Left, const Node* _Right) const
         {
@@ -224,7 +224,7 @@ private:
         }
     };
 #if 0
-    struct Node_less_set : public std::binary_function <Node*, Node*, bool>
+    struct Node_less_set
     {
         bool operator()(const Node* _Left, const Node* _Right) const
         {

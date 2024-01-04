@@ -30,6 +30,9 @@ public:
         PRINTING_BOUND_ = 47.0;
         NON_MONIC_ = true;
         DEBUG_ = false;
+        MAX_PRIMES_TO_COMBINE_ = 6;
+        SMALL_PRIME_LIMIT_ = 1500L;
+        LARGE_PRIME_MIN_ = 7490000L;
 
         std::ifstream config_file(filename, std::ios::in);
         if (config_file)
@@ -124,6 +127,18 @@ public:
                     if (s == "true") DEBUG_ = true;
                     else DEBUG_ = false;
                 }
+                else if (str.find("MAX_PRIMES_TO_COMBINE = ") == 0)
+                {
+                    MAX_PRIMES_TO_COMBINE_ = std::atol(s.c_str());
+                }
+                else if (str.find("SMALL_PRIME_LIMIT = ") == 0)
+                {
+                    SMALL_PRIME_LIMIT_ = std::atol(s.c_str());
+                }
+                else if (str.find("LARGE_PRIME_MIN = ") == 0)
+                {
+                    LARGE_PRIME_MIN_ = std::atol(s.c_str());
+                }
             }
         }
 
@@ -204,6 +219,18 @@ public:
     {
         return DEBUG_;
     }
+    size_t MAX_PRIMES_TO_COMBINE() const
+    {
+        return MAX_PRIMES_TO_COMBINE_;
+    }
+    long int SMALL_PRIME_LIMIT() const
+    {
+        return SMALL_PRIME_LIMIT_;
+    }
+    long int LARGE_PRIME_MIN() const
+    {
+        return LARGE_PRIME_MIN_;
+    }
 
     void display() const
     {
@@ -227,6 +254,9 @@ public:
         std::cout << "NON_MONIC = " << NON_MONIC() << std::endl;
         std::cout << "DEBUG = " << DEBUG() << std::endl;
         std::cout << "OUTPUT_FILE = " << OUTPUT_FILE() << std::endl;
+        std::cout << "MAX_PRIMES_TO_COMBINE = " << MAX_PRIMES_TO_COMBINE() << std::endl;
+        std::cout << "SMALL_PRIME_LIMIT = " << SMALL_PRIME_LIMIT() << std::endl;
+        std::cout << "LARGE_PRIME_MIN = " << LARGE_PRIME_MIN() << std::endl;
     }
 
 private:
@@ -249,6 +279,9 @@ private:
     double GOOD_M_CUTOFF_;
     bool NON_MONIC_;
     bool DEBUG_;
+    size_t MAX_PRIMES_TO_COMBINE_;
+    long int SMALL_PRIME_LIMIT_;
+    long int LARGE_PRIME_MIN_;
 };
 
 #endif
