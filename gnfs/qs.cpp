@@ -761,7 +761,7 @@ bool linear_algebra_stage(unsigned long long int N, long int& factor)
                 std::stringstream ss;
                 ss << "multiplicity of p = " << factor_base[j].p_ << " (" << prime_count[j] << ") is not even in dependency " << c << std::endl;
                 std::cerr << ss.str() << std::endl;
-                throw ss.str().c_str();
+                throw "multiplicity of p is not even in dependency";
             }
             else
             {

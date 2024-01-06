@@ -226,7 +226,7 @@ void transpose(const SparseMatrix& A, SparseMatrix& transA, long int max_row_siz
                         if (row >= transA.max_rows_in_memory_)
 #endif
                         {
-                            transA.xor(row, i);
+                            transA.do_xor(row, i);
                         }
                     }
                 }
@@ -934,7 +934,7 @@ void kernel(std::vector<BitMatrix>& M, BitMatrix& kerM)
                 {
                     for (auto& r: M)
                     {
-                        r.xor(i, j);
+                        r.do_xor(i, j);
                     }
                 }
             }
@@ -944,7 +944,7 @@ void kernel(std::vector<BitMatrix>& M, BitMatrix& kerM)
                 {
                     for (auto& r: M)
                     {
-                        r.xor(i, j);
+                        r.do_xor(i, j);
                     }
                 }
             }

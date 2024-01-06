@@ -54,14 +54,14 @@ public:
     }
     VeryLong(long long l)
     {
-        int negative = 0;
+        volatile int negative = 0;
         if (l < 0)
         {
             l = -l;
             negative = 1;
         }
-        uint32_t q = static_cast<uint32_t>(l >> 32);
-        uint32_t r = static_cast<uint32_t>(l & 0x00000000ffffffff);
+        volatile uint32_t q = static_cast<uint32_t>(l >> 32);
+        volatile uint32_t r = static_cast<uint32_t>(l & 0x00000000ffffffff);
         mpz_init_set_ui(vl_, q);
         mpz_mul_2exp(vl_, vl_, 32);
         mpz_add_ui(vl_, vl_, r);

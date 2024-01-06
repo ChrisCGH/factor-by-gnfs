@@ -217,8 +217,8 @@ private:
     bool writeable_;
     enum { DEFAULT_VIEW_SIZE = 32 * 1024 * 1024};
 };
+
 #else
-#ifdef WIN32
 namespace
 {
 void report_error(const std::string& msg, const std::string& extra_msg = std::string(""))
@@ -447,7 +447,6 @@ private:
     bool writeable_;
     enum { DEFAULT_VIEW_SIZE = 32 * 1024 * 1024};
 };
-#endif
 #endif
 
 inline bool getline(MemoryMappedFile& mmfile, std::string& str)

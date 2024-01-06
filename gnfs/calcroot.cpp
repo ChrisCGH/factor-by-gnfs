@@ -57,7 +57,7 @@ int readRatRelations(const std::string& filename, RelationList& ratRelations)
             long long int aa = strtoll(buf);
             long int b = std::atol(c);
             //Relation* rel = new Relation(aa.get_long_long(), b);
-            Relation* rel = new Relation(aa, b);
+            Relation_t* rel = new Relation_t(aa, b);
             std::unordered_map<long int, int> primes;
             //std::cout << "(aa,b) = (" << aa << "," << b << ")" << std::endl;
             // read factors from file, if any

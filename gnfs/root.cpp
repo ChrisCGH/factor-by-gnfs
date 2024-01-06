@@ -243,7 +243,7 @@ void addNormalPrimeFactorisation(const VeryLong& a,
     }
 }
 
-void addRelationFactorisation(const Relation& rel, int sign,
+void addRelationFactorisation(const Relation_t& rel, int sign,
                               PrimeIdealDecomposition& primeIdealProduct)
 {
     VeryLong a = rel.a;
@@ -306,7 +306,7 @@ void producePrimeDecomposition(const RelationList& relationNumer,
     //int firstTime = 1;
     for (auto& rn: relationNumer)
     {
-        Relation* rel = rn;
+        Relation_t* rel = rn;
         //cout << "Adding (" << rel->a << "," << rel->b << ")" << endl;
         addRelationFactorisation(*rel, 1, primeIdealProduct);
     }
@@ -314,7 +314,7 @@ void producePrimeDecomposition(const RelationList& relationNumer,
     {
         for (auto& rd: relationDenom)
         {
-            Relation* rel = rd;
+            Relation_t* rel = rd;
             addRelationFactorisation(*rel, -1, primeIdealProduct);
         }
     }
@@ -327,7 +327,7 @@ void producePrimeDecomposition(const RelationList& relationNumer,
 //----------------------------------------------------------------------------
 // valuation of F(a,b) at a prime p
 
-int e_p_r(Relation& rel, long int p, long int v, long int r)
+int e_p_r(Relation_t& rel, long int p, long int v, long int r)
 {
     //long int a = (rel.a % VeryLong(p)).get_long();
     long int a = rel.a % p;
@@ -410,7 +410,7 @@ double complexity(const RelationList& relations,
     std::pair<long int, long int> a_pair(0L, 0L);
     if (j < (int)e.size())
     {
-        Relation* rel = relations[j];
+        Relation_t* rel = relations[j];
         for (auto& p1: rel->primes_)
         {
             long int p = p1.first;
@@ -444,7 +444,7 @@ double complexity(const RelationList& relations,
     }
     if (k >= 0)
     {
-        Relation* rel = relations[k];
+        Relation_t* rel = relations[k];
         for (auto& p1: rel->primes_)
         {
             long int p = p1.first;
@@ -487,7 +487,7 @@ int printRelations(const RelationList& relations)
 {
     for (size_t i = 0; i < relations.size(); i++)
     {
-        Relation* rel = relations[i];
+        Relation_t* rel = relations[i];
         VeryLong a = rel->a;
         long int b = rel->b;
         if (Debug)
@@ -566,7 +566,7 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
             c++;
             long long int aa = strtoll(buf);
             long int b = std::atol(c);
-            Relation* rel = new Relation(aa, b);
+            Relation_t* rel = new Relation_t(aa, b);
             VeryLong bb(b);
             VeryLong f = min_poly.evaluate_homogeneous(aa, bb);
             if (Debug)
@@ -633,7 +633,7 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
                         primes[p] = -1;
                     }
                 }
-                // copy primes into Relation pointed to by rel
+                // copy primes into Relation_t pointed to by rel
                 rel->primes_.reserve(primes.size());
                 for (auto& p1: primes)
                 {
@@ -1881,7 +1881,7 @@ void readDump(const char* filename,
             }
             *d = '\0';
             long int b = std::atol(tmp);
-            Relation* rel = new Relation(a, b);
+            Relation_t* rel = new Relation_t(a, b);
             relationNumer.push_back(rel);
             std::getline(dumpfile, str);
         }
@@ -1911,7 +1911,7 @@ void readDump(const char* filename,
             }
             *d = '\0';
             long int b = std::atol(tmp);
-            Relation* rel = new Relation(a, b);
+            Relation_t* rel = new Relation_t(a, b);
             relationDenom.push_back(rel);
             std::getline(dumpfile, str);
         }

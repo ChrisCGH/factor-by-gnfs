@@ -146,13 +146,13 @@ AlgebraicNumber operator*(const AlgebraicNumber& a1,
                           const AlgebraicNumber& a2)
 {
     // First compute c_k = Sum(i+j=k) a_i b_j
-    std::vector<Quotient<VeryLong > > c;
     int d = AlgebraicNumber::degree();
     size_t csize = 2 * d - 1;
-    if (c.size() != csize)
-    {
-        c.resize(csize);
-    }
+    std::vector<Quotient<VeryLong > > c(csize);
+    //if (c.size() != csize)
+    //{
+    //    c.resize(csize);
+    //}
     const Quotient<VeryLong> zero(0L);
     Quotient<VeryLong> x;
     for (auto& i: c)
@@ -297,13 +297,13 @@ AlgebraicNumber& AlgebraicNumber::multiply(const VeryLong& a, const VeryLong& b)
 
 AlgebraicNumber& AlgebraicNumber::operator*=(const AlgebraicNumber& a)
 {
-    std::vector<Quotient<VeryLong > > c;
     size_t d = AlgebraicNumber::degree();
     size_t csize = 2 * d - 1;
-    if (c.size() != csize)
-    {
-        c.resize(csize);
-    }
+    std::vector<Quotient<VeryLong > > c(csize);
+    //if (c.size() != csize)
+    //{
+    //    c.resize(csize);
+    //}
     const Quotient<VeryLong> zero(0L);
     Quotient<VeryLong> x;
     for (auto& i1: c)

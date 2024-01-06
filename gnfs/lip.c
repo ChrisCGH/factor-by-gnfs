@@ -1305,10 +1305,15 @@ zsetlength(
       fflush(stderr);
 #endif
       x[-1] = len;
-      if (!(x = (verylong)realloc((void*)(&(x[-1])), (size_t)(len + 2) * SIZEOFLONG)))
+      verylong tmp;
+      if (!(tmp = (verylong)realloc((void*)(&(x[-1])), (size_t)(len + 2) * SIZEOFLONG)))
       {
          fprintf(stderr,"%d bytes realloc failed\n", ((int)len + 2) * SIZEOFLONG);
          zhalt("reallocation failed in zsetlength");
+      }
+      else
+      {
+         x = tmp;
       }
    }
    else if (len >= 0)
@@ -7499,10 +7504,16 @@ zfwrite_c(
    {
       if ((++i) >= outsize)
       {
-         if (!(out = (verylong)realloc((void*)out, (size_t)((outsize += SIZE) * SIZEOFLONG))))
+         verylong tmp;
+         if (!(tmp = (verylong)realloc((void*)out, (size_t)((outsize += SIZE) * SIZEOFLONG))))
          {
             zhalt("reallocation failure in zfwrite_c");
+            free(out);
             return (0);
+         }
+         else
+         {
+            out = tmp;
          }
       }
       out[i] = zsdiv(ca, div, &ca);
@@ -7675,7 +7686,18 @@ zhfwrite(
    if (!b)
       b = (char *)malloc((size_t)(bl = (aa[0] << 3)));
    else if (bl < (aa[0] << 3))
-      b = (char *)realloc((void*)b, (size_t)((bl = (aa[0] << 3)) * sizeof(char)));
+   {
+      char *tmp = (char *)realloc((void*)b, (size_t)((bl = (aa[0] << 3)) * sizeof(char)));
+      if (tmp)
+         b = tmp;
+      else
+      {
+         free(b);
+         zhalt("reallocation failure in zhfwrite_b\n");
+         b = 0;
+         return;
+      }
+   }
    do
    {
       b[cnt] = eulav(aa[1] & 15);
@@ -8076,10 +8098,15 @@ zswrite(
    {
       if ((++i) >= outsize)
       {
-         if (!(out = (verylong)realloc((void*)out, (size_t)((outsize += SIZE) * SIZEOFLONG))))
+         verylong tmp;
+         if (!(tmp = (verylong)realloc((void*)out, (size_t)((outsize += SIZE) * SIZEOFLONG))))
          {
             zhalt("reallocation failure in zswrite");
             return (0);
+         }
+         else
+         {
+            out = tmp;
          }
       }
       out[i] = zsdiv(ca, div, &ca);
@@ -8249,10 +8276,15 @@ zfwrite_b(
       }
       else if (need > sl)
       {
-         if (!(s = (long*)realloc(s,need*sizeof(long))))
+         long *tmp;
+         if (!(tmp = (long*)realloc(s,need*sizeof(long))))
          {
             zhalt("reallocation failure in zfwrite_b\n");
             return (0);
+         }
+         else
+         {
+            s = tmp;
          }
       }
       sl = need;
@@ -8413,10 +8445,15 @@ zfwrite_b(
       }
       else if (need > ll)
       {
-         if (!(l = (verylong*)realloc(l,need*sizeof(verylong))))
+         verylong *tmp;
+         if (!(tmp = (verylong*)realloc(l,need*sizeof(verylong))))
          {
             zhalt("reallocation failure in zfwrite_b\n");
             return (0);
+         }
+         else
+         {
+            l = tmp;
          }
          for (i=ll;i<need;i++)
             l[i] = 0;
@@ -10544,6 +10581,11 @@ ph2exp(
    register long two;
    register long three;
    long ee[NBITSH];
+
+   for (int j = 0; j < NBITSH; ++j)
+   {
+      ee[j] = 0L;
+   }
 
    if (e == 1)
    {

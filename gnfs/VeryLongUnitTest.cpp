@@ -100,7 +100,7 @@ public:
         CPPUNIT_ASSERT(lli96 == v97.get_long_long());
 
         long long int lli96m(0x8000000000000000LL);
-        const VeryLong v97m(lli96m);
+        VeryLong v97m(lli96m);
         CPPUNIT_ASSERT(lli96m == v97m.get_long_long());
 
         long int li98(0x7FFFFFFFL);

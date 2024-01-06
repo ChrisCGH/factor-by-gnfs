@@ -29,15 +29,15 @@ public:
     {
 
         CPPUNIT_ASSERT(row.highest_column() == -1);
-        CPPUNIT_ASSERT(row.xor(2) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(2) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 2);
-        CPPUNIT_ASSERT(row.xor(9) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(9) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 9);
-        CPPUNIT_ASSERT(row.xor(3) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(3) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 9);
-        CPPUNIT_ASSERT(row.xor(10) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(10) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 10);
-        CPPUNIT_ASSERT(row.xor(4) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(4) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.highest_column() == 10);
         CPPUNIT_ASSERT(row.size() == 5);
         auto it = row.begin();
@@ -52,16 +52,16 @@ public:
         CPPUNIT_ASSERT(*it == 10);
         ++it;
         CPPUNIT_ASSERT(it == row.end());
-        CPPUNIT_ASSERT(row.xor(4) == ISparseRow::XOR_REMOVED);
+        CPPUNIT_ASSERT(row.do_xor(4) == ISparseRow::XOR_REMOVED);
         CPPUNIT_ASSERT(row.size() == 4);
         CPPUNIT_ASSERT(row.highest_column() == 10);
-        CPPUNIT_ASSERT(row.xor(10) == ISparseRow::XOR_REMOVED);
+        CPPUNIT_ASSERT(row.do_xor(10) == ISparseRow::XOR_REMOVED);
         CPPUNIT_ASSERT(row.size() == 3);
         CPPUNIT_ASSERT(row.highest_column() == 9);
 
         for (size_t i = 0; i < 17; ++i)
         {
-            CPPUNIT_ASSERT(row.xor(i + 1000) == ISparseRow::XOR_ADDED);
+            CPPUNIT_ASSERT(row.do_xor(i + 1000) == ISparseRow::XOR_ADDED);
         }
         CPPUNIT_ASSERT(row.size() == 20);
         CPPUNIT_ASSERT(row.highest_column() == 1016);
@@ -74,7 +74,7 @@ public:
             CPPUNIT_ASSERT(*it == expected_row_data[j]);
         }
 
-        CPPUNIT_ASSERT(row.xor(1017) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(row.do_xor(1017) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(row.size() == 21);
         CPPUNIT_ASSERT(row.highest_column() == 1017);
         static size_t expected_row_data1[] = { 2, 3, 9, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017 };
@@ -261,7 +261,7 @@ public:
         CPPUNIT_ASSERT(sm1.rows() == 0);
         CPPUNIT_ASSERT(sm1.cols() == 0);
 
-        CPPUNIT_ASSERT(sm1.xor(10, 5) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(10, 5) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 11);
         CPPUNIT_ASSERT(sm1.cols() == 6);
 
@@ -274,7 +274,7 @@ public:
         CPPUNIT_ASSERT(sm1.row_size(10) == 1);
         CPPUNIT_ASSERT(*sm1.begin(10) == 5);
 
-        CPPUNIT_ASSERT(sm1.xor(10, 5) == ISparseRow::XOR_REMOVED);
+        CPPUNIT_ASSERT(sm1.do_xor(10, 5) == ISparseRow::XOR_REMOVED);
         CPPUNIT_ASSERT(sm1.rows() == 11);
         CPPUNIT_ASSERT(sm1.cols() == 6);
         for (size_t row = 0; row < 11; ++row)
@@ -290,15 +290,15 @@ public:
         CPPUNIT_ASSERT(sm1.rows() == 0);
         CPPUNIT_ASSERT(sm1.cols() == 0);
 
-        CPPUNIT_ASSERT(sm1.xor(10, 5) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(10, 5) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 11);
         CPPUNIT_ASSERT(sm1.cols() == 6);
 
-        CPPUNIT_ASSERT(sm1.xor(11, 3) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(11, 3) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 12);
         CPPUNIT_ASSERT(sm1.cols() == 6);
 
-        CPPUNIT_ASSERT(sm1.xor(6, 20) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(6, 20) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 12);
         CPPUNIT_ASSERT(sm1.cols() == 21);
 
@@ -326,7 +326,7 @@ public:
         oss1 << "1 3" << std::endl;
         CPPUNIT_ASSERT(oss.str() == oss1.str());
 
-        CPPUNIT_ASSERT(sm1.xor(6, 20) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(6, 20) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 7);
         CPPUNIT_ASSERT(sm1.cols() == 21);
 
@@ -343,11 +343,11 @@ public:
         oss1 << "1 20" << std::endl;
         CPPUNIT_ASSERT(oss.str() == oss1.str());
 
-        CPPUNIT_ASSERT(sm1.xor(4, 2) == ISparseRow::XOR_ADDED);
-        CPPUNIT_ASSERT(sm1.xor(4, 3) == ISparseRow::XOR_ADDED);
-        CPPUNIT_ASSERT(sm1.xor(4, 20) == ISparseRow::XOR_ADDED);
-        CPPUNIT_ASSERT(sm1.xor(4, 21) == ISparseRow::XOR_ADDED);
-        CPPUNIT_ASSERT(sm1.xor(4, 22) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(4, 2) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(4, 3) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(4, 20) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(4, 21) == ISparseRow::XOR_ADDED);
+        CPPUNIT_ASSERT(sm1.do_xor(4, 22) == ISparseRow::XOR_ADDED);
         CPPUNIT_ASSERT(sm1.rows() == 7);
         CPPUNIT_ASSERT(sm1.cols() == 23);
 

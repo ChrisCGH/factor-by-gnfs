@@ -94,18 +94,18 @@ private:
     }
 };
 
-struct Relation
+struct Relation_t
 {
     long long int a;
     long int b;
     //typedef std::vector<std::pair<long int, int> > primelist;
     typedef PrimeList primelist;
     primelist primes_;
-    Relation(long long int aa, long int bb) : a(aa), b(bb)
+    Relation_t(long long int aa, long int bb) : a(aa), b(bb)
     {}
 };
 
-typedef std::vector<Relation*> RelationList;
+typedef std::vector<Relation_t*> RelationList;
 
 #ifdef _NUMBERFIELD_H
 void squareRoot(const char* filename, std::vector<AlgebraicNumber*>& delta,

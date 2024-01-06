@@ -43,7 +43,7 @@ class ISparseRow
 {
 public:
     enum xor_status { XOR_FAILED = 0, XOR_ADDED, XOR_REMOVED };
-    virtual xor_status xor(size_t col) = 0;
+    virtual xor_status do_xor(size_t col) = 0;
     virtual xor_status add_next(size_t col) = 0;
     virtual void set_row(const std::vector<size_t>& columns) = 0;
     virtual void set_row(const int* first_col, int col_count) = 0;
@@ -270,14 +270,14 @@ private:
         std::sort(one_, one_ + one_size_);
     }
 
-    ISparseRow::xor_status xor(size_t col)
+    ISparseRow::xor_status do_xor(size_t col)
     {
         // Note that we must keep columns in one_ sorted.
         // one_ = 2 3 4 9 10
         // one_size_ = 5
-        // Case (i) xor(3)
-        // Case (ii) xor(6)
-        // Case (iii) xor(11)
+        // Case (i) do_xor(3)
+        // Case (ii) do_xor(6)
+        // Case (iii) do_xor(11)
         // stop search when one_[i] >= col
         const int inc = default_inc;
         //if (col < 0L) return ISparseRow::XOR_FAILED;
@@ -585,7 +585,7 @@ struct BitMatrix
         return cols_;
     }
 
-    void xor(size_t row1, size_t row2)
+    void do_xor(size_t row1, size_t row2)
     {
         row_[row1] ^= row_[row2];
     }
@@ -750,7 +750,7 @@ public:
     virtual void clear() = 0;
     virtual size_t rows() const = 0;
     virtual size_t cols() const = 0;
-    virtual ISparseRow::xor_status xor(size_t row, size_t col) = 0;
+    virtual ISparseRow::xor_status do_xor(size_t row, size_t col) = 0;
     virtual void set_row(size_t row, const std::vector<size_t>& columns) = 0;
     virtual void set_row(size_t row, const int* first_col, int col_count) = 0;
     virtual ISparseRow::const_iterator begin(long int i) const = 0;
@@ -836,21 +836,21 @@ public:
         return cols_;
     }
 
-    ISparseRow::xor_status xor(size_t row, size_t col)
+    ISparseRow::xor_status do_xor(size_t row, size_t col)
     {
         //if (row < 0) return SparseRow::XOR_FAILED;
         extend(row + 1);
-        //ISparseRow::xor_status rc = sparse_row_[row]->xor(col);
+        //ISparseRow::xor_status rc = sparse_row_[row]->do_xor(col);
         ISparseRow::xor_status rc;
 #ifdef FILE_BASED_SPARSE_MATRIX
         if (first_row_allocated_on_disc_ >= 0 && row >= (size_t)first_row_allocated_on_disc_)
         {
-            rc = fbsrm_->row(row).xor(col);
+            rc = fbsrm_->row(row).do_xor(col);
         }
         else
 #endif
         {
-            rc = sparse_row_[row]->xor(col);
+            rc = sparse_row_[row]->do_xor(col);
         }
         if (SparseRow::XOR_ADDED == rc)
         {

@@ -190,9 +190,9 @@ void add_primes(std::vector<std::string>& primes,
                     long int index = found->second;
                     long int col = colstart + index;
 #ifdef SMALL_PRIMES_AS_TRANSPOSE
-                    smat.xor(row_index, col);
+                    smat.do_xor(row_index, col);
 #else
-                    smat.xor(col, row_index);
+                    smat.do_xor(col, row_index);
 #endif
                 }
                 else
@@ -216,9 +216,9 @@ void add_primes(std::vector<std::string>& primes,
             long int index = found->second;
             long int col = colstart + index;
 #ifdef SMALL_PRIMES_AS_TRANSPOSE
-            smat.xor(row_index, col);
+            smat.do_xor(row_index, col);
 #else
-            smat.xor(col, row_index);
+            smat.do_xor(col, row_index);
 #endif
         }
         else

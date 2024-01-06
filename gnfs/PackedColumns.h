@@ -31,7 +31,7 @@ public:
     friend class PackedColumnsConstIterator;
     PackedColumns() : first_column_(-BitOperations::BITS_IN_WORD), packed_columns_(0)
     {}
-    bool xor(size_t column)
+    bool do_xor(size_t column)
     {
         bool removed = false;
         if (first_column_ == -BitOperations::BITS_IN_WORD) first_column_ = static_cast<long int>(column);

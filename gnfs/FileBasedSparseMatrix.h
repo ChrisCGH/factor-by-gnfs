@@ -53,14 +53,14 @@ public:
         serialise();
     }
 
-    ISparseRow::xor_status xor(size_t col)
+    ISparseRow::xor_status do_xor(size_t col)
     {
         // Note that we must keep columns in one_ sorted.
         // one_ = 2 3 4 9 10
         // one_size_ = 5
-        // Case (i) xor(3)
-        // Case (ii) xor(6)
-        // Case (iii) xor(11)
+        // Case (i) do_xor(3)
+        // Case (ii) do_xor(6)
+        // Case (iii) do_xor(11)
         // stop search when one_[i] >= col
         const int inc = SparseRow::default_inc;
         //if (col < 0L) return ISparseRow::XOR_FAILED;

@@ -128,7 +128,7 @@ struct xorer
     xorer(SparseMatrix& sm): sm_(sm) {}
     ISparseRow::xor_status operator() (size_t row, size_t col) const
     {
-        return sm_.xor(row, col);
+        return sm_.do_xor(row, col);
     }
     SparseMatrix& sm_;
 };
@@ -167,7 +167,7 @@ long int RelationSetManager::merge(long int rs1, long int rs2)
         ++next_relation_set_;
     }
     std::for_each(s.begin(), s.end(), [this, new_rs](size_t col) {
-        return relation_set_relation_map_.xor(new_rs, col);
+        return relation_set_relation_map_.do_xor(new_rs, col);
     });
     return new_rs;
 }
@@ -298,7 +298,7 @@ void RelationSetManager::build_relation_set_relation_map_from_merge_records()
         relation_set_relation_map_.set_size(relation_set_count_, relation_set_count_);
         for (int relation = 0; relation < relation_set_count_; ++relation)
         {
-            relation_set_relation_map_.xor(relation, relation);
+            relation_set_relation_map_.do_xor(relation, relation);
         }
     }
     next_relation_set_ = relation_set_relation_map_.rows();
@@ -368,7 +368,7 @@ RelationManager::RelationManager(MemoryMappedFile& is, RelationTable& relation_t
             Relation& r = relation_table[*it];
             for (int i = 0; i < r.prime_count_; ++i)
             {
-                ISparseRow::xor_status rc = relation_set_prime_map_.xor(relation_set, relation_table.get_prime(r.primes_index_, i));
+                ISparseRow::xor_status rc = relation_set_prime_map_.do_xor(relation_set, relation_table.get_prime(r.primes_index_, i));
                 if (rc == ISparseRow::XOR_REMOVED)
                 {
                     frequency_table_.decrement_prime(relation_table.get_prime(r.primes_index_, i));
@@ -430,7 +430,7 @@ void RelationManager::remove(long int relation_set)
     {
         if (prime_relation_set_map_.row_size(pr))
         {
-            prime_relation_set_map_.xor(pr, relation_set);
+            prime_relation_set_map_.do_xor(pr, relation_set);
         }
         frequency_table_.decrement_prime(pr);
     }
@@ -455,20 +455,20 @@ long int RelationManager::merge(long int rs1, long int rs2, long int prime)
     {
         if (*it1 < *it2)
         {
-            relation_set_prime_map_.xor(new_rs, *it1);
+            relation_set_prime_map_.do_xor(new_rs, *it1);
             if (prime_relation_set_map_.row_size(*it1))
             {
-                prime_relation_set_map_.xor(*it1, new_rs);
+                prime_relation_set_map_.do_xor(*it1, new_rs);
             }
             frequency_table_.increment_prime(*it1);
             ++it1;
         }
         else if (*it2 < *it1)
         {
-            relation_set_prime_map_.xor(new_rs, *it2);
+            relation_set_prime_map_.do_xor(new_rs, *it2);
             if (prime_relation_set_map_.row_size(*it2))
             {
-                prime_relation_set_map_.xor(*it2, new_rs);
+                prime_relation_set_map_.do_xor(*it2, new_rs);
             }
             frequency_table_.increment_prime(*it2);
             ++it2;
@@ -481,20 +481,20 @@ long int RelationManager::merge(long int rs1, long int rs2, long int prime)
     }
     while (it1 != it1_end)
     {
-        relation_set_prime_map_.xor(new_rs, *it1);
+        relation_set_prime_map_.do_xor(new_rs, *it1);
         if (prime_relation_set_map_.row_size(*it1))
         {
-            prime_relation_set_map_.xor(*it1, new_rs);
+            prime_relation_set_map_.do_xor(*it1, new_rs);
         }
         frequency_table_.increment_prime(*it1);
         ++it1;
     }
     while (it2 != it2_end)
     {
-        relation_set_prime_map_.xor(new_rs, *it2);
+        relation_set_prime_map_.do_xor(new_rs, *it2);
         if (prime_relation_set_map_.row_size(*it2))
         {
-            prime_relation_set_map_.xor(*it2, new_rs);
+            prime_relation_set_map_.do_xor(*it2, new_rs);
         }
         frequency_table_.increment_prime(*it2);
         ++it2;
