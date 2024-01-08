@@ -1,6 +1,6 @@
 #!/bin/bash
 bindir=../../gbin
-$bindir/lsieve 1000000 1070000 2> /dev/null
+#$bindir/lsieve 1000000 1070000 2> /dev/null
 ##$bindir/lsieve 2> /dev/null
 $bindir/postProcessing.pl -r tst250.relations -ro rels1 -c REMOVE_DUPLICATES
 $bindir/postProcessing.pl -r rels1 -ro rels2 -f 10000 -e 5000 -c REMOVE_SINGLETONS

@@ -36,8 +36,9 @@ std::ostream& operator<<(std::ostream& os, const SparseRow& r)
 void SparseMatrix::parse(const std::string& str, size_t row)
 {
     long int highest_column = 0;
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    //long int num_cols = 0;
+    //char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
     sparse_row_[row] = 0;
 #ifdef FILE_BASED_SPARSE_MATRIX
     if (row >= max_rows_in_memory_)
@@ -49,7 +50,7 @@ void SparseMatrix::parse(const std::string& str, size_t row)
     else
 #endif
     {
-        sparse_row_[row] = new SparseRow(num_cols, s);
+        sparse_row_[row] = new SparseRow(num_cols, true);
         highest_column = sparse_row_[row]->highest_column();
     }
     if (highest_column > static_cast<long int>(cols_))
@@ -1359,8 +1360,7 @@ SparseMatrix2::SparseMatrix2(const std::string& file, bool split) : dense_file_(
         size_t dense_rows = 0;
         while (getline(mmf, str))
         {
-            long int num_cols = 0;
-            SparseRow::begin_parse(str, num_cols);
+            long int num_cols = SparseRow::begin_parse__(str);
 
             if (split_ && dense_rows < max_very_dense_rows && (double)num_cols / (double)rows_ > very_dense_density_bound)
             {
@@ -1606,14 +1606,14 @@ void SparseMatrix2::write_dense_row(const std::string& str)
     *dense_file_ << str << std::endl;
 }
 
-void SparseMatrix2::add_row(size_t row, size_t num_cols, char* s)
+void SparseMatrix2::add_row(size_t row, size_t num_cols)
 {
     if (next_point_ + num_cols > last_point_)
     {
         //std::cerr << "Extending: num_cols = " << num_cols << std::endl;
         extend(row, num_cols);
     }
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         size_t n = std::atol(s);
         *next_point_ = static_cast<long int>(n);
@@ -1632,16 +1632,14 @@ void SparseMatrix2::add_row(size_t row, size_t num_cols, char* s)
 
 void SparseMatrix2::add_row(size_t row, const std::string& str)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
-    add_row(row, num_cols, s);
+    add_row(row, num_cols);
 }
 
 bool SparseMatrix2::parse(const std::string& str, size_t row)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
     if (split_ && dense_rows_ < max_very_dense_rows && (double)num_cols / (double)rows_ > very_dense_density_bound)
     {
@@ -1655,7 +1653,7 @@ bool SparseMatrix2::parse(const std::string& str, size_t row)
         extend(row, num_cols);
     }
 
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         size_t n = std::atol(s);
         *next_point_ = static_cast<long int>(n);
@@ -1720,12 +1718,10 @@ void SparseMatrix2::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const 
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
         uint32_t resultRowL = 0UL;
         uint32_t resultRowR = 0UL;
-
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        SparseRow::begin_parse__(str);
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRowL ^= *(L.row_.vec_ + n);
@@ -1782,11 +1778,10 @@ void SparseMatrix2::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         uint32_t resultRow = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRow ^= *(L.row_.vec_ + n);
@@ -2746,8 +2741,7 @@ std::ostream& operator<<(std::ostream& os, const BitMatrix64& bm)
 
 bool SparseMatrix3::parse(const std::string& str, size_t row)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
     double density = (double)num_cols / (double)rows_;
 
@@ -2760,12 +2754,12 @@ bool SparseMatrix3::parse(const std::string& str, size_t row)
 
     if (density > medium_density_bound)
     {
-        add_to_medium_dense_rows(num_cols, s);
+        add_to_medium_dense_rows(num_cols);
         ++medium_count_;
         return true;
     }
 
-    sparse_->add_row(sparse_count_, num_cols, s);
+    sparse_->add_row(sparse_count_, num_cols);
     if (sparse_->cols() > cols_)
     {
         cols_ = sparse_->cols();
@@ -2777,8 +2771,7 @@ bool SparseMatrix3::parse(const std::string& str, size_t row)
 
 bool SparseMatrix3::parse_for_sizing(const std::string& str, long int row)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
     double density = (double)num_cols / (double)rows_;
 
@@ -2790,7 +2783,7 @@ bool SparseMatrix3::parse_for_sizing(const std::string& str, long int row)
 
     if (density > medium_density_bound)
     {
-        add_to_size_of_medium_dense_rows(num_cols, s);
+        add_to_size_of_medium_dense_rows(num_cols);
         ++medium_count_;
         return true;
     }
@@ -2813,13 +2806,13 @@ void SparseMatrix3::extend_dense(size_t stripe)
     }
 }
 
-void SparseMatrix3::add_to_medium_dense_rows(long int num_cols, char* s)
+void SparseMatrix3::add_to_medium_dense_rows(long int num_cols)
 {
     std::ostringstream oss;
     long int prev_stripe = -1L;
     long int cols_in_stripe = 0L;
     std::unordered_map<size_t, std::string> striped_row;
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         size_t col = std::atol(s);
         size_t stripe = col / stripe_size;
@@ -2869,11 +2862,11 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols, char* s)
     }
 }
 
-void SparseMatrix3::add_to_size_of_medium_dense_rows(long int num_cols, char* s)
+void SparseMatrix3::add_to_size_of_medium_dense_rows(long int num_cols)
 {
     long int prev_stripe = -1L;
     long int cols_in_stripe = 0L;
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         size_t col = std::atol(s);
         size_t stripe = col / stripe_size;
@@ -3293,12 +3286,11 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const 
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         uint32_t resultRowL = 0UL;
         uint32_t resultRowR = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRowL ^= *(L.row_.vec_ + n);
@@ -3331,12 +3323,11 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, cons
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         unsigned long long int resultRowL = 0UL;
         unsigned long long int resultRowR = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRowL ^= *(L.row_.vec_ + n);
@@ -3365,11 +3356,9 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         uint32_t resultRow = 0UL;
-
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRow ^= *(L.row_.vec_ + n);
@@ -3395,11 +3384,10 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitM
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         unsigned long long int resultRow = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRow ^= *(L.row_.vec_ + n);
@@ -3657,7 +3645,7 @@ void SparseMatrix4::write_dense_row(const std::string& str)
     *dense_file_ << str << std::endl;
 }
 
-void SparseMatrix4::add_row(size_t row, size_t num_cols, char* s)
+void SparseMatrix4::add_row(size_t row, size_t num_cols)
 {
     if (next_point_ + num_cols + 1 > last_point_)
     {
@@ -3666,7 +3654,7 @@ void SparseMatrix4::add_row(size_t row, size_t num_cols, char* s)
     }
     *next_point_ = -static_cast<long int>(num_cols + 1);
     ++next_point_;
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         long int n = std::atol(s);
         *next_point_ = n;
@@ -3681,16 +3669,14 @@ void SparseMatrix4::add_row(size_t row, size_t num_cols, char* s)
 
 void SparseMatrix4::add_row(size_t row, const std::string& str)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
-    add_row(row, num_cols, s);
+    add_row(row, num_cols);
 }
 
 bool SparseMatrix4::parse(const std::string& str, size_t row)
 {
-    long int num_cols = 0;
-    char* s = SparseRow::begin_parse(str, num_cols);
+    long int num_cols = SparseRow::begin_parse__(str);
 
     if (split_ && dense_rows_ < max_very_dense_rows && (double)num_cols / (double)rows_ > very_dense_density_bound)
     {
@@ -3706,7 +3692,7 @@ bool SparseMatrix4::parse(const std::string& str, size_t row)
 
     *next_point_ = -(num_cols + 1);
     ++next_point_;
-    while ((s = strtok(0, " ")))
+    while (char* s = strtok(0, " "))
     {
         long int n = std::atol(s);
         *next_point_ = n;
@@ -3768,12 +3754,11 @@ void SparseMatrix4::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const 
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         uint32_t resultRowL = 0UL;
         uint32_t resultRowR = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRowL ^= *(L.row_.vec_ + n);
@@ -3829,11 +3814,10 @@ void SparseMatrix4::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
 
     while (getline(mmf, str))
     {
-        long int num_cols = 0;
+        SparseRow::begin_parse__(str);
         uint32_t resultRow = 0UL;
 
-        char* s = SparseRow::begin_parse(str, num_cols);
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             long int n = std::atol(s);
             resultRow ^= *(L.row_.vec_ + n);

@@ -700,7 +700,6 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
             {
                 p = iter->get_p();
                 b_mod_p = b % p;
-                c_d_mod_p = c_d % p;
                 logp = iter->get_logp();
                 pll = p;
                 SIEVE_TYPE** next_sieve_ptr = 0;

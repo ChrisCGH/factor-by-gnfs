@@ -675,9 +675,10 @@ void optimizeRelationsQuotient(RelationList& numer, RelationList& denom)
     int x = 0;
     const double DEFAULT_CUTOFF = 137.0;
     double CUTOFF = DEFAULT_CUTOFF;
-    if (std::getenv("COMPLEXITY_CUTOFF"))
+    const char* complexity_cutoff_override = std::getenv("COMPLEXITY_CUTOFF");
+    if (complexity_cutoff_override)
     {
-        CUTOFF = std::atof(std::getenv("COMPLEXITY_CUTOFF"));
+        CUTOFF = std::atof(complexity_cutoff_override);
     }
 
     int done = 0;

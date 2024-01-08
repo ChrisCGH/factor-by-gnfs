@@ -145,14 +145,7 @@ public:
     {
         int degree = AlgebraicNumber::degree();
         MODULAR_INTEGER zero(0L);
-        static MODULAR_INTEGER* tmp = 0;
-        static int tmp_size = 0;
-        if (!tmp || tmp_size != degree)
-        {
-            tmp = new MODULAR_INTEGER[degree];
-            tmp_size = degree;
-        }
-
+        std::vector<MODULAR_INTEGER> tmp(degree);
         static MODULAR_INTEGER x;
         static MODULAR_INTEGER y;
         for (int k = 0; k < degree; k++)
@@ -208,14 +201,7 @@ public:
     {
         int degree = AlgebraicNumber::degree();
         MODULAR_INTEGER zero(0L);
-        static MODULAR_INTEGER* tmp = 0;
-        static int tmp_size = 0;
-        if (!tmp || tmp_size != degree)
-        {
-            tmp = new MODULAR_INTEGER[degree];
-            tmp_size = degree;
-        }
-
+        std::vector<MODULAR_INTEGER> tmp(degree);
         MODULAR_INTEGER x;
         const std::vector<Quotient<INTEGER2> >& c = b.ib_coefficients();
         for (int k = 0; k < degree; k++)

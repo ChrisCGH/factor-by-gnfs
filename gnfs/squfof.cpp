@@ -932,8 +932,8 @@ bool SQUFOF(long long int N, long int& factor)
             {
                 if (it->distance() < delta)
                 {
-                    delta -= it->distance();
 #ifdef DEBUG
+                    delta -= it->distance();
                     std::cout << "composing with " << *it << std::endl;
 #endif
                     F.compose(QuadraticFormL(it->A(), it->B(), it->C(), it->distance()));
@@ -941,8 +941,8 @@ bool SQUFOF(long long int N, long int& factor)
                     std::cout << "-> " << F << ", delta = " << delta << std::endl;
 #endif
                     F.full_reduce();
-                    delta = save_delta - F.distance();
 #ifdef DEBUG
+                    delta = save_delta - F.distance();
                     std::cout << "reduced -> " << F << ", delta = " << delta << std::endl;
 #endif
                 }

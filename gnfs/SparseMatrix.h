@@ -70,24 +70,38 @@ public:
     enum { default_inc = 50 };
     SparseRow() : one_(0), one_size_(0), one_cap_(0)
     {}
-    SparseRow(long int cols) : one_(0), one_size_(0), one_cap_(cols)
+//    SparseRow(long int cols) : one_(0), one_size_(0), one_cap_(cols)
+//    {
+//        one_ = new uint32_t [ one_cap_ ];
+//        //one_ = new size_t [ one_cap_ ];
+//    }
+    SparseRow(long int num_cols, bool parse_started = false) : one_(0), one_size_(0), one_cap_(num_cols)
     {
-        one_ = new uint32_t [ one_cap_ ];
-        //one_ = new size_t [ one_cap_ ];
+        one_ = new uint32_t [ num_cols ];
+        //one_ = new size_t [ num_cols ];
+        if (!parse_started) return;
+        //one_cap_ = num_cols;
+        one_size_ = num_cols;
+        int i = 0;
+        while (char* s = strtok(0, " "))
+        {
+            int n = std::atol(s);
+            one_[i] = n;
+            i++;
+        }
     }
 private:
 
     SparseRow(const std::string& str) : one_(0), one_size_(0), one_cap_(0)
     {
-        long int num_cols = 0;
-        char* s = SparseRow::begin_parse(str, num_cols);
-        if (!s) return;
+        int num_cols = SparseRow::begin_parse__(str);
+        if (!num_cols) return;
         one_ = new uint32_t [ num_cols ];
         //one_ = new size_t [ num_cols ];
         one_size_ = num_cols;
         one_cap_ = num_cols;
         int i = 0;
-        while ((s = strtok(0, " ")))
+        while (char* s = strtok(0, " "))
         {
             int n = std::atol(s);
             one_[i] = n;
@@ -95,20 +109,7 @@ private:
         }
     }
 
-    SparseRow(long int num_cols, char* s) : one_(0), one_size_(0), one_cap_(0)
-    {
-        one_ = new uint32_t [ num_cols ];
-        //one_ = new size_t [ num_cols ];
-        one_size_ = num_cols;
-        one_cap_ = num_cols;
-        int i = 0;
-        while ((s = strtok(0, " ")))
-        {
-            int n = std::atol(s);
-            one_[i] = n;
-            i++;
-        }
-    }
+    //SparseRow(long int num_cols, char* s) : one_(0), one_size_(0), one_cap_(0)
 public:
     virtual ~SparseRow()
     {
@@ -144,7 +145,7 @@ private:
     {
         one_size_ = 0;
     }
-
+#if 0
     static char* begin_parse(const std::string& str, long int& column_count)
     {
         // This function gets the column count from str using strtok(buf, " "),
@@ -163,6 +164,28 @@ private:
         char* s = strtok(buf, " ");
         column_count = std::atol(s);
         return buf;
+    }
+#endif
+    static long int begin_parse__(const std::string& str)
+    {
+        // This function getsreturns the column count from str using strtok(buf, " ")
+        static char* buf = 0;
+        static std::string::size_type buflen = 0;
+        long int column_count = 0;
+        if (str.empty()) return 0;
+        if (str.size() > buflen)
+        {
+            delete [] buf;
+            buflen = str.size();
+            buf = new char [ buflen + 1 ];
+        }
+        strcpy(buf, str.c_str());
+        char* s = strtok(buf, " ");
+        if (s)
+        {
+            column_count = std::atol(s);
+        }
+        return column_count;
     }
 
     void compress();
@@ -1170,7 +1193,7 @@ public:
     SparseMatrix2(const std::vector<long int>& points, long int rows, long int columns);
     ~SparseMatrix2();
     void add_row(size_t row, const std::string& str);
-    void add_row(size_t row, size_t num_cols, char* s);
+    void add_row(size_t row, size_t num_cols);
     friend void multiply(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AX);
     friend void multiply(const SparseMatrix2& A, const BitMatrix64& X, BitMatrix64& AX);
     friend void multiplyt(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AtX);
@@ -1223,7 +1246,7 @@ public:
     SparseMatrix4(const std::vector<long int>& points, long int rows, long int columns);
     ~SparseMatrix4();
     void add_row(size_t row, const std::string& str);
-    void add_row(size_t row, size_t num_cols, char* s);
+    void add_row(size_t row, size_t num_cols);
     friend void multiply(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AX);
     friend void multiply(const SparseMatrix4& A, const BitMatrix64& X, BitMatrix64& AX);
     friend void multiplyt(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AtX);
@@ -1320,8 +1343,8 @@ private:
     bool parse(const std::string& str, size_t row);
     bool parse_for_sizing(const std::string& str, long int row);
     void write_very_dense_row(const std::string& str);
-    void add_to_medium_dense_rows(long int num_cols, char* s);
-    void add_to_size_of_medium_dense_rows(long int num_cols, char* s);
+    void add_to_medium_dense_rows(long int num_cols);
+    void add_to_size_of_medium_dense_rows(long int num_cols);
     void extend_dense(size_t stripe);
 };
 #endif

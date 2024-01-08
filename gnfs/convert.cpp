@@ -38,6 +38,10 @@ namespace Convert
 {
 char* parse_FBGNFS_relation(const std::string& str, long long int& a, long long int&b)
 {
+    if (str.empty())
+    {
+        return 0;
+    }
     copy_str(str);
     char* c = buf;
     char* d = c;
@@ -62,6 +66,10 @@ char* parse_FBGNFS_relation(const std::string& str, long long int& a, long long 
 
 void parse_FBGNFS(const std::string& str, long long int& a, long long int& b, char*& alg_str, char*& rat_str)
 {
+    if (str.empty())
+    {
+        return;
+    }
     // str -> aaaaaa bbbbbbb : alg : rat :
     char* d = parse_FBGNFS_relation(str, a, b);
     char* c = d;
