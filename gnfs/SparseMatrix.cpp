@@ -527,12 +527,11 @@ void invert(const BitMatrix& MM, BitMatrix& XX)
         C.resize(n, 0);
         // since in GF(2) the inverse of a unit is always 1
         //int d = 1;
-        size_t k = j + 1;
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             C[k] = BitOperations::bitSet(j, M.row_[k]);
         }
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             BitOperations::clearBit(j, M.row_[k]);
             for (size_t l = j + 1; l < n; l++)
@@ -544,7 +543,7 @@ void invert(const BitMatrix& MM, BitMatrix& XX)
                 }
             }
         }
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             if (C[k])
             {
@@ -557,10 +556,9 @@ void invert(const BitMatrix& MM, BitMatrix& XX)
     }
 
     // step 6. [Solve triangular system]
-    size_t i = n - 1;
     XX.row_.resize(n);
     XX.cols_ = n;
-    for (i = n - 1; i + 1 != 0; --i)
+    for (size_t i = n - 1; i + 1 != 0; --i)
     {
         XX.row_[i] = B.row_[i];
         for (size_t j = i + 1; j < n; j++)
@@ -2099,12 +2097,11 @@ void invert(const BitMatrix64& MM, BitMatrix64& XX)
         C.resize(n, 0);
         // since in GF(2) the inverse of a unit is always 1
         //int d = 1;
-        size_t k = j + 1;
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             C[k] = BitOperations64::bitSet(j, M.row_[k]);
         }
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             BitOperations64::clearBit(j, M.row_[k]);
             for (size_t l = j + 1; l < n; l++)
@@ -2116,7 +2113,7 @@ void invert(const BitMatrix64& MM, BitMatrix64& XX)
                 }
             }
         }
-        for (k = j + 1; k < n; k++)
+        for (size_t k = j + 1; k < n; k++)
         {
             if (C[k])
             {
@@ -2129,10 +2126,9 @@ void invert(const BitMatrix64& MM, BitMatrix64& XX)
     }
 
     // step 6. [Solve triangular system]
-    size_t i = n - 1;
     XX.row_.resize(n);
     XX.cols_ = n;
-    for (i = n - 1; i + 1 != 0; --i)
+    for (size_t i = n - 1; i + 1 != 0; --i)
     {
         XX.row_[i] = B.row_[i];
         for (size_t j = i + 1; j < n; j++)

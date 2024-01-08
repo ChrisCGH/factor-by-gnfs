@@ -276,14 +276,14 @@ void VeryLong::generate_prime_powers()
     }
     //cout << " done (" << Prime_power.size() << ")" << endl;
     //cout << "Generating prime powers for step 2 up to B2 = " << B2 << " ..." << flush;
-    long int pp = p0;
-    long int diff = 0;
+    //long int pp = p0;
+    //long int diff = 0;
     while (p0 < B2)
     {
         Prime_power2.push_back(p0);
-        pp = p0;
+        long int pp = p0;
         p0 = mpz_pnext();
-        diff = p0 - pp;
+        long int diff = p0 - pp;
         if (diff > Max_diff) Max_diff = diff;
     }
     //cout << " done (" << Prime_power2.size() << ")" << endl;

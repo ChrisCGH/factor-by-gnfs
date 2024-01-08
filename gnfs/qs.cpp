@@ -569,7 +569,7 @@ bool linear_algebra_stage(unsigned long long int N, long int& factor)
     // Each row corresponds to a prime, and each column to a relation
     // Remove singletons first, i.e. relations which contain a prime
     // which only appear in one relation
-    Relation* rel = relations;
+    Relation* rel;
 
     std::vector<int> relation_removed(smooth_count, 0);
     std::vector<int> relations_containing_prime(factor_base_size, 0);

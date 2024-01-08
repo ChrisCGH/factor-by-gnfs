@@ -553,7 +553,7 @@ void Siever::sieve(const Polynomial<double>& f, const VeryLong& c_d,
     long int b_mod_p = 0L;
     long long int pll = 0L;
     SIEVE_TYPE logp = 0;
-    SIEVE_TYPE* sieve_end_ptr = &sieve_array_[max_A - min_A];
+    SIEVE_TYPE* sieve_end_ptr;
 
     // divide sieve array into chunks that fit into the L1 cache (L1_SIZE)
     //const int L1_BITS = 18; // best time: 18 sec/line

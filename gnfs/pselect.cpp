@@ -2286,14 +2286,14 @@ void skewed_polynomial_selection()
 
     while (!finished)
     {
-        long int p = primes[genrand() % NUMBER_OF_PRIMES];
+        //long int p = primes[genrand() % NUMBER_OF_PRIMES];
         VeryLong c = Skewed_config.C_START();
 
         if (Skewed_config.C_FACTOR() != 0L)
         {
             while (ln(c) < min_log_ad - ln(Skewed_config.C_FACTOR()))
             {
-                p = primes[genrand() % NUMBER_OF_PRIMES];
+                long int p = primes[genrand() % NUMBER_OF_PRIMES];
                 if (ln(c * VeryLong(p)) < max_log_ad) c = c * VeryLong(p);
             }
         }
