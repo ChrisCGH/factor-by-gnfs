@@ -36,8 +36,6 @@ std::ostream& operator<<(std::ostream& os, const SparseRow& r)
 void SparseMatrix::parse(const std::string& str, size_t row)
 {
     long int highest_column = 0;
-    //long int num_cols = 0;
-    //char* s = SparseRow::begin_parse(str, num_cols);
     long int num_cols = SparseRow::begin_parse__(str);
     sparse_row_[row] = 0;
 #ifdef FILE_BASED_SPARSE_MATRIX
