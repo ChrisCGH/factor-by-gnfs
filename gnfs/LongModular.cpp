@@ -265,6 +265,12 @@ LongModular LongModular::square_root() const
         }
 
         // 4. [Reduce exponent]
+        if (r - m - 1 <= 0)
+        {
+            std::ostringstream oss;
+            oss << "r - m - 1 = " << r - m - 1 << " <= 0";
+            throw oss.str();
+        }
         long int rm1 = r - m - 1;
         long int power = 1 << rm1;
         long int t = zexpmods(y, power, p);

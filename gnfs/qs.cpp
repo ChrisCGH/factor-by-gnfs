@@ -203,6 +203,12 @@ long int find_modular_square_root(long int a, long int p, long int n, long int e
         }
 
         // 4. [Reduce exponent]
+        if (r - m - 1 <= 0)
+        {
+            std::ostringstream oss;
+            oss << "r - m - 1 = " << r - m - 1 << " <= 0";
+            throw oss.str();
+        }
         long int rm1 = r - m - 1;
         long int power = 1 << rm1;
         long int t = zexpmods(y, power, p);

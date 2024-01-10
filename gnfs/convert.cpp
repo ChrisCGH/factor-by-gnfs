@@ -29,7 +29,7 @@ void copy_str(const std::string& str)
 
 long long strtoll(const char* str)
 {
-    double x = std::atof(str);
+    double x = str ? std::atof(str) : 0.0;
     return (long long)x;
 }
 };
