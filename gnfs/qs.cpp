@@ -60,7 +60,11 @@ size_t factor_base_size = 0;
 size_t next_q_index = 0;
 bool last_polynomial = false;
 
+#if defined(__GNUC__) || defined(__clang__)
+alignas(64) Factor_base_item factor_base[primes_size];
+#else
 Factor_base_item factor_base[primes_size];
+#endif
 
 mpz_t N_;
 //
@@ -120,7 +124,11 @@ struct Relation
 
 size_t smooth_count = 0;
 const long int MAX_RELATIONS = 300L;
+#if defined(__GNUC__) || defined(__clang__)
+alignas(64) Relation relations[MAX_RELATIONS];
+#else
 Relation relations[MAX_RELATIONS];
+#endif
 #if 0
 void print_relation(size_t r, Relation* rel)
 {
@@ -151,7 +159,11 @@ const long int M = 9300L;
 typedef signed char SIEVE_TYPE;
 //typedef int SIEVE_TYPE;
 
+#if defined(__GNUC__) || defined(__clang__)
+alignas(64) SIEVE_TYPE sieve_array[2*M + 1];
+#else
 SIEVE_TYPE sieve_array[2*M + 1];
+#endif
 const SIEVE_TYPE* sieve_array_end = sieve_array + sizeof(sieve_array) / sizeof(SIEVE_TYPE);
 
 unsigned long int myzmulmods(unsigned long int a, unsigned long int b, unsigned long int n)
@@ -489,6 +501,13 @@ long long int g(long int x)
     long int p;
     for (; (unsigned long long int)value > ULONG_MAX && i < factor_base_size; ++i)
     {
+#if defined(__GNUC__) || defined(__clang__)
+        // Prefetch next few items for better cache performance
+        if (i + 4 < factor_base_size)
+        {
+            __builtin_prefetch(&factor_base[i+4], 0, 1);
+        }
+#endif
         unsigned char multiplicity = 0;
         p = factor_base[i].p_;
         while (value % p == 0)
@@ -514,6 +533,13 @@ long long int g(long int x)
     value_l = value;
     for (; value_l > 1L && i < factor_base_size; ++i)
     {
+#if defined(__GNUC__) || defined(__clang__)
+        // Prefetch next few items for better cache performance
+        if (i + 4 < factor_base_size)
+        {
+            __builtin_prefetch(&factor_base[i+4], 0, 1);
+        }
+#endif
         p = factor_base[i].p_;
         unsigned char multiplicity = 0;
         while (value_l % p == 0)
