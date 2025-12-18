@@ -1,7 +1,7 @@
 // Quadratic Sieve Attempt
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC optimize("O3")
-#pragma GCC target("avx2")
+//#pragma GCC optimize("O3")
+//#pragma GCC target("avx2")
 #endif
 
 #include <vector>
@@ -220,9 +220,17 @@ long int find_modular_square_root(long int a, long int p, long int n, long int e
         }
 
         // 4. [Reduce exponent]
-        if (r - m - 1 <= 0)
+        //if (r - m - 1 <= 0)
+        if (r - m - 1 < 0)
         {
             std::ostringstream oss;
+
+            std::cerr << "=== Modular Square Root Failure ===" << std::endl;
+            std::cerr << "Input: a=" << a << " p=" << p << " n=" << n 
+                      << " e=" << e << " q=" << q << " n_q_p=" << n_q_p << std::endl;
+            std::cerr << "State: r=" << r << " m=" << m << " r-m-1=" << (r-m-1) << std::endl;
+            std::cerr << "Values: x=" << x << " b=" << b << " y=" << y << std::endl;
+ 
             oss << "r - m - 1 = " << r - m - 1 << " <= 0";
             throw oss.str();
         }
