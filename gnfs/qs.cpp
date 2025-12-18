@@ -1,4 +1,9 @@
 // Quadratic Sieve Attempt
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC optimize("O3")
+#pragma GCC target("avx2")
+#endif
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -342,7 +347,7 @@ void initialization_stage(unsigned long long int N)
     if (Debug) std::cerr << "done" << std::endl;
 }
 
-//#define USE_CACHE 1
+#define USE_CACHE 1
 #ifdef USE_CACHE
 struct SieveCache
 {
@@ -361,7 +366,7 @@ void sieve_stage()
     ::memset(sieve_array, 0, sizeof(sieve_array));
     size_t i = 0;
 #ifdef USE_CACHE
-    const size_t sieve_cache_size = 16L;
+    const size_t sieve_cache_size = 64L;
     size_t cache_index = 0;
     SieveCache cache[sieve_cache_size];
 #endif
