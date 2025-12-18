@@ -37,18 +37,24 @@ static long int primes_log[primes_size] =
 { 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 };
 //{ 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 };
 
-struct Factor_base_item
+// Hot data - accessed during sieving (frequently)
+struct Factor_base_hot
 {
-    long int p_;
-    long int p2_;
+    long int p_;      // prime
+    long int log_;    // nearest integer to log(p_)
+    long int soln1_;  // first solution
+    long int soln2_;  // second solution
+};
+
+// Cold data - used during initialization (rarely)
+struct Factor_base_cold
+{
+    long int p2_;     // p squared
     long int n_;
     long int e_;
     long int q_;
     long int n_q_p_;
-    long int log_; // nearest integer to log(p_)
     long int tmem_;
-    long int soln1_;
-    long int soln2_;
 };
 
 size_t factor_base_size = 0;
@@ -56,9 +62,11 @@ size_t next_q_index = 0;
 bool last_polynomial = false;
 
 #if defined(__GNUC__) || defined(__clang__)
-alignas(64) Factor_base_item factor_base[primes_size];
+alignas(64) Factor_base_hot factor_base_hot[primes_size];
+alignas(64) Factor_base_cold factor_base_cold[primes_size];
 #else
-Factor_base_item factor_base[primes_size];
+Factor_base_hot factor_base_hot[primes_size];
+Factor_base_cold factor_base_cold[primes_size];
 #endif
 
 mpz_t N_;
@@ -132,7 +140,7 @@ void print_relation(size_t r, Relation* rel)
     {
         size_t i_ = rel->primes_[j].i_;
         long int e = rel->primes_[j].e_;
-        long int p = factor_base[i_].p_;
+        long int p = factor_base_hot[i_].p_;
         std::cerr << "(" << i_ << ", " << p << ", " << e << "), ";
     }
     std::cerr << std::endl;
@@ -234,11 +242,12 @@ long int find_modular_square_root(long int a, long int p, long int n, long int e
 #if 0
 void print_factor_base()
 {
-    Factor_base_item* fbi = factor_base;
     for (size_t i = 0; i < factor_base_size; ++i)
     {
-        std::cerr << "i : " << fbi->p_ << ", " << fbi->log_ << ", " << fbi->n_ << ", " << fbi->e_ << ", " << fbi->q_ << ", " << fbi->n_q_p_ << ", " << fbi->tmem_ << std::endl;
-        ++fbi;
+        std::cerr << "i : " << factor_base_hot[i].p_ << ", " << factor_base_hot[i].log_ << ", " 
+                  << factor_base_cold[i].n_ << ", " << factor_base_cold[i].e_ << ", " 
+                  << factor_base_cold[i].q_ << ", " << factor_base_cold[i].n_q_p_ << ", " 
+                  << factor_base_cold[i].tmem_ << std::endl;
     }
 }
 #endif
@@ -259,14 +268,17 @@ void compute_startup_data(unsigned long long int N)
             break;
         if (p == 2 || mpz_kronecker_si(N_, p) == 1)
         {
-            factor_base[factor_base_size].p_ = p;
-            factor_base[factor_base_size].p2_ = p * p;
-            factor_base[factor_base_size].log_ = primes_log[i];
-            factor_base[factor_base_size].n_ = primes_n[i];
-            factor_base[factor_base_size].e_ = primes_e[i];
-            factor_base[factor_base_size].q_ = primes_q[i];
-            factor_base[factor_base_size].n_q_p_ = primes_n_q_p[i];
-            factor_base[factor_base_size].tmem_ =
+            // Populate hot data (for sieving)
+            factor_base_hot[factor_base_size].p_ = p;
+            factor_base_hot[factor_base_size].log_ = primes_log[i];
+            
+            // Populate cold data (for initialization)
+            factor_base_cold[factor_base_size].p2_ = p * p;
+            factor_base_cold[factor_base_size].n_ = primes_n[i];
+            factor_base_cold[factor_base_size].e_ = primes_e[i];
+            factor_base_cold[factor_base_size].q_ = primes_q[i];
+            factor_base_cold[factor_base_size].n_q_p_ = primes_n_q_p[i];
+            factor_base_cold[factor_base_size].tmem_ =
                 find_modular_square_root(N % p, p, primes_n[i], primes_e[i], primes_q[i], primes_n_q_p[i]);
             ++factor_base_size;
         }
@@ -292,12 +304,11 @@ void initialization_stage(unsigned long long int N)
         last_polynomial = true;
     }
     size_t i = next_q_index--;
-    Factor_base_item* fbi = factor_base + i;
-    long int q = factor_base[i].p_;
+    long int q = factor_base_hot[i].p_;
     a = q * q;
     // find modular square root of N mod q and then lift via Hensel's lemma
     // to get a modular square root mod q^2
-    b = find_modular_square_root(N % q, q, fbi->n_, fbi->e_, fbi->q_, fbi->n_q_p_);
+    b = find_modular_square_root(N % q, q, factor_base_cold[i].n_, factor_base_cold[i].e_, factor_base_cold[i].q_, factor_base_cold[i].n_q_p_);
 #if 0
     unsigned long long int b_ll = b;
     long int r_ = ((b_ll * b_ll - N) / q) % q;
@@ -342,14 +353,14 @@ void initialization_stage(unsigned long long int N)
     //
     for (size_t i = 0; i < factor_base_size; ++i)
     {
-        long int log = factor_base[i].log_;
+        long int log = factor_base_hot[i].log_;
         if (log == 0)
             continue;
-        long int p = factor_base[i].p_;
-        long int tmem = factor_base[i].tmem_;
+        long int p = factor_base_hot[i].p_;
+        long int tmem = factor_base_cold[i].tmem_;
         long int a_inv = ::inverse(a, p);
-        factor_base[i].soln1_ = (a_inv * (tmem - b)) % p + M;
-        factor_base[i].soln2_ = (a_inv * (-tmem - b)) % p + M;
+        factor_base_hot[i].soln1_ = (a_inv * (tmem - b)) % p + M;
+        factor_base_hot[i].soln2_ = (a_inv * (-tmem - b)) % p + M;
     }
 
     if (Debug) std::cerr << "done" << std::endl;
@@ -381,12 +392,12 @@ void sieve_stage()
 
     for (; i < factor_base_size; ++i)
     {
-        long int log = factor_base[i].log_;
+        long int log = factor_base_hot[i].log_;
         if (log == 0)
             continue;
-        long int p = factor_base[i].p_;
-        long int soln1 = factor_base[i].soln1_;
-        long int soln2 = factor_base[i].soln2_;
+        long int p = factor_base_hot[i].p_;
+        long int soln1 = factor_base_hot[i].soln1_;
+        long int soln2 = factor_base_hot[i].soln2_;
 
         long int k_min = soln1 / p;
         k_min = -k_min;
@@ -491,7 +502,7 @@ long long int g(long int x)
 
     Relation* relation = relations + smooth_count;
     relation->primes_count_ = 0;
-    long int max_p = factor_base[factor_base_size - 1].p_;
+    long int max_p = factor_base_hot[factor_base_size - 1].p_;
 
     size_t i = 0;
     long int p;
@@ -501,11 +512,11 @@ long long int g(long int x)
         // Prefetch next few items for better cache performance
         if (i + 4 < factor_base_size)
         {
-            __builtin_prefetch(&factor_base[i+4], 0, 1);
+            __builtin_prefetch(&factor_base_hot[i+4], 0, 1);
         }
 #endif
         unsigned char multiplicity = 0;
-        p = factor_base[i].p_;
+        p = factor_base_hot[i].p_;
         while (value % p == 0)
         {
             value /= p;
@@ -518,7 +529,7 @@ long long int g(long int x)
             relation->primes_count_++;
         }
 #if 1
-        if (value < factor_base[i].p2_)
+        if (value < factor_base_cold[i].p2_)
         {
             //std::cerr << "value = " << value << ", value / p = " << value / p << ", p = " << p << std::endl;
             return;
@@ -533,10 +544,10 @@ long long int g(long int x)
         // Prefetch next few items for better cache performance
         if (i + 4 < factor_base_size)
         {
-            __builtin_prefetch(&factor_base[i+4], 0, 1);
+            __builtin_prefetch(&factor_base_hot[i+4], 0, 1);
         }
 #endif
-        p = factor_base[i].p_;
+        p = factor_base_hot[i].p_;
         unsigned char multiplicity = 0;
         while (value_l % p == 0)
         {
@@ -550,7 +561,7 @@ long long int g(long int x)
             relation->primes_count_++;
         }
 #if 1
-        if (value_l > (unsigned long int)max_p && value_l < (unsigned long int)factor_base[i].p2_)
+        if (value_l > (unsigned long int)max_p && value_l < (unsigned long int)factor_base_cold[i].p2_)
         {
             //std::cerr << "value_l = " << value_l << ", value_l / p = " << value_l / p << ", p = " << p << std::endl;
             return;
@@ -792,14 +803,14 @@ bool linear_algebra_stage(unsigned long long int N, long int& factor)
             if (prime_count[j] % 2)
             {
                 std::stringstream ss;
-                ss << "multiplicity of p = " << factor_base[j].p_ << " (" << prime_count[j] << ") is not even in dependency " << c << std::endl;
+                ss << "multiplicity of p = " << factor_base_hot[j].p_ << " (" << prime_count[j] << ") is not even in dependency " << c << std::endl;
                 std::cerr << ss.str() << std::endl;
                 throw "multiplicity of p is not even in dependency";
             }
             else
             {
                 int pc = prime_count[j] / 2;
-                long int p = factor_base[j].p_;
+                long int p = factor_base_hot[j].p_;
                 for (int ii = 0; ii < pc; ++ii)
                 {
                     y_ *= p;
