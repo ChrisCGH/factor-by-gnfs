@@ -406,20 +406,30 @@ struct FastVector
     }
     void resize(size_t s, bool keep = false)
     {
-        const size_t incr = 100;
         if (s > capacity_)
         {
-            capacity_ = s + incr;
+            // Exponential growth: at least 1.5x previous capacity
+            capacity_ = std::max(s, capacity_ + capacity_ / 2);
             uint32_t* tmp = new uint32_t [ capacity_ ];
-            memset(tmp, 0, capacity_ * sizeof(uint32_t));
-            if (keep)
+            
+            if (keep && vec_)
             {
                 memcpy(tmp, vec_, size_ * sizeof(uint32_t));
+                // Only clear new portion
+                memset(tmp + size_, 0, (capacity_ - size_) * sizeof(uint32_t));
+            }
+            else
+            {
+                memset(tmp, 0, capacity_ * sizeof(uint32_t));
             }
             delete [] vec_;
             vec_ = tmp;
         }
-        for (size_t i = size_; i < s; i++) vec_[i] = 0UL;
+        else if (s > size_)
+        {
+            // Only clear newly used portion
+            memset(vec_ + size_, 0, (s - size_) * sizeof(uint32_t));
+        }
         size_ = s;
     }
     uint32_t* begin() const
@@ -473,20 +483,30 @@ struct FastVector64
     }
     void resize(size_t s, bool keep = false)
     {
-        const size_t incr = 100;
         if (s > capacity_)
         {
-            capacity_ = s + incr;
+            // Exponential growth: at least 1.5x previous capacity
+            capacity_ = std::max(s, capacity_ + capacity_ / 2);
             unsigned long long int* tmp = new unsigned long long int [ capacity_ ];
-            memset(tmp, 0, capacity_ * sizeof(unsigned long long int));
-            if (keep)
+            
+            if (keep && vec_)
             {
                 memcpy(tmp, vec_, size_ * sizeof(unsigned long long int));
+                // Only clear new portion
+                memset(tmp + size_, 0, (capacity_ - size_) * sizeof(unsigned long long int));
+            }
+            else
+            {
+                memset(tmp, 0, capacity_ * sizeof(unsigned long long int));
             }
             delete [] vec_;
             vec_ = tmp;
         }
-        for (size_t i = size_; i < s; i++) vec_[i] = 0UL;
+        else if (s > size_)
+        {
+            // Only clear newly used portion
+            memset(vec_ + size_, 0, (s - size_) * sizeof(unsigned long long int));
+        }
         size_ = s;
     }
     unsigned long long int* begin() const

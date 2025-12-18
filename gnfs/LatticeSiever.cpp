@@ -1,3 +1,8 @@
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC optimize("O3")
+#pragma GCC target("avx2")
+#endif
+
 #include "LatticeSiever.h"
 #include "Matrix.h"
 #include "LongModular.h"
