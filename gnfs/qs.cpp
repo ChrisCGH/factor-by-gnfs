@@ -244,10 +244,10 @@ void print_factor_base()
 {
     for (size_t i = 0; i < factor_base_size; ++i)
     {
-        std::cerr << "i : " << factor_base_hot[i].p_ << ", " << factor_base_hot[i].log_ << ", " 
-                  << factor_base_cold[i].n_ << ", " << factor_base_cold[i].e_ << ", " 
-                  << factor_base_cold[i].q_ << ", " << factor_base_cold[i].n_q_p_ << ", " 
-                  << factor_base_cold[i].tmem_ << std::endl;
+        std::cerr << "i : " << factor_base_hot[i].p_ << ", " << factor_base_cold[i].p2_ << ", " 
+                  << factor_base_hot[i].log_ << ", " << factor_base_cold[i].n_ << ", " 
+                  << factor_base_cold[i].e_ << ", " << factor_base_cold[i].q_ << ", " 
+                  << factor_base_cold[i].n_q_p_ << ", " << factor_base_cold[i].tmem_ << std::endl;
     }
 }
 #endif
