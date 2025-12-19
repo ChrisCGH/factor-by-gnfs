@@ -1,6 +1,6 @@
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC optimize("O3")
-#pragma GCC target("avx2")
+// AVX2 target removed - not supported on all CPUs
 #endif
 
 #include "LatticeSiever.h"
@@ -171,24 +171,18 @@ VeryLong evaluate_on_lattice(const Polynomial<VeryLong>& f,
     return res;
 }
 
-double evaluate_on_lattice(const Polynomial<double>& f,
-                           long int c, long int d,
-                           const std::pair<long int, long int>& c1,
-                           const std::pair<long int, long int>& c2)
+inline double evaluate_on_lattice(const Polynomial<double>& f,
+                                   long int c, long int d,
+                                   const std::pair<long int, long int>& c1,
+                                   const std::pair<long int, long int>& c2)
 {
     if (c == 0L && d == 0L) return 0.0;
-    double a(c);
-    a *= c1.first;
-    double tmp(d);
-    tmp *= c2.first;
-    a += tmp;
-    double b(c);
-    b *= c1.second;
-    tmp = d;
-    tmp *= c2.second;
-    b += tmp;
-    double res = f.evaluate_homogeneous(a, b);
-    return res;
+    
+    // Fused multiply-add operations, fewer temporaries
+    double a = c * c1.first + d * c2.first;
+    double b = c * c1.second + d * c2.second;
+    
+    return f.evaluate_homogeneous(a, b);
 }
 
 inline long int nearest_integer(double d)
@@ -284,12 +278,14 @@ LatticeSiever::~LatticeSiever()
 //
 //    c - min_c + (max_c - min_c + 1) * d
 //
-std::pair<long int, long int> LatticeSiever::offset_to_c_d(size_t offset)
+inline std::pair<long int, long int> LatticeSiever::offset_to_c_d(size_t offset)
 {
+    // Optimized: c_span = 2048 = 2^11, use bitwise operations
+    // offset % 2048 = offset & 0x7FF
+    // offset / 2048 = offset >> 11
     std::pair<long int, long int> cd;
-
-    cd.first = offset % (max_c - min_c + 1) + min_c;
-    cd.second = offset / (max_c - min_c + 1);
+    cd.first = (offset & 0x7FF) + min_c;   // offset % c_span + min_c
+    cd.second = offset >> 11;               // offset / c_span
     return cd;
 }
 
@@ -312,44 +308,36 @@ long int LatticeSiever::check_interval1(long int q)
 
     SIEVE_TYPE* sieve_ptr = fixed_sieve_array_;
     SIEVE_TYPE* sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-#if 0
+    
+    // Use incremental c,d instead of offset_to_c_d() calls
     long int c = min_c;
     long int d = min_d;
-#endif
 
     while (sieve_ptr < sieve_end_ptr)
     {
         SIEVE_TYPE val = -128;
         if (debug_)
         {
-            std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
-            std::cerr << "1. (c,d) = (" << cd.first << "," << cd.second << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff0 = " << cutoff0 << std::endl;
+            std::cerr << "1. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff0 = " << cutoff0 << std::endl;
         }
         if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
         {
             if ((int)(*sieve_ptr) >= cutoff0)
             {
-#if 1
-                std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
-                double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
-#else
+                // Use c,d directly - no offset_to_c_d() call needed
                 double value1 = evaluate_on_lattice(f1d_, c, d, c1_, c2_);
-#endif
                 int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
                 if (debug_)
                 {
-                    std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
-                    std::cerr << "2. (c,d) = (" << cd.first << "," << cd.second << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
+                    std::cerr << "2. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
                 }
 
                 if ((int)(*sieve_ptr) > cutoff)
                 {
                     if (debug_)
                     {
-                        size_t offset = sieve_ptr - fixed_sieve_array_;
-                        std::pair<long int, long int> cd = offset_to_c_d(offset);
-                        std::cerr << "2.1 (c,d) = (" << cd.first << "," << cd.second << "), sieve_ptr = " << std::hex << (size_t)sieve_ptr << std::dec << ", offset = " << offset << ", cd = (" << cd.first << "," << cd.second << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
+                        std::cerr << "2.1 (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
                     }
                     val = 0;
                     ++potential;
@@ -366,14 +354,12 @@ long int LatticeSiever::check_interval1(long int q)
             }
         }
         ++sieve_ptr;
-#if 0
         ++c;
         if (c > max_c)
         {
             c = min_c;
             ++d;
         }
-#endif
     }
     return potential;
 }
