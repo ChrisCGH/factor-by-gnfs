@@ -143,10 +143,10 @@ double LatticeSiever::total_sieving_time_ = 0;
 namespace
 {
 // calculate log of x to base q
-double logq(double x, int q)
+inline double logq(double x, int q)
 {
-    if (q == 10) return log10(x);
-    return log10(x) / log10((double)q);
+    // q is always LOGQ_BASE = 10 in this codebase
+    return log10(x);
 }
 
 VeryLong evaluate_on_lattice(const Polynomial<VeryLong>& f,
@@ -320,7 +320,8 @@ long int LatticeSiever::check_interval1(long int q)
                 // Calculate c,d only when needed using optimized offset_to_c_d()
                 std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
                 double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
-                int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
+                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
 
                 if ((int)(*sieve_ptr) > cutoff)
@@ -365,18 +366,11 @@ void LatticeSiever::check_interval2()
             if ((int)(*sieve_ptr) >= cutoff0)
             {
                 double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
-                int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
+                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
-                if (debug_)
-                {
-                    std::cerr << "3. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
-                }
                 if ((int)(*sieve_ptr) > cutoff)
                 {
-                    if (debug_)
-                    {
-                        std::cerr << "3.1 (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
-                    }
                     VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
                     potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
                     if (number_potentially_smooth_ > 0)
@@ -400,7 +394,7 @@ void LatticeSiever::check_interval2()
         }
         ++c;
         ++sieve_ptr;
-        if (sieve_ptr < sieve_end_ptr && c > max_c)
+        if (c > max_c)
         {
             c = min_c;
             ++d;
@@ -410,28 +404,16 @@ void LatticeSiever::check_interval2()
 
 void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
 {
-    if (smooth_iter->c_ == 4994L && smooth_iter->d_ == 3578L)
-    {
-        std::cerr << "divide_by_small_primes1 : remaining_quotient = " << smooth_iter->partial1_.remaining_quotient_ << std::endl;
-    }
     VeryLong::generate_prime_table();
     long int p = VeryLong::firstPrime();
     long int B = std::max(SMALL_PRIME_BOUND1_, 1000L);
     while (p < B)
     {
-        if (smooth_iter->c_ == 4994L && smooth_iter->d_ == 3578L)
-        {
-            std::cerr << "divide_by_small_primes1 : p = " << p << ", remaining_quotient = " << smooth_iter->partial1_.remaining_quotient_ << std::endl;
-        }
         while (smooth_iter->partial1_.remaining_quotient_ % p == 0L)
         {
             smooth_iter->add_factor1(p);
         }
         p = VeryLong::nextPrime();
-    }
-    if (smooth_iter->c_ == 4994L && smooth_iter->d_ == 3578L)
-    {
-        std::cerr << "divide_by_small_primes1 : final remaining_quotient = " << smooth_iter->partial1_.remaining_quotient_ << std::endl;
     }
 }
 
