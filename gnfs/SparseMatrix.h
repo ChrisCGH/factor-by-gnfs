@@ -417,6 +417,7 @@ struct FastVector
         }
         else if (s > size_)
         {
+            // Only clear newly used portion
             memset(vec_ + size_, 0, (s - size_) * sizeof(uint32_t));
         }
         size_ = s;
@@ -501,6 +502,7 @@ struct FastVector64
         }
         else if (s > size_)
         {
+            // Only clear newly used portion
             memset(vec_ + size_, 0, (s - size_) * sizeof(unsigned long long int));
         }
         size_ = s;
@@ -510,14 +512,21 @@ struct FastVector64
     {
         if (s > capacity_)
         {
-            // Exponential growth: at least 1.5x previous capacity
-            capacity_ = std::max(s, capacity_ + capacity_ / 2);
+            // Handle initial allocation
+            if (capacity_ == 0)
+            {
+                capacity_ = std::max(s, incr);
+            }
+            else
+            {
+                capacity_ = std::max(s, capacity_ + capacity_ / 2);
+            }
+            
             unsigned long long int* tmp = new unsigned long long int [ capacity_ ];
             
             if (keep && vec_)
             {
                 memcpy(tmp, vec_, size_ * sizeof(unsigned long long int));
-                // Only clear new portion
                 memset(tmp + size_, 0, (capacity_ - size_) * sizeof(unsigned long long int));
             }
             else
