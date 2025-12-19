@@ -145,27 +145,6 @@ private:
     {
         one_size_ = 0;
     }
-#if 0
-    static char* begin_parse(const std::string& str, long int& column_count)
-    {
-        // This function gets the column count from str using strtok(buf, " "),
-        // and returns a char* buf suitable for subsequent calls to strtok(0, " ")
-        static char* buf = 0;
-        static std::string::size_type buflen = 0;
-        column_count = 0;
-        if (str.empty()) return 0;
-        if (str.size() > buflen)
-        {
-            delete [] buf;
-            buflen = str.size();
-            buf = new char [ buflen + 1 ];
-        }
-        strcpy(buf, str.c_str());
-        char* s = strtok(buf, " ");
-        column_count = std::atol(s);
-        return buf;
-    }
-#endif
     static long int begin_parse__(const std::string& str)
     {
         // This function getsreturns the column count from str using strtok(buf, " ")
@@ -406,16 +385,27 @@ struct FastVector
     }
     void resize(size_t s, bool keep = false)
     {
+        const size_t incr = 100;
         if (s > capacity_)
         {
-            // Exponential growth: at least 1.5x previous capacity
-            capacity_ = std::max(s, capacity_ + capacity_ / 2);
+            // OLD CODE - CAUSES BUG: 
+            // capacity_ = std:: max(s, capacity_ + capacity_ / 2);
+            
+            // CORRECTED CODE:
+            if (capacity_ == 0)
+            {
+                capacity_ = std::max(s, incr);  // Start with at least 'incr'
+            }
+            else
+            {
+                capacity_ = std::max(s, capacity_ + capacity_ / 2);  // 1.5x growth
+            }
+            
             uint32_t* tmp = new uint32_t [ capacity_ ];
             
             if (keep && vec_)
             {
                 memcpy(tmp, vec_, size_ * sizeof(uint32_t));
-                // Only clear new portion
                 memset(tmp + size_, 0, (capacity_ - size_) * sizeof(uint32_t));
             }
             else
@@ -427,7 +417,6 @@ struct FastVector
         }
         else if (s > size_)
         {
-            // Only clear newly used portion
             memset(vec_ + size_, 0, (s - size_) * sizeof(uint32_t));
         }
         size_ = s;
@@ -483,6 +472,42 @@ struct FastVector64
     }
     void resize(size_t s, bool keep = false)
     {
+        const size_t incr = 100;
+        if (s > capacity_)
+        {
+            // Handle initial allocation
+            if (capacity_ == 0)
+            {
+                capacity_ = std::max(s, incr);
+            }
+            else
+            {
+                capacity_ = std::max(s, capacity_ + capacity_ / 2);
+            }
+        
+            unsigned long long int* tmp = new unsigned long long int [ capacity_ ];
+        
+            if (keep && vec_)
+            {
+                memcpy(tmp, vec_, size_ * sizeof(unsigned long long int));
+                memset(tmp + size_, 0, (capacity_ - size_) * sizeof(unsigned long long int));
+            }
+            else
+            {
+                memset(tmp, 0, capacity_ * sizeof(unsigned long long int));
+            }
+            delete [] vec_;
+            vec_ = tmp;
+        }
+        else if (s > size_)
+        {
+            memset(vec_ + size_, 0, (s - size_) * sizeof(unsigned long long int));
+        }
+        size_ = s;
+    }
+#if 0
+    void resize(size_t s, bool keep = false)
+    {
         if (s > capacity_)
         {
             // Exponential growth: at least 1.5x previous capacity
@@ -509,6 +534,7 @@ struct FastVector64
         }
         size_ = s;
     }
+#endif    
     unsigned long long int* begin() const
     {
         return vec_;
