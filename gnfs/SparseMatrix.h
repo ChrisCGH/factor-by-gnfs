@@ -417,6 +417,7 @@ struct FastVector
         }
         else if (s > size_)
         {
+            // Only clear newly used portion
             memset(vec_ + size_, 0, (s - size_) * sizeof(uint32_t));
         }
         size_ = s;
