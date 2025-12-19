@@ -280,10 +280,10 @@ LatticeSiever::~LatticeSiever()
 //
 inline std::pair<long int, long int> LatticeSiever::offset_to_c_d(size_t offset)
 {
-    // Optimized: c_span is a power of 2 (2^c_span_bits = 2^11 = 2048)
+    // Optimized: c_span is a power of 2 (c_span = 2048 = 2^11)
     // Use bitwise operations instead of expensive modulo/division:
     // offset % c_span = offset & (c_span - 1)
-    // offset / c_span = offset >> c_span_bits
+    // offset / c_span = offset >> c_span_bits (where c_span_bits = 11)
     std::pair<long int, long int> cd;
     cd.first = (offset & (c_span - 1)) + min_c;   // offset % c_span + min_c
     cd.second = offset >> c_span_bits;             // offset / c_span
