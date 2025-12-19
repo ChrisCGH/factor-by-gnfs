@@ -309,37 +309,22 @@ long int LatticeSiever::check_interval1(long int q)
 
     SIEVE_TYPE* sieve_ptr = fixed_sieve_array_;
     SIEVE_TYPE* sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-    
-    // Use incremental c,d instead of offset_to_c_d() calls
-    long int c = min_c;
-    long int d = min_d;
 
     while (sieve_ptr < sieve_end_ptr)
     {
         SIEVE_TYPE val = -128;
-        if (debug_)
-        {
-            std::cerr << "1. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff0 = " << cutoff0 << std::endl;
-        }
         if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
         {
             if ((int)(*sieve_ptr) >= cutoff0)
             {
-                // Use c,d directly - no offset_to_c_d() call needed
-                double value1 = evaluate_on_lattice(f1d_, c, d, c1_, c2_);
+                // Calculate c,d only when needed using optimized offset_to_c_d()
+                std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
+                double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
                 int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
-                if (debug_)
-                {
-                    std::cerr << "2. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
-                }
 
                 if ((int)(*sieve_ptr) > cutoff)
                 {
-                    if (debug_)
-                    {
-                        std::cerr << "2.1 (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
-                    }
                     val = 0;
                     ++potential;
                 }
@@ -355,12 +340,6 @@ long int LatticeSiever::check_interval1(long int q)
             }
         }
         ++sieve_ptr;
-        ++c;
-        if (c > max_c)
-        {
-            c = min_c;
-            ++d;
-        }
     }
     return potential;
 }
