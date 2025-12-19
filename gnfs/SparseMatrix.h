@@ -502,6 +502,7 @@ struct FastVector64
         }
         else if (s > size_)
         {
+            // Only clear newly used portion
             memset(vec_ + size_, 0, (s - size_) * sizeof(unsigned long long int));
         }
         size_ = s;
