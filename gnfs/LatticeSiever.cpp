@@ -313,9 +313,9 @@ long int LatticeSiever::check_interval1(long int q)
     while (sieve_ptr < sieve_end_ptr)
     {
         SIEVE_TYPE val = -128;
-        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
+        if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
         {
-            if ((int)(*sieve_ptr) >= cutoff0)
+            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))  // Rare case
             {
                 // Calculate c,d only when needed using optimized offset_to_c_d()
                 std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
@@ -323,14 +323,14 @@ long int LatticeSiever::check_interval1(long int q)
                 int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
 
-                if ((int)(*sieve_ptr) > cutoff)
+                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))  // Even rarer
                 {
                     val = 0;
                     ++potential;
                 }
             }
 
-            if (val < 0)
+            if (__builtin_expect(val < 0, 1))  // Common case
             {
                 sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
             }
@@ -360,9 +360,9 @@ void LatticeSiever::check_interval2()
     int cutoff0 = 0;
     while (sieve_ptr < sieve_end_ptr)
     {
-        if (!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_))
+        if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
         {
-            if ((int)(*sieve_ptr) >= cutoff0)
+            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
             {
                 double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
                 int cutoff = static_cast<int>(logq(fabs(value1), LOGQ_BASE) - log_L1d2);
@@ -371,7 +371,7 @@ void LatticeSiever::check_interval2()
                 {
                     std::cerr << "3. (c,d) = (" << c << "," << d << "), *sieve_ptr = " << (int)(*sieve_ptr) << ", cutoff = " << cutoff << std::endl;
                 }
-                if ((int)(*sieve_ptr) > cutoff)
+                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))  // Rare
                 {
                     if (debug_)
                     {
