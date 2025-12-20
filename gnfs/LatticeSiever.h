@@ -441,7 +441,7 @@ private:
         SieveCacheBucket<cache_size> buckets_[bucket_count];
         LatticeSiever::SIEVE_TYPE* const sieve_array_;
         const BitArray64<sieve_array_size>& sieve_bit_array_;
-        std::vector<uint32_t> non_empty_buckets_;
+        std::vector<size_t> non_empty_buckets_;
 #ifdef DEBUG_SIEVE_CACHE
         std::ofstream debug_file_;
 #endif
