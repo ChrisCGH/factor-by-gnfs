@@ -1056,14 +1056,12 @@ private:
     }
 };
 
-// Explicit specialization declarations for double - marked as hot functions
+// Explicit specialization declarations for double
 template <>
-double Polynomial<double>::evaluate_homogeneous(const double& a, const double& b) const
-    __attribute__((hot));
+double Polynomial<double>::evaluate_homogeneous(const double& a, const double& b) const;
 
 template <>
-double Polynomial<double>::evaluate(const double& value) const
-    __attribute__((hot));
+double Polynomial<double>::evaluate(const double& value) const;
 
 // Algorithm 3.6.6 (Complex Roots)
 template <class T > int find_roots_over_C(const Polynomial<complex<T > >& P, std::vector<complex<T > >& roots)

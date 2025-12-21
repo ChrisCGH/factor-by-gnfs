@@ -3,7 +3,7 @@
 
 // Optimized Horner's method for double polynomial evaluation
 template <>
-double Polynomial<double>::evaluate(const double& value) const
+double Polynomial<double>::evaluate(const double& value) const __attribute__((hot))
 {
     if (_coefficients.empty()) return 0.0;
     
@@ -17,7 +17,7 @@ double Polynomial<double>::evaluate(const double& value) const
 
 // Specialized homogeneous evaluation for common GNFS polynomial degrees
 template <>
-double Polynomial<double>::evaluate_homogeneous(const double& a, const double& b) const
+double Polynomial<double>::evaluate_homogeneous(const double& a, const double& b) const __attribute__((hot))
 {
     const int d = deg();
     
