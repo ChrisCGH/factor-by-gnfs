@@ -307,38 +307,39 @@ long int LatticeSiever::check_interval1(long int q)
     int cutoff0 = INITIAL_CUTOFF_;
     long int potential = 0;
 
-    SIEVE_TYPE* sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
+    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
+    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
 
     while (sieve_ptr < sieve_end_ptr)
     {
-        SIEVE_TYPE val = -128;
-        if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
+        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
+        __builtin_prefetch(sieve_ptr + 64, 0, 1);
+        
+        // Check hot sieve value first before bit array
+        if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))
         {
-            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))  // Rare case
+            if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
             {
-                // Calculate c,d only when needed using optimized offset_to_c_d()
                 std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
                 double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
                 double abs_value1 = (value1 < 0.0) ? -value1 : value1;
                 int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
 
-                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))  // Even rarer
+                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
                 {
-                    val = 0;
+                    *sieve_ptr = 0;
                     ++potential;
                 }
+                else
+                {
+                    sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                }
             }
-
-            if (__builtin_expect(val < 0, 1))  // Common case
-            {
-                sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
-            }
-            else
-            {
-                *sieve_ptr = val;
-            }
+        }
+        else if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
+        {
+            sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
         }
         ++sieve_ptr;
     }
@@ -353,14 +354,17 @@ void LatticeSiever::check_interval2()
     double log_L1d2 = logq(L1d2, LOGQ_BASE);
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT2_;
-    SIEVE_TYPE* sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
+    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
+    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
     long int c = min_c;
     long int d = min_d;
 
     int cutoff0 = 0;
     while (sieve_ptr < sieve_end_ptr)
     {
+        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
+        __builtin_prefetch(sieve_ptr + 64, 0, 1);
+        
         if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
         {
             if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
