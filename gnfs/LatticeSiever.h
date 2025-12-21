@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <exception>
+#include <vector>
 #include "PointerHashTable.h"
 #include "Parallelogram.h"
 #include "BitOperations.h"
@@ -260,11 +261,16 @@ private:
 
          */
         static const size_t bucket_count = ((sieve_array_size - 1) / bucket_size) + 1;
+        // Precompute reciprocal for fast division by bucket_size
+        // Using: (offset * reciprocal) >> 32 ≈ offset / bucket_size
+        static constexpr uint64_t bucket_size_reciprocal = 
+            (uint64_t)((1ULL << 32) + bucket_size - 1) / bucket_size;
 #endif
         //SieveCache(LatticeSiever::SIEVE_TYPE* const sieve_array, const BitArray64<sieve_array_size>& sieve_bit_array)
         SieveCache(SIEVE_TYPE* const sieve_array, const BitArray64<sieve_array_size>& sieve_bit_array)
             : sieve_array_(sieve_array), sieve_bit_array_(sieve_bit_array)
         {
+            non_empty_buckets_.reserve(bucket_count / 4);  // Reserve 25% capacity
             LatticeSiever::SIEVE_TYPE* base = sieve_array_;
             for (size_t i = 0; i < bucket_count; ++i)
             {
@@ -291,11 +297,20 @@ private:
                 --count;
                 offset += inc;
 #ifdef BUCKET_BITS
-                SieveCacheBucket<cache_size>& scb = buckets_[offset >> bucket_bits];
+                size_t bucket_idx = offset >> bucket_bits;
+                SieveCacheBucket<cache_size>& scb = buckets_[bucket_idx];
 #else
-                SieveCacheBucket<cache_size>& scb = buckets_[offset / bucket_size];
+                size_t bucket_idx = (uint32_t)(((uint64_t)offset * bucket_size_reciprocal) >> 32);
+                SieveCacheBucket<cache_size>& scb = buckets_[bucket_idx];
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
+                
+                // Track if this bucket was previously empty
+                if (item == scb.cache_)
+                {
+                    non_empty_buckets_.push_back(bucket_idx);
+                }
+                
                 item->offset_ = offset;
                 item->p_ = iter->p;
                 item->logp_ = iter->logp;
@@ -310,9 +325,12 @@ private:
                             debug_file_ << std::hex << size_t(it->offset_) << std::dec << std::endl;
 #endif
                             *(it->offset_ + sieve_array_) += it->logp_;
-                            SieveCacheItem::pf_list_->pf_ptr_->offset_ = it->offset_;
-                            SieveCacheItem::pf_list_->pf_ptr_->p_ = it->p_;
-                            ++SieveCacheItem::pf_list_->pf_ptr_;
+                            
+                            // Cache the pointer for faster access
+                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
+                            pf->offset_ = it->offset_;
+                            pf->p_ = it->p_;
+                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
                         }
                     }
                     scb.next_cache_ = scb.cache_;
@@ -398,7 +416,7 @@ private:
 #endif
         void dump(bool add_to_pf_list = true)
         {
-            for (size_t bucket_index = 0; bucket_index < bucket_count; ++bucket_index)
+            for (size_t bucket_index : non_empty_buckets_)
             {
                 SieveCacheBucket<cache_size>& scb = buckets_[bucket_index];
                 SieveCacheItem* it = scb.cache_;
@@ -416,12 +434,14 @@ private:
                 }
                 scb.next_cache_ = scb.cache_;
             }
+            non_empty_buckets_.clear();
         }
 
     private:
         SieveCacheBucket<cache_size> buckets_[bucket_count];
         LatticeSiever::SIEVE_TYPE* const sieve_array_;
         const BitArray64<sieve_array_size>& sieve_bit_array_;
+        std::vector<size_t> non_empty_buckets_;
 #ifdef DEBUG_SIEVE_CACHE
         std::ofstream debug_file_;
 #endif
