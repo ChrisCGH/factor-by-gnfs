@@ -292,6 +292,7 @@ private:
 
         void add(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter)
         {
+            SIEVE_TYPE* __restrict__ sieve_array = sieve_array_;
             while (count)
             {
                 --count;
@@ -324,7 +325,7 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it->offset_) << std::dec << std::endl;
 #endif
-                            *(it->offset_ + sieve_array_) += it->logp_;
+                            *(it->offset_ + sieve_array) += it->logp_;
                             
                             // Cache the pointer for faster access
                             PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;

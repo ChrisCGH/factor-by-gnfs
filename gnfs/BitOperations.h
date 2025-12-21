@@ -201,7 +201,7 @@ struct BitOperations64
         return mask[cols];
     }
 
-    static bool bitSet(size_t i, unsigned long long int w)
+    static inline bool bitSet(size_t i, unsigned long long int w)
     {
         // returns zero if bit i is not set in w
         // returns non-zero otherwise
@@ -222,14 +222,14 @@ struct BitOperations64
         return (w & (1ULL << i)) == 0;
     }
 
-    static void setBit(size_t i, unsigned long long int& w)
+    static inline void setBit(size_t i, unsigned long long int& w)
     {
         // sets bit i (counting from 0) in w
         if (i >= BITS_IN_WORD)
             return;
         w |= (1ULL << i);
     }
-    static void clearBit(size_t i, unsigned long long int& w)
+    static inline void clearBit(size_t i, unsigned long long int& w)
     {
         // clears bit i (counting from 0) in w
         if (i >= BITS_IN_WORD)
@@ -314,21 +314,16 @@ struct BitArray64
     BitArray64() {}
     void set(size_t bit)
     {
-        BitOperations64::setBit(bit % BitOperations64::BITS_IN_WORD, word[bit / BitOperations64::BITS_IN_WORD]);
+        // BITS_IN_WORD = 64 = 2^6, so bit % 64 = bit & 63, bit / 64 = bit >> 6
+        BitOperations64::setBit(bit & 63, word[bit >> 6]);
     }
     void clear(size_t bit)
     {
-        BitOperations64::clearBit(bit % BitOperations64::BITS_IN_WORD, word[bit / BitOperations64::BITS_IN_WORD]);
+        BitOperations64::clearBit(bit & 63, word[bit >> 6]);
     }
     bool isSet(size_t bit) const
     {
-        //static bool bitSet(size_t i, unsigned long long int w)
-        //return (w & (1ULL << i)) != 0;
-        //const unsigned long long int& w = word[bit / BitOperations64::BITS_IN_WORD];
-        //size_t i = bit % BitOperations64::BITS_IN_WORD;
-        //return (w & (1ULL << i)) != 0;
-        //return (word[bit / BitOperations64::BITS_IN_WORD] & (1ULL << (bit % BitOperations64::BITS_IN_WORD))) != 0;
-        return BitOperations64::bitSet(bit % BitOperations64::BITS_IN_WORD, word[bit / BitOperations64::BITS_IN_WORD]);
+        return BitOperations64::bitSet(bit & 63, word[bit >> 6]);
     }
     void clear()
     {
