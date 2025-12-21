@@ -204,7 +204,7 @@ cleanpolynomialut:
 	rm -rf $(OUTPUTDIR)/PolyinomialUnitTest $(POLYNOMIAL_UT_OBJS)
 
 
-POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS = PolynomialOptimizerUnitTest.cpp PolynomialOptimizer.cpp pselect.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp discriminant.cpp dickman.cpp Logger.cpp
+POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS = PolynomialOptimizerUnitTest.cpp PolynomialOptimizer.cpp pselect.cpp Polynomial.cpp Polynomial_double.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp discriminant.cpp dickman.cpp Logger.cpp
 
 include $(POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS:.cpp=.d)
 
@@ -400,7 +400,7 @@ $(OUTPUTDIR)/VeryLongModularUnitTest : $(VLM_UT_OBJS)
 cleanvlmut: 
 	rm -rf $(OUTPUTDIR)/VeryLongModularUnitTest $(VLM_UT_OBJS)
 
-SKEWED_CPP_SRCS = skewed.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+SKEWED_CPP_SRCS = skewed.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp Polynomial_double.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -418,7 +418,7 @@ $(OUTPUTDIR)/skewed : $(SKEWED_OBJS)
 cleanskewed: 
 	rm -rf $(OUTPUTDIR)/skewed $(SKEWED_OBJS)
 
-EF_CPP_SRCS = ef.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+EF_CPP_SRCS = ef.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp Polynomial_double.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -526,7 +526,7 @@ $(OUTPUTDIR)/testan : $(TESTAN_OBJS)
 cleantestan :
 	rm -rf $(OUTPUTDIR)/testan $(TESTAN_OBJS)
 
-SIEVE_CPP_SRCS = sieve.cpp Siever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp discriminant.cpp timings.cpp lll.cpp squfof.cpp convert.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+SIEVE_CPP_SRCS = sieve.cpp Siever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp Polynomial_double.cpp QuadraticCharacters.cpp discriminant.cpp timings.cpp lll.cpp squfof.cpp convert.cpp qs.cpp SparseMatrix.cpp Logger.cpp
 
 SIEVE_OBJS = $(SIEVE_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
