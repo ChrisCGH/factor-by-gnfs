@@ -1,4 +1,5 @@
 gnfs/*.o
 gnfs/*.d
+gnfs/*.lst
 gnfs/examples/*/*
 gnfs/gbin/*
