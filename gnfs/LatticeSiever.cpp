@@ -175,14 +175,15 @@ inline double evaluate_on_lattice(const Polynomial<double>& f,
                                    long int c, long int d,
                                    const std::pair<long int, long int>& c1,
                                    const std::pair<long int, long int>& c2)
+    __attribute__((hot))
 {
-    if (c == 0L && d == 0L) return 0.0;
+    if (__builtin_expect(c == 0L && d == 0L, 0)) return 0.0;
     
-    // Fused multiply-add operations, fewer temporaries
-    double a = c * c1.first + d * c2.first;
-    double b = c * c1.second + d * c2.second;
+    // Use 64-bit integer arithmetic for precision, then convert once
+    long long int a_ll = (long long int)c * c1.first + (long long int)d * c2.first;
+    long long int b_ll = (long long int)c * c1.second + (long long int)d * c2.second;
     
-    return f.evaluate_homogeneous(a, b);
+    return f.evaluate_homogeneous((double)a_ll, (double)b_ll);
 }
 
 inline long int nearest_integer(double d)
