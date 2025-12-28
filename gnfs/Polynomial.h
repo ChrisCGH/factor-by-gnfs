@@ -700,20 +700,6 @@ public:
         return result;
     }
 
-    // Keep generic version for VeryLong and other types
-    F evaluate_homogeneous_generic(const F& a, const F& b) const
-    {
-        F result = 0L;
-        F temp = 1L;
-        for (auto& co: _coefficients)
-        {
-            result *= b;
-            result += temp * co;
-            temp *= a;
-        }
-        return result;
-    }
-
     F evaluate_homogeneous_1(const F& a, const F& b) const
     {
         F result = 0L;
@@ -1055,13 +1041,6 @@ private:
         if (d > degree) _coefficients.resize(degree + 1);
     }
 };
-
-// Explicit specialization declarations for double
-template <>
-double Polynomial<double>::evaluate_homogeneous(const double& a, const double& b) const;
-
-template <>
-double Polynomial<double>::evaluate(const double& value) const;
 
 // Algorithm 3.6.6 (Complex Roots)
 template <class T > int find_roots_over_C(const Polynomial<complex<T > >& P, std::vector<complex<T > >& roots)
