@@ -140,6 +140,38 @@ LatticeSiever::PrimeFactorList* LatticeSiever::SieveCacheItem::pf_list_ = 0;
 long int LatticeSiever::total_relations_ = 0;
 double LatticeSiever::total_sieving_time_ = 0;
 
+// Static member initialization for cached small primes
+std::vector<long int> LatticeSiever::small_primes_1_;
+std::vector<long int> LatticeSiever::small_primes_2_;
+bool LatticeSiever::small_primes_initialized_ = false;
+
+void LatticeSiever::initialize_small_primes(long int bound1, long int bound2)
+{
+    if (small_primes_initialized_) return;
+    
+    VeryLong::generate_prime_table();
+    long int B1 = std::max(bound1, 1000L);
+    long int B2 = std::max(bound2, 1000L);
+    
+    // Build prime list for bound1
+    long int p = VeryLong::firstPrime();
+    while (p < B1)
+    {
+        small_primes_1_.push_back(p);
+        p = VeryLong::nextPrime();
+    }
+    
+    // Build prime list for bound2
+    p = VeryLong::firstPrime();
+    while (p < B2)
+    {
+        small_primes_2_.push_back(p);
+        p = VeryLong::nextPrime();
+    }
+    
+    small_primes_initialized_ = true;
+}
+
 namespace
 {
 // calculate log of x to base q
@@ -171,11 +203,10 @@ VeryLong evaluate_on_lattice(const Polynomial<VeryLong>& f,
     return res;
 }
 
-inline double evaluate_on_lattice(const Polynomial<double>& f,
+inline double __attribute__((hot)) evaluate_on_lattice(const Polynomial<double>& f,
                                    long int c, long int d,
                                    const std::pair<long int, long int>& c1,
                                    const std::pair<long int, long int>& c2)
-    __attribute__((hot))
 {
     if (__builtin_expect(c == 0L && d == 0L, 0)) return 0.0;
     
@@ -229,6 +260,14 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     for (int i = 0; i < LP1_; i++) L_LP_1_ *= L1_;
     L_LP_2_ = L2_;
     for (int i = 0; i < LP2_; i++) L_LP_2_ *= L2_;
+    
+    // Precompute power values for check_interval functions
+    L1_pow_LP1_ = L1_;
+    for (int i = 0; i < LP1_; i++) L1_pow_LP1_ *= L1_;
+    L2_pow_LP2_ = L2_;
+    for (int i = 0; i < LP2_; i++) L2_pow_LP2_ *= L2_;
+    log_L2_pow_LP2_ = log10(L2_pow_LP2_);
+    
     relation_file_ = config.RELATION_FILE();
     SIEVE_BOUND_ADJUSTMENT1_ = config.SIEVE_BOUND_ADJUSTMENT1();
     SIEVE_BOUND_ADJUSTMENT2_ = config.SIEVE_BOUND_ADJUSTMENT2();
@@ -243,6 +282,9 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     fixed_sieve_region_ = config.FIXED_SIEVE_REGION();
 
     SKEWEDNESS_ = config.SKEWEDNESS();
+    
+    // Initialize cached small primes once
+    initialize_small_primes(SMALL_PRIME_BOUND1_, SMALL_PRIME_BOUND2_);
 
     std::string tmp = config.SIEVE_ID() + ".fb.dat";
     const char* alg_base_file = tmp.c_str();
@@ -298,11 +340,9 @@ size_t LatticeSiever::c_d_to_offset(const std::pair<long int, long int>& cd)
 
 long int LatticeSiever::check_interval1(long int q)
 {
-    double L1d = L1_;
-    double L1d2 = L1d;
-    for (int i = 0; i < LP1_ - 1; i++) L1d2 *= L1d;
-    L1d2 /= static_cast<double>(q);
-    double log_L1d2 = logq(L1d2, LOGQ_BASE);
+    // Use precomputed value, only divide by q
+    double L1d2 = L1_pow_LP1_ / static_cast<double>(q);
+    double log_L1d2 = log10(L1d2);
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
     int cutoff0 = INITIAL_CUTOFF_;
@@ -349,10 +389,8 @@ long int LatticeSiever::check_interval1(long int q)
 
 void LatticeSiever::check_interval2()
 {
-    double L1d = L2_;
-    double L1d2 = L1d;
-    for (int i = 0; i < LP2_ - 1; i++) L1d2 *= L1d;
-    double log_L1d2 = logq(L1d2, LOGQ_BASE);
+    // Use precomputed values directly
+    double log_L1d2 = log_L2_pow_LP2_;
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT2_;
     SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
@@ -409,22 +447,17 @@ void LatticeSiever::check_interval2()
 
 void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
 {
-    VeryLong::generate_prime_table();
-    long int p = VeryLong::firstPrime();
-    long int B = std::max(SMALL_PRIME_BOUND1_, 1000L);
-    while (p < B)
+    for (long int p : small_primes_1_)
     {
         while (smooth_iter->partial1_.remaining_quotient_ % p == 0L)
         {
             smooth_iter->add_factor1(p);
         }
-        p = VeryLong::nextPrime();
     }
 }
 
 void LatticeSiever::divide_by_small_primes2(PotentiallySmoothPoint* smooth_iter)
 {
-    //std::cerr << "divide_by_small_primes2 : (c,d) = (" << smooth_iter->c_ << "," << smooth_iter->d_ << ")" << std::endl;
     if (smooth_iter->partial2_.remaining_quotient_ == 0L)
     {
         throw std::string("Problem: remaining_quotient is zero");
@@ -433,10 +466,8 @@ void LatticeSiever::divide_by_small_primes2(PotentiallySmoothPoint* smooth_iter)
     {
         std::cerr << "divide_by_small_primes2 : remaining_quotient = " << smooth_iter->partial2_.remaining_quotient_ << std::endl;
     }
-    VeryLong::generate_prime_table();
-    long int p = VeryLong::firstPrime();
-    long int B = std::max(SMALL_PRIME_BOUND2_, 1000L);
-    while (p < B)
+    
+    for (long int p : small_primes_2_)
     {
         while (smooth_iter->partial2_.remaining_quotient_ % p == 0L)
         {
@@ -446,7 +477,6 @@ void LatticeSiever::divide_by_small_primes2(PotentiallySmoothPoint* smooth_iter)
             }
             smooth_iter->add_factor2(p);
         }
-        p = VeryLong::nextPrime();
     }
 }
 
@@ -993,8 +1023,15 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
     int32_t e22 = e2.first + (e2.second << c_span_bits);
 
     Parallelogram E_region(c_region_, e1, e2);
-    int32_t e_min = static_cast<int32_t>(std::ceil(E_region.min_x()));
-    int32_t e_max = static_cast<int32_t>(std::floor(E_region.max_x()));
+    
+    // Optimize: Use integer arithmetic where possible
+    double min_x = E_region.min_x();
+    double max_x = E_region.max_x();
+    
+    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
+    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    int32_t e_max = static_cast<int32_t>(max_x);
+    
     int32_t f_min = 0L;
     int32_t f_max = 0L;
     int32_t e = e_min;
@@ -1025,8 +1062,15 @@ inline void LatticeSiever::sieve1_again(FactorBase::a_iterator iter, long int r1
     int32_t e22 = e2.first + (e2.second << c_span_bits);
 
     Parallelogram E_region(c_region_, e1, e2);
-    int32_t e_min = static_cast<int32_t>(std::ceil(E_region.min_x()));
-    int32_t e_max = static_cast<int32_t>(std::floor(E_region.max_x()));
+    
+    // Optimize: Use integer arithmetic where possible
+    double min_x = E_region.min_x();
+    double max_x = E_region.max_x();
+    
+    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
+    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    int32_t e_max = static_cast<int32_t>(max_x);
+    
     int32_t f_min = 0L;
     int32_t f_max = 0L;
     int32_t e = e_min;
@@ -1053,8 +1097,15 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     int32_t e22 = e2.first + (e2.second << c_span_bits);
 
     Parallelogram E_region(c_region_, e1, e2);
-    int32_t e_min = static_cast<int32_t>(std::ceil(E_region.min_x()));
-    int32_t e_max = static_cast<int32_t>(std::floor(E_region.max_x()));
+    
+    // Optimize: Use integer arithmetic where possible
+    double min_x = E_region.min_x();
+    double max_x = E_region.max_x();
+    
+    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
+    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    int32_t e_max = static_cast<int32_t>(max_x);
+    
     int32_t f_min = 0L;
     int32_t f_max = 0L;
     int32_t e = e_min;
@@ -1269,22 +1320,27 @@ bool LatticeSiever::allocate_c_d_region()
     VeryLong::generate_prime_table();
     long int p = VeryLong::firstPrime();
     long int B = std::max(std::abs(min_c), std::abs(max_c));
+    const int c_span_const = max_c - min_c + 1;
+    
     while (p < B)
     {
         long int z = min_d % p;
         if (z <= 0) z += p;
         long int d = min_d - z + p;
+        
         while (d <= max_d)
         {
             z = min_c % p;
             if (z <= 0) z += p;
             long int c = min_c - z + p;
-            SIEVE_TYPE* ptr = fixed_sieve_array_ + c - min_c + d * (max_c - min_c + 1);
+            
+            // Compute base offset once per d
+            size_t base_offset = (d - min_d) * c_span_const;
+            
             while (c <= max_c)
             {
-                //*ptr = -128;
-                sieve_bit_array_.set(ptr - fixed_sieve_array_);
-                ptr += p;
+                size_t offset = base_offset + (c - min_c);
+                sieve_bit_array_.set(offset);
                 c += p;
             }
             d += p;
