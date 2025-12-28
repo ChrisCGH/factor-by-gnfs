@@ -342,6 +342,7 @@ long int LatticeSiever::check_interval1(long int q)
 {
     // Use precomputed value, only divide by q
     double L1d2 = L1_pow_LP1_ / static_cast<double>(q);
+    // LOGQ_BASE is always 10 (see logq function definition)
     double log_L1d2 = log10(L1d2);
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
@@ -1029,9 +1030,10 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
     double max_x = E_region.max_x();
     
     // Fast integer conversion for ceil and floor
-    // For ceil: cast to int, then add 1 if there was a fractional part
+    // For ceil: for positive values, add 1 if fractional part exists
+    // For negative values, truncation already gives ceiling behavior
     int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > static_cast<double>(e_min)) e_min++;
+    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
@@ -1070,9 +1072,10 @@ inline void LatticeSiever::sieve1_again(FactorBase::a_iterator iter, long int r1
     double max_x = E_region.max_x();
     
     // Fast integer conversion for ceil and floor
-    // For ceil: cast to int, then add 1 if there was a fractional part
+    // For ceil: for positive values, add 1 if fractional part exists
+    // For negative values, truncation already gives ceiling behavior
     int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > static_cast<double>(e_min)) e_min++;
+    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
@@ -1107,9 +1110,10 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     double max_x = E_region.max_x();
     
     // Fast integer conversion for ceil and floor
-    // For ceil: cast to int, then add 1 if there was a fractional part
+    // For ceil: for positive values, add 1 if fractional part exists
+    // For negative values, truncation already gives ceiling behavior
     int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > static_cast<double>(e_min)) e_min++;
+    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
