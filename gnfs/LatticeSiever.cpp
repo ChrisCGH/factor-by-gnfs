@@ -264,10 +264,11 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     for (int i = 0; i < LP2_; i++) L_LP_2_ *= L2_;
     
     // Precompute double power values for check_interval functions
+    // Start at L1, multiply (LP1_-1) times to get L1^LP1_
     L1_pow_LP1_ = L1_;
-    for (int i = 0; i < LP1_; i++) L1_pow_LP1_ *= static_cast<double>(L1_);
+    for (int i = 0; i < LP1_ - 1; i++) L1_pow_LP1_ *= static_cast<double>(L1_);
     L2_pow_LP2_ = L2_;
-    for (int i = 0; i < LP2_; i++) L2_pow_LP2_ *= static_cast<double>(L2_);
+    for (int i = 0; i < LP2_ - 1; i++) L2_pow_LP2_ *= static_cast<double>(L2_);
     log_L2_pow_LP2_ = log10(L2_pow_LP2_);
     
     relation_file_ = config.RELATION_FILE();
