@@ -1028,8 +1028,10 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
     double min_x = E_region.min_x();
     double max_x = E_region.max_x();
     
-    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
-    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    // Fast integer conversion for ceil and floor
+    // For ceil: cast to int, then add 1 if there was a fractional part
+    int32_t e_min = static_cast<int32_t>(min_x);
+    if (min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
@@ -1067,8 +1069,10 @@ inline void LatticeSiever::sieve1_again(FactorBase::a_iterator iter, long int r1
     double min_x = E_region.min_x();
     double max_x = E_region.max_x();
     
-    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
-    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    // Fast integer conversion for ceil and floor
+    // For ceil: cast to int, then add 1 if there was a fractional part
+    int32_t e_min = static_cast<int32_t>(min_x);
+    if (min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
@@ -1102,8 +1106,10 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     double min_x = E_region.min_x();
     double max_x = E_region.max_x();
     
-    // Fast integer conversion: add 0.999999 for ceil (positive), cast for floor
-    int32_t e_min = (min_x >= 0.0) ? static_cast<int32_t>(min_x + 0.999999) : static_cast<int32_t>(min_x);
+    // Fast integer conversion for ceil and floor
+    // For ceil: cast to int, then add 1 if there was a fractional part
+    int32_t e_min = static_cast<int32_t>(min_x);
+    if (min_x > static_cast<double>(e_min)) e_min++;
     int32_t e_max = static_cast<int32_t>(max_x);
     
     int32_t f_min = 0L;
