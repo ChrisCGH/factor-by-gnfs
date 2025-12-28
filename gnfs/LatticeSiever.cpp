@@ -256,16 +256,18 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     B2_ = config.B2();
     L2_ = config.L2();
     LP2_ = config.LP2();
+    
+    // Compute power values for both VeryLong and double types
     L_LP_1_ = L1_;
     for (int i = 0; i < LP1_; i++) L_LP_1_ *= L1_;
     L_LP_2_ = L2_;
     for (int i = 0; i < LP2_; i++) L_LP_2_ *= L2_;
     
-    // Precompute power values for check_interval functions
+    // Precompute double power values for check_interval functions
     L1_pow_LP1_ = L1_;
-    for (int i = 0; i < LP1_; i++) L1_pow_LP1_ *= L1_;
+    for (int i = 0; i < LP1_; i++) L1_pow_LP1_ *= static_cast<double>(L1_);
     L2_pow_LP2_ = L2_;
-    for (int i = 0; i < LP2_; i++) L2_pow_LP2_ *= L2_;
+    for (int i = 0; i < LP2_; i++) L2_pow_LP2_ *= static_cast<double>(L2_);
     log_L2_pow_LP2_ = log10(L2_pow_LP2_);
     
     relation_file_ = config.RELATION_FILE();
