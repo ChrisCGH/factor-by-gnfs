@@ -1,8 +1,6 @@
 #!/bin/bash
 # Performance analysis helper for LatticeSiever
 
-set -e
-
 GNFS_DIR="/home/runner/work/factor-by-gnfs/factor-by-gnfs/gnfs"
 cd "$GNFS_DIR"
 
@@ -12,7 +10,10 @@ echo ""
 # Check if lsieve exists
 if [ ! -f "gbin/lsieve" ]; then
     echo "Building lsieve..."
-    make lsieve 2>&1 | tail -5
+    if ! make lsieve 2>&1 | tail -10; then
+        echo "Error: Failed to build lsieve. Try running 'cd gnfs && make lsieve' manually."
+        exit 1
+    fi
     echo ""
 fi
 
@@ -27,15 +28,23 @@ echo ""
 rm -f sieve.tim
 
 # Run the siever
-./gbin/lsieve $MIN_Q $MAX_Q 2>&1 | tee /tmp/sieve_output.txt
+if ! ./gbin/lsieve $MIN_Q $MAX_Q 2>&1 | tee /tmp/sieve_output.txt; then
+    echo "Warning: lsieve execution had errors"
+fi
 
 echo ""
 echo "=== Built-in Timer Results ==="
 if [ -f "sieve.tim" ]; then
-    cat sieve.tim
+    # Show only the final summary
+    echo "Latest timing summary:"
+    tail -20 sieve.tim | grep -v "^$"
     echo ""
-    echo "=== Top Time Consumers ==="
-    grep -v "^$" sieve.tim | sort -k2 -nr | head -10
+    echo "=== Top Time Consumers (from final run) ==="
+    # Extract phase names and times, sort by percentage
+    tail -20 sieve.tim | grep ",Total,Real=" | \
+        awk -F',' '{print $2 " : " $4}' | \
+        sed 's/Real=//' | \
+        sort -t'(' -k2 -rn | head -10
 else
     echo "Warning: sieve.tim not found"
 fi

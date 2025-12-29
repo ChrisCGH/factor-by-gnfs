@@ -13,21 +13,41 @@ def parse_timer_file(timer_file):
     timings = {}
     try:
         with open(timer_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line or ':' not in line:
-                    continue
-                parts = line.split(':')
-                if len(parts) >= 2:
-                    name = parts[0].strip()
-                    time_str = parts[1].strip().split()[0]
-                    try:
-                        time_val = float(time_str)
-                        timings[name] = time_val
-                    except ValueError:
-                        pass
+            lines = f.readlines()
+            
+            # Find the last "Summary" section
+            last_summary_idx = -1
+            for i, line in enumerate(lines):
+                if 'Summary' in line:
+                    last_summary_idx = i
+            
+            # Parse from last summary onwards
+            if last_summary_idx >= 0:
+                for line in lines[last_summary_idx:]:
+                    line = line.strip()
+                    if not line or 'Summary' in line or 'Grand Total' in line:
+                        continue
+                    
+                    # Format: timestamp,phase_name,Total,Real=time (percent%),User=X,System=Y
+                    parts = line.split(',')
+                    if len(parts) >= 4:
+                        phase_name = parts[1].strip()
+                        time_info = parts[3].strip()
+                        
+                        # Extract time value from "Real=0.904257 (18.7338%)"
+                        match = re.search(r'Real=([\d.]+)', time_info)
+                        if match and phase_name:
+                            time_val = float(match.group(1))
+                            # Accumulate if phase already exists (shouldn't, but be safe)
+                            if phase_name in timings:
+                                timings[phase_name] += time_val
+                            else:
+                                timings[phase_name] = time_val
     except FileNotFoundError:
         print(f"Warning: {timer_file} not found", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Error parsing {timer_file}: {e}", file=sys.stderr)
+    
     return timings
 
 def analyze_timings(timings):
@@ -57,7 +77,23 @@ def analyze_timings(timings):
         }
         
         # Phase-specific optimization suggestions
-        if 'sieve by vectors' in name:
+        if 'check relations' in name.lower():
+            if pct > 40:
+                rec['suggestions'].extend([
+                    "MAJOR BOTTLENECK: check_for_remaining_relations() takes most time!",
+                    "Profile this function specifically: perf record -g -e cpu-clock",
+                    "Look for trial division, GCD computations, or factorization steps",
+                    "Consider: parallel checking, early-exit for non-smooth, batch GCD",
+                    "This is the PRIMARY target for optimization"
+                ])
+            elif pct > 20:
+                rec['suggestions'].extend([
+                    "Significant bottleneck in relation checking",
+                    "Profile check_for_remaining_relations() function",
+                    "Consider optimizing smoothness verification"
+                ])
+        
+        elif 'sieve by vectors' in name:
             if pct > 30:
                 rec['suggestions'].extend([
                     "Memory-bound: Consider cache-blocking techniques",
