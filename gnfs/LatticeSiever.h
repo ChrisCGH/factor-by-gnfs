@@ -536,10 +536,12 @@ private:
     void sieve_by_vectors1_again();
     void sieve_by_vectors2();
     void sieve1(FactorBase::a_iterator iter, long int r1);
+    void sieve1_block(FactorBase::a_iterator iter, long int r1, size_t block_start, size_t block_end);
 #ifdef RESIEVE1
     void sieve1_again(FactorBase::a_iterator iter, long int r1);
 #endif
     void sieve2(FactorBase::a_iterator iter, long int r1);
+    void sieve2_block(FactorBase::a_iterator iter, long int r1, size_t block_start, size_t block_end);
     long int check_interval1(long int q);
     void check_interval2();
     std::pair<long int, long int> offset_to_c_d(size_t offset);
