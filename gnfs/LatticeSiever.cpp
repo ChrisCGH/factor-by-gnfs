@@ -1059,60 +1059,6 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
     }
 }
 
-// Cache-blocking version: only processes sieve locations within [block_start, block_end)
-inline void LatticeSiever::sieve1_block(FactorBase::a_iterator iter, long int r1, 
-                                        size_t block_start, size_t block_end)
-{
-    std::pair<int32_t, int32_t> e1;
-    std::pair<int32_t, int32_t> e2;
-    generate_ef_lattice(iter->get_p(), r1, e1, e2);
-    int32_t e12 = e1.first + (e1.second << c_span_bits);
-    int32_t e22 = e2.first + (e2.second << c_span_bits);
-
-    Parallelogram E_region(c_region_, e1, e2);
-    
-    // Optimize: Use integer arithmetic where possible
-    double min_x = E_region.min_x();
-    double max_x = E_region.max_x();
-    
-    // Fast integer conversion for ceil and floor
-    int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
-    int32_t e_max = static_cast<int32_t>(max_x);
-    
-    int32_t f_min = 0L;
-    int32_t f_max = 0L;
-    int32_t e = e_min;
-
-    while (e <= e_max)
-    {
-        if (E_region.y_limits1(e, f_min, f_max))
-        {
-            uint32_t ptr = e * e12 + (f_min - 1) * e22 - min_c;
-            int32_t f_span = f_max - f_min + 1;
-            
-            // Only add to cache if any part of this span is in current block
-            // Calculate range [ptr + e22, ptr + f_span * e22)
-            uint32_t start_offset = ptr + e22;
-            uint32_t end_offset = ptr + (f_span + 1) * e22;
-            
-            // Skip if entirely outside block
-            if (end_offset <= block_start || start_offset >= block_end)
-            {
-                ++e;
-                continue;
-            }
-            
-#ifdef RESIEVE1
-            sieveCache_.add1(ptr, f_span, e22, iter);
-#else
-            sieveCache_.add(ptr, f_span, e22, iter);
-#endif
-        }
-        ++e;
-    }
-}
-
 #ifdef RESIEVE1
 inline void LatticeSiever::sieve1_again(FactorBase::a_iterator iter, long int r1)
 {
@@ -1189,55 +1135,6 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     }
 }
 
-// Cache-blocking version of sieve2: only processes sieve locations within [block_start, block_end)
-inline void LatticeSiever::sieve2_block(FactorBase::a_iterator iter, long int r1, 
-                                        size_t block_start, size_t block_end)
-{
-    std::pair<int32_t, int32_t> e1;
-    std::pair<int32_t, int32_t> e2;
-    generate_ef_lattice(iter->get_p(), r1, e1, e2);
-    int32_t e12 = e1.first + (e1.second << c_span_bits);
-    int32_t e22 = e2.first + (e2.second << c_span_bits);
-
-    Parallelogram E_region(c_region_, e1, e2);
-    
-    // Optimize: Use integer arithmetic where possible
-    double min_x = E_region.min_x();
-    double max_x = E_region.max_x();
-    
-    // Fast integer conversion for ceil and floor
-    int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
-    int32_t e_max = static_cast<int32_t>(max_x);
-    
-    int32_t f_min = 0L;
-    int32_t f_max = 0L;
-    int32_t e = e_min;
-
-    while (e <= e_max)
-    {
-        if (E_region.y_limits1(e, f_min, f_max))
-        {
-            uint32_t ptr = e * e12 + (f_min - 1) * e22 - min_c;
-            int32_t f_span = f_max - f_min + 1;
-            
-            // Only add to cache if any part of this span is in current block
-            uint32_t start_offset = ptr + e22;
-            uint32_t end_offset = ptr + (f_span + 1) * e22;
-            
-            // Skip if entirely outside block
-            if (end_offset <= block_start || start_offset >= block_end)
-            {
-                ++e;
-                continue;
-            }
-            
-            sieveCache_.add(ptr, f_span, e22, iter);
-        }
-        ++e;
-    }
-}
-
 /*
  *   (a,b) = c c1 + d c2
  *         = (c c1.first + d c2.first, c c1.second + d c2.second)
@@ -1286,69 +1183,47 @@ void LatticeSiever::sieve_by_vectors1()
 #ifndef RESIEVE1
     SieveCacheItem::set_pf_list(&alg_pf_list_);
 #endif
-    
-    // Safety check: Return early if alg_factor_base_ is not initialized
-    if (!alg_factor_base_)
-    {
-        return;
-    }
-    
-    // Cache-blocking: Process sieve in L3-cache-sized blocks to reduce cache misses
-    // L3 cache is 2 MiB, use 512 KB blocks to leave room for other data and code
-    const size_t BLOCK_SIZE = 512 * 1024;  // 512 KB in bytes
-    const size_t BLOCK_ELEMENTS = BLOCK_SIZE / sizeof(SIEVE_TYPE);
-    const size_t total_blocks = (fixed_sieve_array_size + BLOCK_ELEMENTS - 1) / BLOCK_ELEMENTS;
-    
-    for (size_t block_idx = 0; block_idx < total_blocks; ++block_idx)
-    {
-        size_t block_start = block_idx * BLOCK_ELEMENTS;
-        size_t block_end = std::min(block_start + BLOCK_ELEMENTS, (size_t)fixed_sieve_array_size);
-        
-        // Sieve this block with all primes
-        auto iter = alg_factor_base_->begin();
-        auto enditer = alg_factor_base_->end();
+    auto iter = alg_factor_base_->begin();
+    auto enditer = alg_factor_base_->end();
 
-        for (; iter != enditer; ++iter)
+    for (; iter != enditer; ++iter)
+    {
+        if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
+        if (iter->get_p() > B1_) break;
+        for (auto root_info_iter = alg_factor_base_->begin(iter);
+                root_info_iter != alg_factor_base_->end(iter);
+                ++root_info_iter)
         {
-            if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
-            if (iter->get_p() > B1_) break;
-            for (auto root_info_iter = alg_factor_base_->begin(iter);
-                    root_info_iter != alg_factor_base_->end(iter);
-                    ++root_info_iter)
-            {
-                long int p = iter->get_p();
-                long int r = *root_info_iter;
-                if (p == r) continue;
-                // now find short vectors in the sub-lattice of the (q,s) lattice
-                // which intersects the (p,r) lattice.
+            long int p = iter->get_p();
+            long int r = *root_info_iter;
+            if (p == r) continue;
+            // now find short vectors in the sub-lattice of the (q,s) lattice
+            // which intersects the (p,r) lattice.
 
-                long long int Q_ll = c1_.first - (long long)c1_.second * r;
-                long int Q = modasm(Q_ll, p);
-                if (Q)
+            long long int Q_ll = c1_.first - (long long)c1_.second * r;
+            long int Q = modasm(Q_ll, p);
+            if (Q)
+            {
+                long long int R_ll = (long long)c2_.second * r - c2_.first;
+                long int R = modasm(R_ll, p);
+                // we are interested in (c,d) such that c Q = d R mod p
+                // or c Q R^-1 = d mod p or cr' = d mod p
+                if (R)
                 {
-                    long long int R_ll = (long long)c2_.second * r - c2_.first;
-                    long int R = modasm(R_ll, p);
-                    // we are interested in (c,d) such that c Q = d R mod p
-                    // or c Q R^-1 = d mod p or cr' = d mod p
-                    if (R)
-                    {
-                        long int R_inv = inverse<long int>((long int)R, p);
-                        // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                        long int r1 = 0L;
-                        mulmodasm2(Q, R_inv, p, r1);
-                        sieve1_block(iter, r1, block_start, block_end);
-                    }
+                    long int R_inv = inverse<long int>((long int)R, p);
+                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
+                    long int r1 = 0L;
+                    mulmodasm2(Q, R_inv, p, r1);
+                    sieve1(iter, r1);
                 }
             }
         }
-        
-        // Dump cache after processing each block to keep working set small
-#ifdef RESIEVE1
-        sieveCache_.dump(false);
-#else
-        sieveCache_.dump(true);
-#endif
     }
+#ifdef RESIEVE1
+    sieveCache_.dump(false);
+#else
+    sieveCache_.dump(true);
+#endif
 }
 
 #ifdef RESIEVE1
@@ -1407,61 +1282,40 @@ void LatticeSiever::sieve_by_vectors2()
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
     }
     SieveCacheItem::set_pf_list(&rat_pf_list_);
-    
-    // Safety check: Return early if rat_factor_base_ is not initialized
-    if (!rat_factor_base_)
-    {
-        return;
-    }
-    
-    // Cache-blocking: Process sieve in L3-cache-sized blocks to reduce cache misses
-    const size_t BLOCK_SIZE = 512 * 1024;  // 512 KB in bytes
-    const size_t BLOCK_ELEMENTS = BLOCK_SIZE / sizeof(SIEVE_TYPE);
-    const size_t total_blocks = (fixed_sieve_array_size + BLOCK_ELEMENTS - 1) / BLOCK_ELEMENTS;
-    
-    for (size_t block_idx = 0; block_idx < total_blocks; ++block_idx)
-    {
-        size_t block_start = block_idx * BLOCK_ELEMENTS;
-        size_t block_end = std::min(block_start + BLOCK_ELEMENTS, (size_t)fixed_sieve_array_size);
-        
-        // Sieve this block with all primes
-        auto iter = rat_factor_base_->begin();
-        auto enditer = rat_factor_base_->end();
+    auto iter = rat_factor_base_->begin();
+    auto enditer = rat_factor_base_->end();
 
-        for (; iter != enditer; ++iter)
+    for (; iter != enditer; ++iter)
+    {
+        long int p = iter->get_p();
+        if (p < SMALL_PRIME_BOUND2_) continue;
+        if (p > B2_) break;
         {
-            long int p = iter->get_p();
-            if (p < SMALL_PRIME_BOUND2_) continue;
-            if (p > B2_) break;
-            {
-                long int r = *(rat_factor_base_->begin(iter));
-                if (p == r) continue;
-                // now find short vectors in the sub-lattice of the (q,s) lattice
-                // which intersects the (p,r) lattice.
+            long int r = *(rat_factor_base_->begin(iter));
+            if (p == r) continue;
+            // now find short vectors in the sub-lattice of the (q,s) lattice
+            // which intersects the (p,r) lattice.
 
-                long long int Q_ll = c1_.first - (long long)c1_.second * r;
-                long int Q = modasm(Q_ll, p);
-                if (Q)
+            long long int Q_ll = c1_.first - (long long)c1_.second * r;
+            long int Q = modasm(Q_ll, p);
+            if (Q)
+            {
+                long long int R_ll = (long long)c2_.second * r - c2_.first;
+                long int R = modasm(R_ll, p);
+                // we are interested in (c,d) such that c Q = d R mod p
+                // or c Q R^-1 = d mod p or cr' = d mod p
+                if (R)
                 {
-                    long long int R_ll = (long long)c2_.second * r - c2_.first;
-                    long int R = modasm(R_ll, p);
-                    // we are interested in (c,d) such that c Q = d R mod p
-                    // or c Q R^-1 = d mod p or cr' = d mod p
-                    if (R)
-                    {
-                        long int R_inv = inverse<long int>((long int)R, p);
-                        // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                        long int r1 = 0L;
-                        mulmodasm2(Q, R_inv, p, r1);
-                        sieve2_block(iter, r1, block_start, block_end);
-                    }
+                    long int R_inv = inverse<long int>((long int)R, p);
+                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
+                    long int r1 = 0L;
+                    mulmodasm2(Q, R_inv, p, r1);
+                    sieve1(iter, r1);
                 }
             }
         }
-        
-        // Dump cache after processing each block
-        sieveCache_.dump();
     }
+    sieveCache_.dump();
 }
 
 bool LatticeSiever::allocate_c_d_region()
