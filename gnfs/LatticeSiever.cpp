@@ -1287,6 +1287,12 @@ void LatticeSiever::sieve_by_vectors1()
     SieveCacheItem::set_pf_list(&alg_pf_list_);
 #endif
     
+    // Safety check: Return early if alg_factor_base_ is not initialized
+    if (!alg_factor_base_)
+    {
+        return;
+    }
+    
     // Cache-blocking: Process sieve in L3-cache-sized blocks to reduce cache misses
     // L3 cache is 2 MiB, use 512 KB blocks to leave room for other data and code
     const size_t BLOCK_SIZE = 512 * 1024;  // 512 KB in bytes
@@ -1401,6 +1407,12 @@ void LatticeSiever::sieve_by_vectors2()
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
     }
     SieveCacheItem::set_pf_list(&rat_pf_list_);
+    
+    // Safety check: Return early if rat_factor_base_ is not initialized
+    if (!rat_factor_base_)
+    {
+        return;
+    }
     
     // Cache-blocking: Process sieve in L3-cache-sized blocks to reduce cache misses
     const size_t BLOCK_SIZE = 512 * 1024;  // 512 KB in bytes
