@@ -112,14 +112,14 @@ test : $(ALL_TESTS)
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
 
-ALL_HEADERS = Combinations.h Config.h ContinuedFraction.h ExceptionalPrimes.h FactorBase.h Ideal.h LatticeSiever.h LongModular.h MPFloat.h Matrix.h NumberField.h AlgebraicNumber.h AlgebraicNumber_in_O_pO.h Polynomial.h QuadraticCharacters.h Quotient.h RootConfig.h SieveConfig.h VeryLong.h VeryLongModular.h SparseMatrix.h crt.h dickman.h blockLanczos.h lip.h lippar.h lll.h mod.h mt19937int.h pow.h pselect.h root.h timings.h Siever.h squfof.h PointerHashTable.h graph.h RelationManager.h discriminant.h gcd.h convert.h qs.h PolynomialOptimizer.h SieveUtils.h
-ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp Logger.cpp
+ALL_HEADERS = Combinations.h Config.h ContinuedFraction.h ExceptionalPrimes.h FactorBase.h Ideal.h LatticeSiever.h LongModular.h MPFloat.h Matrix.h NumberField.h AlgebraicNumber.h AlgebraicNumber_in_O_pO.h Polynomial.h QuadraticCharacters.h Quotient.h RootConfig.h SieveConfig.h VeryLong.h VeryLongModular.h SparseMatrix.h crt.h dickman.h blockLanczos.h lip.h lippar.h lll.h mod.h mt19937int.h pow.h pselect.h root.h timings.h Siever.h squfof.h PointerHashTable.h graph.h RelationManager.h discriminant.h gcd.h convert.h qs.h PolynomialOptimizer.h SieveUtils.h pollard_rho.h
+ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp Logger.cpp pollard_rho.cpp
 
 ALL_CS = lip.c mt19937int.c 
 ALL_SRCS = $(ALL_CPPS) $(ALL_CS) $(ALL_HEADERS)
 ALL_OBJS = $(ALL_CPPS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
-QS_CPP_SRCS = qs.cpp SparseMatrix.cpp timings.cpp VeryLongModular.cpp VeryLong.cpp squfof.cpp blockLanczos.cpp
+QS_CPP_SRCS = qs.cpp SparseMatrix.cpp timings.cpp VeryLongModular.cpp VeryLong.cpp squfof.cpp blockLanczos.cpp pollard_rho.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -137,7 +137,7 @@ $(OUTPUTDIR)/qs : $(QS_OBJS)
 cleanqs: 
 	rm -rf $(OUTPUTDIR)/qs $(QS_OBJS)
 
-TESTHNF_CPP_SRCS = testhnf.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+TESTHNF_CPP_SRCS = testhnf.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -155,7 +155,7 @@ $(OUTPUTDIR)/testhnf : $(TESTHNF_OBJS)
 cleantesthnf: 
 	rm -rf $(OUTPUTDIR)/testhnf $(TESTHNF_OBJS)
 
-TESTFACTOR_CPP_SRCS = testfactor.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp blockLanczos.cpp Logger.cpp
+TESTFACTOR_CPP_SRCS = testfactor.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp blockLanczos.cpp pollard_rho.cpp Logger.cpp
 
 
 C_SRCS = mt19937int.c lip.c
@@ -175,7 +175,7 @@ cleantestfactor:
 	rm -rf $(OUTPUTDIR)/testfactor $(TESTFACTOR_OBJS)
 
 
-POLYNOMIAL_UT_CPP_SRCS = PolynomialUnitTest.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp Logger.cpp
+POLYNOMIAL_UT_CPP_SRCS = PolynomialUnitTest.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 include $(POLYNOMIAL_UT_CPP_SRCS:.cpp=.d)
 
@@ -191,7 +191,7 @@ cleanpolynomialut:
 	rm -rf $(OUTPUTDIR)/PolyinomialUnitTest $(POLYNOMIAL_UT_OBJS)
 
 
-POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS = PolynomialOptimizerUnitTest.cpp PolynomialOptimizer.cpp pselect.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp discriminant.cpp dickman.cpp Logger.cpp
+POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS = PolynomialOptimizerUnitTest.cpp PolynomialOptimizer.cpp pselect.cpp Polynomial.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp qs.cpp squfof.cpp timings.cpp SparseMatrix.cpp discriminant.cpp dickman.cpp pollard_rho.cpp Logger.cpp
 
 include $(POLYNOMIAL_OPTIMIZER_UT_CPP_SRCS:.cpp=.d)
 
@@ -207,7 +207,7 @@ cleanpolynomialoptimizerut:
 	rm -rf $(OUTPUTDIR)/PolyinomialOptimizerUnitTest $(POLYNOMIAL_OPTIMIZER_UT_OBJS)
 
 
-LATTICE_SIEVER_UT_CPP_SRCS = LatticeSieverUnitTest.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp SieveUtils.cpp convert.cpp Logger.cpp
+LATTICE_SIEVER_UT_CPP_SRCS = LatticeSieverUnitTest.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp SieveUtils.cpp convert.cpp pollard_rho.cpp Logger.cpp
 
 include $(LATTICE_SIEVER_UT_CPP_SRCS:.cpp=.d)
 
@@ -312,7 +312,7 @@ $(OUTPUTDIR)/QuotientUnitTest : $(QUOTIENT_UT_OBJS)
 cleanquotienteut: 
 	rm -rf $(OUTPUTDIR)/QuotientUnitTest $(QUOTIENT_UT_OBJS)
 
-AN_UT_CPP_SRCS = AlgebraicNumberUnitTest.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp Logger.cpp
+AN_UT_CPP_SRCS = AlgebraicNumberUnitTest.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp pollard_rho.cpp Logger.cpp
 
 AN_UT_OBJS = $(AN_UT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -357,7 +357,7 @@ $(OUTPUTDIR)/LongModularUnitTest : $(LM_UT_OBJS)
 cleanlmut: 
 	rm -rf $(OUTPUTDIR)/LongModularUnitTest $(LM_UT_OBJS)
 
-VL_UT_CPP_SRCS = VeryLongUnitTest.cpp VeryLong.cpp squfof.cpp VeryLongModular.cpp LongModular.cpp qs.cpp timings.cpp SparseMatrix.cpp Logger.cpp
+VL_UT_CPP_SRCS = VeryLongUnitTest.cpp VeryLong.cpp squfof.cpp VeryLongModular.cpp LongModular.cpp qs.cpp timings.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 VL_UT_OBJS = $(VL_UT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -372,7 +372,7 @@ $(OUTPUTDIR)/VeryLongUnitTest : $(VL_UT_OBJS)
 cleanvlut: 
 	rm -rf $(OUTPUTDIR)/VeryLongUnitTest $(VL_UT_OBJS)
 
-VLM_UT_CPP_SRCS = VeryLongModularUnitTest.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp squfof.cpp qs.cpp timings.cpp SparseMatrix.cpp Logger.cpp
+VLM_UT_CPP_SRCS = VeryLongModularUnitTest.cpp VeryLong.cpp VeryLongModular.cpp LongModular.cpp squfof.cpp qs.cpp timings.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 VLM_UT_OBJS = $(VLM_UT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -387,7 +387,7 @@ $(OUTPUTDIR)/VeryLongModularUnitTest : $(VLM_UT_OBJS)
 cleanvlmut: 
 	rm -rf $(OUTPUTDIR)/VeryLongModularUnitTest $(VLM_UT_OBJS)
 
-SKEWED_CPP_SRCS = skewed.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+SKEWED_CPP_SRCS = skewed.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -405,7 +405,7 @@ $(OUTPUTDIR)/skewed : $(SKEWED_OBJS)
 cleanskewed: 
 	rm -rf $(OUTPUTDIR)/skewed $(SKEWED_OBJS)
 
-EF_CPP_SRCS = ef.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+EF_CPP_SRCS = ef.cpp timings.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp pselect.cpp PolynomialOptimizer.cpp dickman.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 C_SRCS = mt19937int.c lip.c
 
@@ -423,7 +423,7 @@ $(OUTPUTDIR)/ef : $(EF_OBJS)
 cleanef: 
 	rm -rf $(OUTPUTDIR)/ef $(EF_OBJS)
 
-LSIEVE_CPP_SRCS = lsieve.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+LSIEVE_CPP_SRCS = lsieve.cpp LatticeSiever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp timings.cpp lll.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 LSIEVE_OBJS = $(LSIEVE_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -438,7 +438,7 @@ $(OUTPUTDIR)/lsieve : $(LSIEVE_OBJS)
 cleanlsieve: 
 	rm -rf $(OUTPUTDIR)/lsieve $(LSIEVE_OBJS)
 
-BM_CPP_SRCS = buildMatrix.cpp SparseMatrix.cpp timings.cpp RelationManager.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp LongModular.cpp squfof.cpp qs.cpp convert.cpp Logger.cpp
+BM_CPP_SRCS = buildMatrix.cpp SparseMatrix.cpp timings.cpp RelationManager.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp LongModular.cpp squfof.cpp qs.cpp convert.cpp pollard_rho.cpp Logger.cpp
 
 BM_OBJS = $(BM_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -482,7 +482,7 @@ $(OUTPUTDIR)/bl : $(BL_OBJS)
 cleanbl:
 	rm -rf $(OUTPUTDIR)/bl $(BL_OBJS)
 
-CALCROOT_CPP_SRCS = calcroot.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp NumberField.cpp Ideal.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+CALCROOT_CPP_SRCS = calcroot.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp NumberField.cpp Ideal.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 
 CALCROOT_OBJS = $(CALCROOT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
@@ -498,7 +498,7 @@ $(OUTPUTDIR)/calcroot : $(CALCROOT_OBJS)
 cleancalcroot:
 	rm -rf $(OUTPUTDIR)/calcroot $(CALCROOT_OBJS)
 
-TESTAN_CPP_SRCS = testan.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp Logger.cpp
+TESTAN_CPP_SRCS = testan.cpp NumberField.cpp Ideal.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp SparseMatrix.cpp qs.cpp pollard_rho.cpp Logger.cpp
 
 TESTAN_OBJS = $(TESTAN_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -513,7 +513,7 @@ $(OUTPUTDIR)/testan : $(TESTAN_OBJS)
 cleantestan :
 	rm -rf $(OUTPUTDIR)/testan $(TESTAN_OBJS)
 
-SIEVE_CPP_SRCS = sieve.cpp Siever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp discriminant.cpp timings.cpp lll.cpp squfof.cpp convert.cpp qs.cpp SparseMatrix.cpp Logger.cpp
+SIEVE_CPP_SRCS = sieve.cpp Siever.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp QuadraticCharacters.cpp discriminant.cpp timings.cpp lll.cpp squfof.cpp convert.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
 SIEVE_OBJS = $(SIEVE_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
@@ -649,7 +649,7 @@ $(OUTPUTDIR)/testmmf : $(TESTMMF_OBJS)
 cleantestmmf :
 	rm -rf $(OUTPUTDIR)/testmmf $(TESTMMF_OBJS)
 
-STEST_CPP_SRCS = stest.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp Logger.cpp
+STEST_CPP_SRCS = stest.cpp VeryLong.cpp VeryLongModular.cpp squfof.cpp qs.cpp SparseMatrix.cpp timings.cpp pollard_rho.cpp Logger.cpp
 
 STEST_OBJS = $(STEST_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
