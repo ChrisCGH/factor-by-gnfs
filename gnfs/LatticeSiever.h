@@ -571,11 +571,22 @@ private:
     long int SMALL_PRIME_BOUND2_;
     long int INITIAL_CUTOFF_;
     double SKEWEDNESS_;
+    
+    // Precomputed values for check_interval functions
+    double L1_pow_LP1_;  // L1^LP1
+    double L2_pow_LP2_;  // L2^LP2
+    double log_L2_pow_LP2_;  // log10(L2^LP2)
 
     std::string relation_file_;
     std::fstream* relfile_;
     FactorBase* alg_factor_base_;
     FactorBase* rat_factor_base_;
+    
+    // Cached small primes for trial division
+    static std::vector<long int> small_primes_1_;
+    static std::vector<long int> small_primes_2_;
+    static bool small_primes_initialized_;
+    static void initialize_small_primes(long int bound1, long int bound2);
 
     static const int LOGQ_BASE = 10;
     static const size_t rat_pf_list_size = 700000L;
