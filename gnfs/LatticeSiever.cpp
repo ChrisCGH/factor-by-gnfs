@@ -343,110 +343,220 @@ size_t LatticeSiever::c_d_to_offset(const std::pair<long int, long int>& cd)
 
 long int LatticeSiever::check_interval1(long int q)
 {
-    // Use precomputed value, only divide by q
+    // Use precomputed value
     double L1d2 = L1_pow_LP1_ / static_cast<double>(q);
-    // LOGQ_BASE is always 10 (see logq function definition)
     double log_L1d2 = log10(L1d2);
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
     int cutoff0 = INITIAL_CUTOFF_;
     long int potential = 0;
 
-    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-
-    while (sieve_ptr < sieve_end_ptr)
+    if (debug_)
     {
-        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
-        __builtin_prefetch(sieve_ptr + 64, 0, 1);
-        
-        // Check hot sieve value first before bit array
-        if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))
-        {
-            if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
-            {
-                std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
-                double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
-                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
-                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                cutoff -= adjustment;
+        std::cerr << "check_interval1: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
+        std::cerr << "Total blocks: " << BLOCKS_PER_SIEVE << std::endl;
+    }
 
-                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
+    // Process sieve array in cache-sized blocks
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
+        
+        SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
+        SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
+        
+        if (debug_ && block % 100 == 0)
+        {
+            std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " (offset " << block_start << " to " << block_end << ")" << std::endl;
+        }
+
+        while (sieve_ptr < sieve_end_ptr)
+        {
+            // Prefetch next cache line within this block
+            if (sieve_ptr + 64 < sieve_end_ptr)
+            {
+                __builtin_prefetch(sieve_ptr + 64, 0, 1);
+            }
+            
+            // Check hot sieve value first before bit array
+            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))
+            {
+                size_t offset = sieve_ptr - fixed_sieve_array_;
+                if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
                 {
-                    *sieve_ptr = 0;
-                    ++potential;
-                }
-                else
-                {
-                    sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                    std::pair<long int, long int> cd = offset_to_c_d(offset);
+                    double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
+                    double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                    int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
+                    cutoff -= adjustment;
+
+                    if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
+                    {
+                        *sieve_ptr = 0;
+                        ++potential;
+                    }
+                    else
+                    {
+                        sieve_bit_array_.set(offset);
+                    }
                 }
             }
+            else
+            {
+                size_t offset = sieve_ptr - fixed_sieve_array_;
+                if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
+                {
+                    sieve_bit_array_.set(offset);
+                }
+            }
+            ++sieve_ptr;
         }
-        else if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
-        {
-            sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
-        }
-        ++sieve_ptr;
     }
+    
+    if (debug_)
+    {
+        std::cerr << "check_interval1 complete: " << potential << " potentially smooth" << std::endl;
+    }
+    
     return potential;
 }
 
 void LatticeSiever::check_interval2()
 {
-    // Use precomputed values directly
+    // Use precomputed values
     double log_L1d2 = log_L2_pow_LP2_;
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT2_;
-    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-    long int c = min_c;
-    long int d = min_d;
-
     int cutoff0 = 0;
-    while (sieve_ptr < sieve_end_ptr)
+    
+    if (debug_)
     {
-        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
-        __builtin_prefetch(sieve_ptr + 64, 0, 1);
+        std::cerr << "check_interval2: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
+    }
+
+    // Process sieve array in cache-sized blocks
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
         
-        if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
+        // Calculate starting c and d for this block
+        long int start_c = min_c + (block_start % c_span);
+        long int start_d = min_d + (block_start / c_span);
+        
+        SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
+        SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
+        
+        long int c = start_c;
+        long int d = start_d;
+        
+        if (debug_ && block % 100 == 0)
         {
-            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
+            std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " starting at (c,d)=(" << c << "," << d << ")" << std::endl;
+        }
+
+        while (sieve_ptr < sieve_end_ptr)
+        {
+            // Prefetch next cache line within this block
+            if (sieve_ptr + 64 < sieve_end_ptr)
             {
-                double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
-                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
-                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                cutoff -= adjustment;
-                if ((int)(*sieve_ptr) > cutoff)
+                __builtin_prefetch(sieve_ptr + 64, 0, 1);
+            }
+            
+            size_t offset = sieve_ptr - fixed_sieve_array_;
+            
+            if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
+            {
+                if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
                 {
-                    VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
-                    potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
-                    if (number_potentially_smooth_ > 0)
+                    double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
+                    double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                    int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
+                    cutoff -= adjustment;
+                    
+                    if ((int)(*sieve_ptr) > cutoff)
                     {
-                        potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
-                            potentially_smooth_point_ + number_potentially_smooth_;
+                        VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
+                        
+                        // Bounds check before array access
+                        if (number_potentially_smooth_ >= max_potentially_smooth)
+                        {
+                            if (debug_)
+                            {
+                                std::cerr << "WARNING: Reached max_potentially_smooth limit" << std::endl;
+                            }
+                            return;  // Early exit to avoid overflow
+                        }
+                        
+                        potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
+                        if (number_potentially_smooth_ > 0)
+                        {
+                            potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
+                                potentially_smooth_point_ + number_potentially_smooth_;
+                        }
+                        ++number_potentially_smooth_;
                     }
-                    ++number_potentially_smooth_;
+                    else
+                    {
+                        sieve_bit_array_.set(offset);
+                    }
                 }
                 else
                 {
-                    //*sieve_ptr = -128;
-                    sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                    sieve_bit_array_.set(offset);
                 }
             }
-            else
+            
+            ++c;
+            ++sieve_ptr;
+            if (c > max_c)
             {
-                //*sieve_ptr = -128;
-                sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                c = min_c;
+                ++d;
             }
         }
-        ++c;
-        ++sieve_ptr;
-        if (c > max_c)
+    }
+    
+    if (debug_)
+    {
+        std::cerr << "check_interval2 complete: " << number_potentially_smooth_ << " potentially smooth" << std::endl;
+    }
+}
+
+void LatticeSiever::validate_sieve_array(const char* checkpoint_name)
+{
+    if (!debug_) return;
+    
+    std::cerr << "=== Validation at " << checkpoint_name << " ===" << std::endl;
+    
+    // Count non-zero entries
+    size_t non_zero_count = 0;
+    size_t set_bit_count = 0;
+    int min_val = 127;
+    int max_val = -128;
+    
+    for (size_t i = 0; i < fixed_sieve_array_size; ++i)
+    {
+        if (fixed_sieve_array_[i] != 0)
         {
-            c = min_c;
-            ++d;
+            ++non_zero_count;
+            if (fixed_sieve_array_[i] < min_val) min_val = fixed_sieve_array_[i];
+            if (fixed_sieve_array_[i] > max_val) max_val = fixed_sieve_array_[i];
+        }
+        if (sieve_bit_array_.isSet(i))
+        {
+            ++set_bit_count;
         }
     }
+    
+    std::cerr << "  Non-zero sieve entries: " << non_zero_count << std::endl;
+    std::cerr << "  Set bit array entries: " << set_bit_count << std::endl;
+    std::cerr << "  Sieve value range: [" << min_val << ", " << max_val << "]" << std::endl;
+    std::cerr << "  Number potentially smooth: " << number_potentially_smooth_ << std::endl;
+    std::cerr << "========================" << std::endl;
 }
 
 void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
@@ -1398,13 +1508,21 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     }
     head_psp_ = potentially_smooth_point_;
     number_potentially_smooth_ = 0;
+    
+    validate_sieve_array("After allocate_c_d_region");
+    
     timer_.start("sieve by vectors 1");
     sieve_by_vectors1();
     timer_.stop();
+    
+    validate_sieve_array("After sieve_by_vectors1");
 
     timer_.start("check interval 1");
     int number_of_potentially_alg_smooth = check_interval1(q);
     timer_.stop();
+    
+    validate_sieve_array("After check_interval1");
+    
     if (verbose())
     {
         std::cout << number_of_potentially_alg_smooth << " -> " << std::flush;
@@ -1413,10 +1531,14 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     timer_.start("sieve by vectors 2");
     sieve_by_vectors2();
     timer_.stop();
+    
+    validate_sieve_array("After sieve_by_vectors2");
 
     timer_.start("check interval 2");
     check_interval2();
     timer_.stop();
+    
+    validate_sieve_array("After check_interval2");
 
     timer_.start("remove factors for rational");
     remove_sieved_factors2();

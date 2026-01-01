@@ -546,6 +546,7 @@ private:
     size_t c_d_to_offset(const std::pair<long int, long int>& cd);
     bool allocate_c_d_region();
     bool in_range(long int c, long int d);
+    void validate_sieve_array(const char* checkpoint_name);
 
     Polynomial<VeryLong> f1_;
     Polynomial<double> f1d_;
@@ -612,6 +613,12 @@ private:
     static const int fixed_sieve_array_size = c_span * (max_d - min_d + 1); // 2^26
     //static const int sieve_cache_size = 7424;
     static const int sieve_cache_size = 7424;
+    
+    // Cache blocking parameters
+    // Block size chosen to fit in L2 cache (256KB typical)
+    // Each sieve entry is 1 byte, so 256K entries = 256KB
+    static const size_t CACHE_BLOCK_SIZE = 262144;  // 256KB worth of sieve entries
+    static const size_t BLOCKS_PER_SIEVE = (fixed_sieve_array_size + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE;
 
     SIEVE_TYPE fixed_sieve_array_[fixed_sieve_array_size];
     BitArray64<fixed_sieve_array_size> sieve_bit_array_;
