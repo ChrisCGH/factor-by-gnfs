@@ -1,8 +1,8 @@
 #!/bin/bash
 # Performance analysis helper for LatticeSiever
 
-GNFS_DIR="/home/runner/work/factor-by-gnfs/factor-by-gnfs/gnfs"
-cd "$GNFS_DIR"
+GNFS_DIR="/home/chris/factor-by-gnfs/gnfs"
+#cd "$GNFS_DIR"
 
 echo "=== LatticeSiever Performance Analysis ==="
 echo ""
@@ -19,7 +19,7 @@ fi
 
 # Default test range - adjust based on your needs
 MIN_Q=${1:-1000000}
-MAX_Q=${2:-1000010}
+MAX_Q=${2:-1000100}
 
 echo "Running test sieve from q=$MIN_Q to q=$MAX_Q..."
 echo ""
@@ -28,7 +28,7 @@ echo ""
 rm -f sieve.tim
 
 # Run the siever
-if ! ./gbin/lsieve $MIN_Q $MAX_Q 2>&1 | tee /tmp/sieve_output.txt; then
+if ! ${GNFS_DIR}/gbin/lsieve $MIN_Q $MAX_Q 2>&1 | tee /tmp/sieve_output.txt; then
     echo "Warning: lsieve execution had errors"
 fi
 
