@@ -1104,25 +1104,48 @@ bool VeryLong::factorise_no_trial_l(long int N, std::vector<long int>* factors)
     if (N == 1L) return true;
 
     long int factor;
+    
+    // Try Pollard's rho first for small numbers (faster than QS)
+    bool rho_ok = false;
+    if (N > 0)
+    {
+        rho_ok = pollard_rho((unsigned long long)N, factor, Debug);
+    }
+    
 #ifdef USE_QS
     bool squfof_ok = false;
     bool qs_ok = false;
-    qs_ok = QS(N, factor);
-    if (qs_ok && factor < 0) // overflow
-        qs_ok = false;
-    if (!qs_ok)
+    
+    // If Pollard's rho didn't find a factor, try QS
+    if (!rho_ok)
+    {
+        qs_ok = QS(N, factor);
+        if (qs_ok && factor < 0) // overflow
+            qs_ok = false;
+        if (!qs_ok)
+        {
+            squfof_ok = SQUFOF(N, factor);
+        }
+    }
+    
+    if (rho_ok || squfof_ok || qs_ok)
+#else
+    bool squfof_ok = false;
+    if (!rho_ok)
     {
         squfof_ok = SQUFOF(N, factor);
     }
-    if (squfof_ok || qs_ok)
-#else
-    bool squfof_ok = SQUFOF(N, factor);
-    if (squfof_ok)
+    if (rho_ok || squfof_ok)
 #endif
     {
         long int next_N = N / factor;
 #ifdef USE_QS
-        if (qs_ok)
+        if (rho_ok)
+        {
+            if (Debug)
+                cerr << "Pollard's rho: N = " << N << endl;
+        }
+        else if (qs_ok)
         {
             if (Debug)
                 cerr << "QS: N = " << N << endl;
@@ -1133,7 +1156,12 @@ bool VeryLong::factorise_no_trial_l(long int N, std::vector<long int>* factors)
                 cerr << "SQUFOF: N = " << N << endl;
         }
 #else
-        if (Debug)
+        if (rho_ok)
+        {
+            if (Debug)
+                cerr << "Pollard's rho: N = " << N << endl;
+        }
+        else if (Debug)
             cerr << "SQUFOF: N = " << N << endl;
 #endif
         if (Debug)
