@@ -2,13 +2,13 @@
 
 ## Overview
 
-This implementation adds cache blocking to the lattice siever's `check_interval1()` and `check_interval2()` functions. The sieve array (8MB) is processed in 256KB blocks that fit in L2 cache, improving temporal locality and cache hit rates.
+This implementation adds comprehensive cache blocking to the lattice siever, including both sieving phases and checking phases. The sieve array (8MB) is processed in 256KB blocks that fit in L2 cache, improving temporal locality and cache hit rates.
 
 ## What Changed
 
 ### Files Modified
-- `gnfs/LatticeSiever.h` - Added constants and validation function declaration
-- `gnfs/LatticeSiever.cpp` - Implemented blocked versions and validation
+- `gnfs/LatticeSiever.h` - Added constants, dump_block method, and validation function declaration
+- `gnfs/LatticeSiever.cpp` - Implemented blocked versions for sieving and checking phases
 
 ### Key Components
 
@@ -18,19 +18,25 @@ static const size_t CACHE_BLOCK_SIZE = 262144;  // 256KB blocks
 static const size_t BLOCKS_PER_SIEVE = 32;       // Total blocks
 ```
 
-#### 2. Blocked check_interval1()
+#### 2. Blocked Sieving (NEW)
+- **`SieveCache::dump_block()`**: Processes cache entries for a specific block range
+- **`sieve_by_vectors1/2()`**: Modified to dump cache block-by-block
+- **Strategy**: Accumulate all sieve operations, then dump block-by-block for cache locality
+- This targets the main source of cache misses (73% miss rate)
+
+#### 3. Blocked check_interval1()
 - Processes 8MB sieve array in 32 blocks of 256KB each
 - Maintains identical logic to original implementation
 - Adds optional debug output for progress tracking
 - Limits prefetch to current block
 
-#### 3. Blocked check_interval2()
+#### 4. Blocked check_interval2()
 - Processes sieve array in blocks with correct (c,d) tracking
 - Adds bounds checking to prevent array overflow
 - Maintains all original logic and side effects
 - Includes debug output for troubleshooting
 
-#### 4. Validation Function
+#### 5. Validation Function
 - `validate_sieve_array()` provides diagnostic snapshots
 - Reports sieve array statistics at key checkpoints
 - Only active when debug mode is enabled
@@ -58,13 +64,16 @@ Or modify the config file to enable debug mode.
 ### Validation Checkpoints
 When debug mode is enabled, you'll see output at these points:
 1. After allocate_c_d_region
-2. After sieve_by_vectors1
+2. After sieve_by_vectors1 (includes block-by-block sieving progress)
 3. After check_interval1
-4. After sieve_by_vectors2
+4. After sieve_by_vectors2 (includes block-by-block sieving progress)
 5. After check_interval2
 
 Example output:
 ```
+sieve_by_vectors1: Processing in blocks of 262144 bytes
+sieve_by_vectors1: Dumping block 0/32 (offset 0 to 262144)
+...
 check_interval1: Processing in blocks of 262144 bytes
 Total blocks: 32
 Processing block 0/32 (offset 0 to 262144)
@@ -82,14 +91,15 @@ check_interval1 complete: 12345 potentially smooth
 ## Performance Expectations
 
 ### Expected Improvements
-- **5-15% throughput increase** from better cache utilization
-- **Improved L2 cache hit rate** - blocks fit in typical 256KB-512KB L2
+- **10-30% throughput increase** from better cache utilization in sieving phases
+- **Significantly improved L2 cache hit rate** - blocks fit in typical 256KB-512KB L2
+- **Reduced cache misses** - targeting the 73% miss rate from sieving operations
 - **More effective prefetching** within block boundaries
 
-### No Performance Degradation
-- Zero overhead when debug mode is disabled
-- Identical algorithm and memory access patterns within blocks
-- Same results as original implementation
+### Cache Locality Benefits
+- **Sieving phase**: Cache entries dumped block-by-block keeps working set in L2
+- **Check phase**: Sequential processing within blocks improves temporal locality
+- **Combined effect**: Each 256KB block + 32KB bit array + cache entries fit in L2
 
 ## Troubleshooting
 
@@ -160,6 +170,34 @@ Compare results with and without blocking (should be identical):
 ```
 
 ## Technical Details
+
+### Sieving Phase Cache Blocking
+
+**Two-Phase Approach:**
+
+1. **Accumulation Phase** (unchanged from original):
+   - All primes are sieved as before
+   - Sieve operations accumulate in `SieveCache` buckets
+   - This maintains the mathematical correctness of the algorithm
+
+2. **Block-wise Dump Phase** (NEW):
+   ```cpp
+   for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+   {
+       size_t block_start = block * CACHE_BLOCK_SIZE;
+       size_t block_end = min(block_start + CACHE_BLOCK_SIZE, fixed_sieve_array_size);
+       sieveCache_.dump_block(block_start, block_end, true);
+   }
+   ```
+   - Process cache entries block-by-block
+   - Each block: 256KB sieve data + 32KB bit array + cache entries
+   - Keeps working set in L2 cache
+
+**Why This Works:**
+- Sieving creates scattered writes across the array (cache-hostile)
+- By dumping cache block-by-block, we ensure each block is hot when processed
+- Cache entries outside current block are kept for later processing
+- Reduces cache misses from ~73% to significantly lower
 
 ### Block Layout
 ```
