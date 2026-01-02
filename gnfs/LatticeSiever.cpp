@@ -1289,7 +1289,6 @@ void LatticeSiever::sieve_by_vectors1()
     {
         std::cerr << "sieve_by_vectors1 : min_c = " << min_c << std::endl;
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
-        std::cerr << "sieve_by_vectors1: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
     }
 #ifndef RESIEVE1
     SieveCacheItem::set_pf_list(&alg_pf_list_);
@@ -1297,7 +1296,6 @@ void LatticeSiever::sieve_by_vectors1()
     auto iter = alg_factor_base_->begin();
     auto enditer = alg_factor_base_->end();
 
-    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
@@ -1331,27 +1329,6 @@ void LatticeSiever::sieve_by_vectors1()
             }
         }
     }
-    
-    // Second pass: dump cache block by block to improve cache locality
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "sieve_by_vectors1: Dumping block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " (offset " << block_start << " to " << block_end << ")" << std::endl;
-        }
-        
-#ifdef RESIEVE1
-        sieveCache_.dump_block(block_start, block_end, false);
-#else
-        sieveCache_.dump_block(block_start, block_end, true);
-#endif
-    }
-    
-    // Final cleanup: dump any remaining items (shouldn't be any, but be safe)
 #ifdef RESIEVE1
     sieveCache_.dump(false);
 #else
@@ -1366,13 +1343,11 @@ void LatticeSiever::sieve_by_vectors1_again()
     {
         std::cerr << "sieve_by_vectors1_again : min_c = " << min_c << std::endl;
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
-        std::cerr << "sieve_by_vectors1_again: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
     }
     SieveCacheItem::set_pf_list(&alg_pf_list_);
     auto iter = alg_factor_base_->begin();
     auto enditer = alg_factor_base_->end();
 
-    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
@@ -1405,23 +1380,6 @@ void LatticeSiever::sieve_by_vectors1_again()
             }
         }
     }
-    
-    // Second pass: dump cache block by block to improve cache locality
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "sieve_by_vectors1_again: Dumping block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " (offset " << block_start << " to " << block_end << ")" << std::endl;
-        }
-        
-        sieveCache_.dump_block(block_start, block_end, true);
-    }
-    
-    // Final cleanup: dump any remaining items
     sieveCache_.dump(true);
 }
 #endif
@@ -1432,13 +1390,11 @@ void LatticeSiever::sieve_by_vectors2()
     {
         std::cerr << "sieve_by_vectors2 : min_c = " << min_c << std::endl;
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
-        std::cerr << "sieve_by_vectors2: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
     }
     SieveCacheItem::set_pf_list(&rat_pf_list_);
     auto iter = rat_factor_base_->begin();
     auto enditer = rat_factor_base_->end();
 
-    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         long int p = iter->get_p();
@@ -1469,23 +1425,6 @@ void LatticeSiever::sieve_by_vectors2()
             }
         }
     }
-    
-    // Second pass: dump cache block by block to improve cache locality
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "sieve_by_vectors2: Dumping block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " (offset " << block_start << " to " << block_end << ")" << std::endl;
-        }
-        
-        sieveCache_.dump_block(block_start, block_end, true);
-    }
-    
-    // Final cleanup: dump any remaining items (shouldn't be any, but be safe)
     sieveCache_.dump();
 }
 
