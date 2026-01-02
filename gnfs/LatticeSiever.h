@@ -437,6 +437,64 @@ private:
             }
             non_empty_buckets_.clear();
         }
+        
+        // Block-based dump: only process entries in the specified offset range
+        // This enables cache blocking during sieving
+        void dump_block(size_t block_start, size_t block_end, bool add_to_pf_list = true)
+        {
+            // Process only non-empty buckets, but filter by block range
+            std::vector<size_t> buckets_to_keep;
+            buckets_to_keep.reserve(non_empty_buckets_.size());
+            
+            for (size_t bucket_index : non_empty_buckets_)
+            {
+                SieveCacheBucket<cache_size>& scb = buckets_[bucket_index];
+                SieveCacheItem* read_ptr = scb.cache_;
+                SieveCacheItem* write_ptr = scb.cache_;
+                bool bucket_still_has_items = false;
+                
+                while (read_ptr != scb.next_cache_)
+                {
+                    // Check if this item is in the current block
+                    if (read_ptr->offset_ >= block_start && read_ptr->offset_ < block_end)
+                    {
+                        // Process this item
+                        if (!sieve_bit_array_.isSet(read_ptr->offset_))
+                        {
+                            *(read_ptr->offset_ + sieve_array_) += read_ptr->logp_;
+                            if (add_to_pf_list)
+                            {
+                                SieveCacheItem::pf_list_->add(read_ptr->offset_ + sieve_array_, read_ptr->p_);
+                            }
+                        }
+                        // Don't keep this item
+                    }
+                    else
+                    {
+                        // Keep this item for later blocks
+                        if (write_ptr != read_ptr)
+                        {
+                            *write_ptr = *read_ptr;
+                        }
+                        ++write_ptr;
+                        bucket_still_has_items = true;
+                    }
+                    ++read_ptr;
+                }
+                
+                // Update next_cache_ to reflect removed items
+                scb.next_cache_ = write_ptr;
+                
+                // If bucket still has items, keep it in the list
+                if (bucket_still_has_items)
+                {
+                    buckets_to_keep.push_back(bucket_index);
+                }
+            }
+            
+            // Update non_empty_buckets_ to only contain buckets that still have unprocessed items
+            non_empty_buckets_ = std::move(buckets_to_keep);
+        }
 
     private:
         SieveCacheBucket<cache_size> buckets_[bucket_count];
