@@ -9,7 +9,6 @@
 #include <sstream>
 #include <exception>
 #include <vector>
-#include <algorithm>
 #include "PointerHashTable.h"
 #include "Parallelogram.h"
 #include "BitOperations.h"
@@ -272,7 +271,6 @@ private:
             : sieve_array_(sieve_array), sieve_bit_array_(sieve_bit_array)
         {
             non_empty_buckets_.reserve(bucket_count / 4);  // Reserve 25% capacity
-            bucket_bitset_.resize(BITSET_SIZE, 0);
             
             LatticeSiever::SIEVE_TYPE* base = sieve_array_;
             for (size_t i = 0; i < bucket_count; ++i)
@@ -314,14 +312,9 @@ private:
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
-                // Track bucket with bitset instead of vector push (using bitwise ops for performance)
-                size_t word_idx = bucket_idx >> 6;  // Division by 64
-                size_t bit_idx = bucket_idx & 63;   // Modulo 64
-                uint64_t bit_mask = 1ULL << bit_idx;
-                
-                if (!(bucket_bitset_[word_idx] & bit_mask))
+                // Track if this bucket was previously empty
+                if (item == scb.cache_)
                 {
-                    bucket_bitset_[word_idx] |= bit_mask;
                     non_empty_buckets_.push_back(bucket_idx);
                 }
                 
@@ -514,9 +507,6 @@ private:
                 scb.next_cache_ = scb.cache_;
             }
             non_empty_buckets_.clear();
-            
-            // Clear bitset for next sieve
-            std::fill(bucket_bitset_.begin(), bucket_bitset_.end(), 0);
         }
 
     private:
@@ -524,11 +514,6 @@ private:
         LatticeSiever::SIEVE_TYPE* const sieve_array_;
         const BitArray64<sieve_array_size>& sieve_bit_array_;
         std::vector<size_t> non_empty_buckets_;
-        
-        // Bitset for O(1) bucket tracking
-        std::vector<uint64_t> bucket_bitset_;
-        static constexpr size_t BITS_PER_WORD = 64;
-        static constexpr size_t BITSET_SIZE = (bucket_count + BITS_PER_WORD - 1) / BITS_PER_WORD;
 #ifdef DEBUG_SIEVE_CACHE
         std::ofstream debug_file_;
 #endif
