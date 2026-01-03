@@ -314,9 +314,9 @@ private:
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
-                // Track bucket with bitset instead of vector push
-                size_t word_idx = bucket_idx / BITS_PER_WORD;
-                size_t bit_idx = bucket_idx % BITS_PER_WORD;
+                // Track bucket with bitset instead of vector push (using bitwise ops for performance)
+                size_t word_idx = bucket_idx >> 6;  // Division by 64
+                size_t bit_idx = bucket_idx & 63;   // Modulo 64
                 uint64_t bit_mask = 1ULL << bit_idx;
                 
                 if (!(bucket_bitset_[word_idx] & bit_mask))
@@ -336,11 +336,13 @@ private:
                     // Process 4 items at a time
                     while (it + 4 <= end)
                     {
-                        // Prefetch next batch
+                        // Prefetch next batch (GCC/Clang specific)
+#if defined(__GNUC__) || defined(__clang__)
                         if (it + 8 <= end)
                         {
                             __builtin_prefetch(&it[8], 0, 1);
                         }
+#endif
                         
                         // Item 0
                         if (!sieve_bit_array_.isSet(it[0].offset_))
