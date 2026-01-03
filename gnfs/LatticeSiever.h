@@ -9,6 +9,7 @@
 #include <sstream>
 #include <exception>
 #include <vector>
+#include <algorithm>
 #include "PointerHashTable.h"
 #include "Parallelogram.h"
 #include "BitOperations.h"
@@ -271,6 +272,8 @@ private:
             : sieve_array_(sieve_array), sieve_bit_array_(sieve_bit_array)
         {
             non_empty_buckets_.reserve(bucket_count / 4);  // Reserve 25% capacity
+            bucket_bitset_.resize(BITSET_SIZE, 0);
+            
             LatticeSiever::SIEVE_TYPE* base = sieve_array_;
             for (size_t i = 0; i < bucket_count; ++i)
             {
@@ -293,6 +296,11 @@ private:
         void add(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter)
         {
             SIEVE_TYPE* __restrict__ sieve_array = sieve_array_;
+            
+            // Hoist invariants out of loop
+            const int32_t p = iter->p;
+            const signed char logp = iter->logp;
+            
             while (count)
             {
                 --count;
@@ -306,19 +314,87 @@ private:
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
-                // Track if this bucket was previously empty
-                if (item == scb.cache_)
+                // Track bucket with bitset instead of vector push
+                size_t word_idx = bucket_idx / BITS_PER_WORD;
+                size_t bit_idx = bucket_idx % BITS_PER_WORD;
+                uint64_t bit_mask = 1ULL << bit_idx;
+                
+                if (!(bucket_bitset_[word_idx] & bit_mask))
                 {
+                    bucket_bitset_[word_idx] |= bit_mask;
                     non_empty_buckets_.push_back(bucket_idx);
                 }
                 
                 item->offset_ = offset;
-                item->p_ = iter->p;
-                item->logp_ = iter->logp;
+                item->p_ = p;        // Use cached value
+                item->logp_ = logp;  // Use cached value
                 if (item == scb.cache_ + cache_size - 1)
                 {
                     const SieveCacheItem* it = scb.cache_;
-                    for (long int i = 0; i < cache_size; ++i, ++it)
+                    const SieveCacheItem* const end = scb.cache_ + cache_size;
+                    
+                    // Process 4 items at a time
+                    while (it + 4 <= end)
+                    {
+                        // Prefetch next batch
+                        if (it + 8 <= end)
+                        {
+                            __builtin_prefetch(&it[8], 0, 1);
+                        }
+                        
+                        // Item 0
+                        if (!sieve_bit_array_.isSet(it[0].offset_))
+                        {
+#ifdef DEBUG_SIEVE_CACHE
+                            debug_file_ << std::hex << size_t(it[0].offset_) << std::dec << std::endl;
+#endif
+                            *(it[0].offset_ + sieve_array) += it[0].logp_;
+                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
+                            pf->offset_ = it[0].offset_;
+                            pf->p_ = it[0].p_;
+                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                        }
+                        // Item 1
+                        if (!sieve_bit_array_.isSet(it[1].offset_))
+                        {
+#ifdef DEBUG_SIEVE_CACHE
+                            debug_file_ << std::hex << size_t(it[1].offset_) << std::dec << std::endl;
+#endif
+                            *(it[1].offset_ + sieve_array) += it[1].logp_;
+                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
+                            pf->offset_ = it[1].offset_;
+                            pf->p_ = it[1].p_;
+                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                        }
+                        // Item 2
+                        if (!sieve_bit_array_.isSet(it[2].offset_))
+                        {
+#ifdef DEBUG_SIEVE_CACHE
+                            debug_file_ << std::hex << size_t(it[2].offset_) << std::dec << std::endl;
+#endif
+                            *(it[2].offset_ + sieve_array) += it[2].logp_;
+                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
+                            pf->offset_ = it[2].offset_;
+                            pf->p_ = it[2].p_;
+                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                        }
+                        // Item 3
+                        if (!sieve_bit_array_.isSet(it[3].offset_))
+                        {
+#ifdef DEBUG_SIEVE_CACHE
+                            debug_file_ << std::hex << size_t(it[3].offset_) << std::dec << std::endl;
+#endif
+                            *(it[3].offset_ + sieve_array) += it[3].logp_;
+                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
+                            pf->offset_ = it[3].offset_;
+                            pf->p_ = it[3].p_;
+                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                        }
+                        it += 4;
+                    }
+                    
+                    // Handle remaining items
+                    while (it < end)
                     {
                         if (!sieve_bit_array_.isSet(it->offset_))
                         {
@@ -326,14 +402,14 @@ private:
                             debug_file_ << std::hex << size_t(it->offset_) << std::dec << std::endl;
 #endif
                             *(it->offset_ + sieve_array) += it->logp_;
-                            
-                            // Cache the pointer for faster access
                             PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
                             pf->offset_ = it->offset_;
                             pf->p_ = it->p_;
                             SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
                         }
+                        ++it;
                     }
+                    
                     scb.next_cache_ = scb.cache_;
                 }
                 else
@@ -436,6 +512,9 @@ private:
                 scb.next_cache_ = scb.cache_;
             }
             non_empty_buckets_.clear();
+            
+            // Clear bitset for next sieve
+            std::fill(bucket_bitset_.begin(), bucket_bitset_.end(), 0);
         }
 
     private:
@@ -443,6 +522,11 @@ private:
         LatticeSiever::SIEVE_TYPE* const sieve_array_;
         const BitArray64<sieve_array_size>& sieve_bit_array_;
         std::vector<size_t> non_empty_buckets_;
+        
+        // Bitset for O(1) bucket tracking
+        std::vector<uint64_t> bucket_bitset_;
+        static constexpr size_t BITS_PER_WORD = 64;
+        static constexpr size_t BITSET_SIZE = (bucket_count + BITS_PER_WORD - 1) / BITS_PER_WORD;
 #ifdef DEBUG_SIEVE_CACHE
         std::ofstream debug_file_;
 #endif
