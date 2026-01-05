@@ -181,26 +181,26 @@ public:
         if (x <= p2_.x)
         {
             // we intersect p1 -> p2 and p1 -> p3
-            min_y = x * y12_ + d12_;
-            double y = x * y13_ + d13_;
-            max_y = (y > min_y) ? y : min_y;
-            min_y = (y < min_y) ? y : min_y;
+            double y1 = x * y12_ + d12_;
+            double y2 = x * y13_ + d13_;
+            min_y = std::min(y1, y2);
+            max_y = std::max(y1, y2);
         }
         else if (x <= p3_.x)
         {
             // we intersect p1 -> p3 and p2 -> p4
-            min_y = x * y13_ + d13_;
-            double y = x * y24_ + d24_;
-            max_y = (y > min_y) ? y : min_y;
-            min_y = (y < min_y) ? y : min_y;
+            double y1 = x * y13_ + d13_;
+            double y2 = x * y24_ + d24_;
+            min_y = std::min(y1, y2);
+            max_y = std::max(y1, y2);
         }
         else // x <= p4_.x (already checked above)
         {
             // we intersect p2 -> p4 and p3 -> p4
-            min_y = x * y24_ + d24_;
-            double y = x * y34_ + d34_;
-            max_y = (y > min_y) ? y : min_y;
-            min_y = (y < min_y) ? y : min_y;
+            double y1 = x * y24_ + d24_;
+            double y2 = x * y34_ + d34_;
+            min_y = std::min(y1, y2);
+            max_y = std::max(y1, y2);
         }
 
         constexpr double epsilon = 1e-10;
