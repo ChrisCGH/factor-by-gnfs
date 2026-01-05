@@ -94,7 +94,7 @@ public:
     }
 
     // for a given value of x, find the minimum and maximum values of y
-    bool y_limits(double x, long int& y_min, long int& y_max)
+    inline bool y_limits(double x, long int& y_min, long int& y_max)
     {
         // assumption: points are sorted so p1_.x <= p2_.x <= p3_.x <= p4_.x
         double min_y;
@@ -154,7 +154,7 @@ public:
         else
             return false;// if (x > p4_.x) return false;
 
-        const double epsilon = 1e-10;
+        constexpr double epsilon = 1e-10;
         double min_y_ceil = std::ceil(min_y - epsilon);
         if (min_y_ceil > max_y + epsilon)
         {
@@ -167,50 +167,43 @@ public:
         return true;
     }
 
-    bool y_limits1(double x, int32_t& y_min, int32_t& y_max)
+    inline bool y_limits1(double x, int32_t& y_min, int32_t& y_max)
     {
         // assumption: points are sorted so p1_.x <= p2_.x <= p3_.x <= p4_.x
         double min_y;
         double max_y;
-        if (x < p1_.x)
+        
+        // Early exit for out-of-bounds
+        if (x < p1_.x || x > p4_.x)
             return false;
+        
+        // Calculate min_y and max_y based on x position
         if (x <= p2_.x)
         {
             // we intersect p1 -> p2 and p1 -> p3
             min_y = x * y12_ + d12_;
-            max_y = min_y;
             double y = x * y13_ + d13_;
-            if (y < min_y)
-                min_y = y;
-            else if (y > max_y)
-                max_y = y;
+            max_y = (y > min_y) ? y : min_y;
+            min_y = (y < min_y) ? y : min_y;
         }
         else if (x <= p3_.x)
         {
             // we intersect p1 -> p3 and p2 -> p4
             min_y = x * y13_ + d13_;
-            max_y = min_y;
             double y = x * y24_ + d24_;
-            if (y < min_y)
-                min_y = y;
-            else if (y > max_y)
-                max_y = y;
+            max_y = (y > min_y) ? y : min_y;
+            min_y = (y < min_y) ? y : min_y;
         }
-        else if (x <= p4_.x)
+        else // x <= p4_.x (already checked above)
         {
             // we intersect p2 -> p4 and p3 -> p4
             min_y = x * y24_ + d24_;
-            max_y = min_y;
             double y = x * y34_ + d34_;
-            if (y < min_y)
-                min_y = y;
-            else if (y > max_y)
-                max_y = y;
+            max_y = (y > min_y) ? y : min_y;
+            min_y = (y < min_y) ? y : min_y;
         }
-        else
-            return false;// if (x > p4_.x) return false;
 
-        const double epsilon = 1e-10;
+        constexpr double epsilon = 1e-10;
         double min_y_ceil = std::ceil(min_y - epsilon);
         if (min_y_ceil > max_y + epsilon)
         {
