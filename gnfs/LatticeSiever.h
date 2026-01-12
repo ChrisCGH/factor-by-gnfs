@@ -508,6 +508,76 @@ private:
             }
             non_empty_buckets_.clear();
         }
+        
+        // Efficient block-based dump: process only buckets that overlap with the current block
+        // Key insight: buckets partition the sieve array, so we only need to process
+        // buckets whose range intersects [block_start, block_end)
+        void dump_block_efficient(size_t block_start, size_t block_end, bool add_to_pf_list = true)
+        {
+            // Calculate bucket range that overlaps with this block
+            size_t first_bucket = block_start / bucket_size;
+            size_t last_bucket = (block_end - 1) / bucket_size;
+            
+            // Track which buckets still have unprocessed items
+            std::vector<size_t> buckets_to_keep;
+            buckets_to_keep.reserve(non_empty_buckets_.size());
+            
+            for (size_t bucket_index : non_empty_buckets_)
+            {
+                // Skip buckets that don't overlap with current block
+                if (bucket_index < first_bucket || bucket_index > last_bucket)
+                {
+                    buckets_to_keep.push_back(bucket_index);
+                    continue;
+                }
+                
+                SieveCacheBucket<cache_size>& scb = buckets_[bucket_index];
+                SieveCacheItem* read_ptr = scb.cache_;
+                SieveCacheItem* write_ptr = scb.cache_;
+                bool bucket_still_has_items = false;
+                
+                while (read_ptr != scb.next_cache_)
+                {
+                    // Check if this item is in the current block
+                    if (read_ptr->offset_ >= block_start && read_ptr->offset_ < block_end)
+                    {
+                        // Process this item
+                        if (!sieve_bit_array_.isSet(read_ptr->offset_))
+                        {
+                            *(read_ptr->offset_ + sieve_array_) += read_ptr->logp_;
+                            if (add_to_pf_list)
+                            {
+                                SieveCacheItem::pf_list_->add(read_ptr->offset_ + sieve_array_, read_ptr->p_);
+                            }
+                        }
+                        // Item processed, don't keep it
+                    }
+                    else
+                    {
+                        // Keep this item for later blocks
+                        if (write_ptr != read_ptr)
+                        {
+                            *write_ptr = *read_ptr;
+                        }
+                        ++write_ptr;
+                        bucket_still_has_items = true;
+                    }
+                    ++read_ptr;
+                }
+                
+                // Update next_cache_ to reflect removed items
+                scb.next_cache_ = write_ptr;
+                
+                // If bucket still has items, keep it in the list
+                if (bucket_still_has_items)
+                {
+                    buckets_to_keep.push_back(bucket_index);
+                }
+            }
+            
+            // Update non_empty_buckets_ to only contain buckets with unprocessed items
+            non_empty_buckets_ = std::move(buckets_to_keep);
+        }
 
     private:
         SieveCacheBucket<cache_size> buckets_[bucket_count];
@@ -617,6 +687,7 @@ private:
     size_t c_d_to_offset(const std::pair<long int, long int>& cd);
     bool allocate_c_d_region();
     bool in_range(long int c, long int d);
+    void validate_sieve_array(const char* checkpoint_name);
 
     Polynomial<VeryLong> f1_;
     Polynomial<double> f1d_;
@@ -683,6 +754,12 @@ private:
     static const int fixed_sieve_array_size = c_span * (max_d - min_d + 1); // 2^26
     //static const int sieve_cache_size = 7424;
     static const int sieve_cache_size = 7424;
+    
+    // Cache blocking parameters
+    // Block size chosen to fit in L2 cache (256KB typical)
+    // Each sieve entry is 1 byte, so 256K entries = 256KB
+    static const size_t CACHE_BLOCK_SIZE = 262144;  // 256KB worth of sieve entries
+    static const size_t BLOCKS_PER_SIEVE = (fixed_sieve_array_size + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE;
 
     SIEVE_TYPE fixed_sieve_array_[fixed_sieve_array_size];
     BitArray64<fixed_sieve_array_size> sieve_bit_array_;
