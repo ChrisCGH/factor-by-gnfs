@@ -1,0 +1,119 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                 RELATION RATE OPTIMIZATION FLOW                  │
+└─────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐
+│  Sieving Run     │
+│  (special-q)     │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Compute Statistics                                       │
+│  - Relations found: N                                     │
+│  - Time elapsed: T seconds                                │
+│  - Rate: N/T relations/second                             │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  RateOptimizer.record_sample()                            │
+│  - Add to history: {rate, time, params}                   │
+│  - Update best rate if improved                           │
+│  - Keep sliding window (last 20 samples)                  │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Display Metrics (if verbose)                             │
+│  [trend:X, avg:Y, best:Z]                                 │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+     ┌───────┐
+     │ Auto  │    NO
+     │Tuning?├─────────────► Continue sieving
+     └───┬───┘
+         │ YES
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Analyze Performance                                      │
+│  - Calculate trend (linear regression)                    │
+│  - Calculate moving average                               │
+│  - Check stability (variance)                             │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+     ┌───────────┐
+     │ Need to   │    NO
+     │ Adjust?   ├─────────────► Continue sieving
+     └───┬───────┘
+         │ YES (degrading or below best by 20%)
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Suggest Adjustments                                      │
+│  IF best known:                                           │
+│    - Move 10% toward best parameters                      │
+│  ELSE:                                                    │
+│    - Make small exploratory changes                       │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Apply Adjustments (with safety bounds)                   │
+│  - B1: [100K, 5M]                                         │
+│  - B2: [50K, 3M]                                          │
+│  - SIEVE_BOUND_ADJUSTMENT: [0, 50]                        │
+│  - INITIAL_CUTOFF: [5, 100]                               │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────┐
+│  Display Adjustment Info                                  │
+│  ### Auto-tuning: Adjusting parameters ###                │
+│  Rate trend: -0.8                                         │
+│  Current rate: 850 rel/sec                                │
+│  Best rate: 1005 rel/sec                                  │
+│  Adjustments: B1=500, B2=200, ...                         │
+│  New parameters: B1=1000500, B2=700200, ...               │
+└────────┬─────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────┐
+│  Continue        │
+│  Sieving with    │
+│  New Parameters  │
+└──────────────────┘
+
+
+KEY DECISION POINTS:
+═══════════════════
+
+1. Auto-tuning enabled? 
+   - Config: ENABLE_AUTO_TUNING = true/false
+   - Default: false (safe)
+
+2. Need to adjust?
+   - Requires: 10+ samples collected
+   - Requires: 5+ samples since last adjustment
+   - Trigger: Trend < -0.5 OR Rate < 0.8 × Best
+
+3. Adjustment strategy:
+   - Known best: Gradual move (10% steps)
+   - Unknown best: Small exploration
+   - Always: Safety bounds enforced
+
+RATE HISTORY EXAMPLE:
+═════════════════════
+
+Sample  Rate    Trend   Action
+──────  ────    ─────   ──────
+1-9     950-    N/A     Collect baseline data
+10      920     -3.0    Adjust (degrading)
+11      940     -2.0    Wait (recent adjust)
+12      960     -1.0    Wait
+13      970     0.5     Wait
+14      980     1.5     Wait (improving)
+15      990     2.0     No change (stable+good)
+16-20   995     1.8     No change (optimal)
+
