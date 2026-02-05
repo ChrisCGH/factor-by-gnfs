@@ -1,5 +1,7 @@
 gnfs/*.o
 gnfs/*.d
 gnfs/*.lst
+gnfs/*.gch
+gnfs/RateOptimizerTest
 gnfs/examples/*/*
 gnfs/gbin/*
