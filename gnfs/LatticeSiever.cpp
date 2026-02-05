@@ -1335,6 +1335,9 @@ void LatticeSiever::sieve_by_vectors1()
         }
     }
     
+    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
+    sieveCache_.remove_duplicate_buckets();
+    
     // Second pass: dump cache block by block for better cache locality
     // This is more efficient than the original attempt because we only process
     // buckets that overlap with each block, avoiding O(N×32) overhead
@@ -1415,6 +1418,9 @@ void LatticeSiever::sieve_by_vectors1_again()
         }
     }
     
+    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
+    sieveCache_.remove_duplicate_buckets();
+    
     // Second pass: dump cache block by block
     if (debug_)
     {
@@ -1482,6 +1488,9 @@ void LatticeSiever::sieve_by_vectors2()
             }
         }
     }
+    
+    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
+    sieveCache_.remove_duplicate_buckets();
     
     // Second pass: dump cache block by block for better cache locality
     if (debug_)

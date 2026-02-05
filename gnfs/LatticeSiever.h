@@ -10,6 +10,7 @@
 #include <sstream>
 #include <exception>
 #include <vector>
+#include <algorithm>
 #include "PointerHashTable.h"
 #include "Parallelogram.h"
 #include "BitOperations.h"
@@ -507,6 +508,16 @@ private:
             
             // Update non_empty_buckets_ to only contain buckets with unprocessed items
             non_empty_buckets_ = std::move(buckets_to_keep);
+        }
+        
+        // Remove duplicate bucket indices that can occur due to auto-dump and refill
+        void remove_duplicate_buckets()
+        {
+            if (non_empty_buckets_.size() <= 1) return;
+            
+            std::sort(non_empty_buckets_.begin(), non_empty_buckets_.end());
+            auto last = std::unique(non_empty_buckets_.begin(), non_empty_buckets_.end());
+            non_empty_buckets_.erase(last, non_empty_buckets_.end());
         }
 
     private:
