@@ -147,7 +147,6 @@ public:
         
         double trend = get_rate_trend(10);
         double current_rate = rate_history_.back().rate;
-        double avg_rate = get_moving_average(5);
         
         // If rate is improving and stable, don't change
         if (trend > 0 && is_rate_stable(0.15))
