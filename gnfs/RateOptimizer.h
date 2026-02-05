@@ -93,12 +93,13 @@ public:
         if (n < 2) return 0.0;
         
         // Simple linear regression on recent samples
+        // Use forward iteration so older samples have lower x values
         double sum_x = 0.0, sum_y = 0.0, sum_xy = 0.0, sum_x2 = 0.0;
-        auto it = rate_history_.rbegin();
-        for (size_t i = 0; i < n; i++, ++it)
+        size_t start_idx = rate_history_.size() - n;
+        for (size_t i = 0; i < n; i++)
         {
             double x = static_cast<double>(i);
-            double y = it->rate;
+            double y = rate_history_[start_idx + i].rate;
             sum_x += x;
             sum_y += y;
             sum_xy += x * y;
