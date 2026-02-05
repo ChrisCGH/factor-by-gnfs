@@ -9,7 +9,7 @@
 class SieveConfig
 {
 public:
-    SieveConfig(const std::string& filename) : LP1_(1), LP2_(1), SKEWEDNESS_(1.0)
+    SieveConfig(const std::string& filename) : LP1_(1), LP2_(1), SKEWEDNESS_(1.0), ENABLE_AUTO_TUNING_(false)
     {
         SIEVE_ID_ = "ctc4";
         RELATION_FILE_ = "relations.out";
@@ -182,6 +182,17 @@ public:
                 {
                     RELATION_FILE_ = s;
                 }
+                else if (str.find("ENABLE_AUTO_TUNING = ") == 0)
+                {
+                    if (s == "true" || s == "TRUE" || s == "1")
+                    {
+                        ENABLE_AUTO_TUNING_ = true;
+                    }
+                    else
+                    {
+                        ENABLE_AUTO_TUNING_ = false;
+                    }
+                }
             }
         }
         else
@@ -304,6 +315,11 @@ public:
     {
         return FIXED_SIEVE_REGION_;
     }
+    
+    bool ENABLE_AUTO_TUNING() const
+    {
+        return ENABLE_AUTO_TUNING_;
+    }
 
     void display() const
     {
@@ -336,6 +352,8 @@ public:
         else std::cerr << "DEBUG = false" << std::endl;
         if (FIXED_SIEVE_REGION_) std::cerr << "FIXED_SIEVE_REGION = true" << std::endl;
         else std::cerr << "FIXED_SIEVE_REGION = false" << std::endl;
+        if (ENABLE_AUTO_TUNING_) std::cerr << "ENABLE_AUTO_TUNING = true" << std::endl;
+        else std::cerr << "ENABLE_AUTO_TUNING = false" << std::endl;
     }
 
 private:
@@ -364,6 +382,7 @@ private:
     std::string RELATION_FILE_;
     bool DEBUG_;
     bool FIXED_SIEVE_REGION_;
+    bool ENABLE_AUTO_TUNING_;
 };
 
 #endif

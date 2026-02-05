@@ -4,6 +4,7 @@
 #include "Polynomial.h"
 #include "FactorBase.h"
 #include "SieveConfig.h"
+#include "RateOptimizer.h"
 #include <utility>
 #include <string>
 #include <sstream>
@@ -712,5 +713,15 @@ private:
     Timing timer_;
     static long int total_relations_;
     static double total_sieving_time_;
+    
+    // Rate optimization
+    RateOptimizer rate_optimizer_;
+    bool enable_auto_tuning_;
+    
+    // Methods for parameter adjustment
+    void apply_parameter_adjustments(long int B1_adj, long int B2_adj,
+                                     long int sieve_bound_adj1, long int sieve_bound_adj2,
+                                     long int initial_cutoff_adj);
+    void record_rate_sample(double rate, int relations_count);
 };
 #endif

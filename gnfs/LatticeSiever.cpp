@@ -286,6 +286,10 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
 
     SKEWEDNESS_ = config.SKEWEDNESS();
     
+    // Initialize rate optimizer
+    enable_auto_tuning_ = config.ENABLE_AUTO_TUNING();
+    rate_optimizer_.set_auto_tuning(enable_auto_tuning_);
+    
     // Initialize cached small primes once
     initialize_small_primes(SMALL_PRIME_BOUND1_, SMALL_PRIME_BOUND2_);
 
@@ -1660,10 +1664,22 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     double running_average_relations_per_day = running_average_relations_per_hour * 24;
     static double prev_running_average_relations_per_day = 0;
     static double prev_total_sieving_time = 0;
+    
+    // Record rate sample for optimization
+    record_rate_sample(running_average_relations_per_second, relations);
+    
     if (verbose())
     {
         std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
         std::cout << " (" << running_average_relations_per_second << "," << (int)running_average_relations_per_hour << "," << (int)running_average_relations_per_day << "),";
+        
+        // Display optimization statistics
+        if (enable_auto_tuning_)
+        {
+            double trend = rate_optimizer_.get_rate_trend();
+            double moving_avg = rate_optimizer_.get_moving_average();
+            std::cout << " [trend:" << trend << ", avg:" << moving_avg << ", best:" << rate_optimizer_.get_best_rate() << "]";
+        }
     }
     if (prev_running_average_relations_per_day > 0 &&
             running_average_relations_per_day / prev_running_average_relations_per_day < 0.5)
@@ -1742,4 +1758,78 @@ bool LatticeSiever::sieve(long int q)
     {
         return true;
     }
+}
+
+// Record a rate sample and potentially adjust parameters
+void LatticeSiever::record_rate_sample(double rate, int relations_count)
+{
+    rate_optimizer_.record_sample(rate, total_sieving_time_, relations_count,
+                                   B1_, B2_, SIEVE_BOUND_ADJUSTMENT1_, 
+                                   SIEVE_BOUND_ADJUSTMENT2_, INITIAL_CUTOFF_);
+    
+    if (!enable_auto_tuning_) return;
+    
+    // Check if we should adjust parameters
+    long int B1_adj = 0, B2_adj = 0, sieve_adj1 = 0, sieve_adj2 = 0, cutoff_adj = 0;
+    
+    if (rate_optimizer_.suggest_adjustments(B1_adj, B2_adj, sieve_adj1, sieve_adj2, cutoff_adj))
+    {
+        if (verbose())
+        {
+            std::cout << std::endl << "### Auto-tuning: Adjusting parameters ###" << std::endl;
+            std::cout << "Rate trend: " << rate_optimizer_.get_rate_trend() << std::endl;
+            std::cout << "Current rate: " << rate << " rel/sec" << std::endl;
+            std::cout << "Best rate: " << rate_optimizer_.get_best_rate() << " rel/sec" << std::endl;
+            std::cout << "Adjustments: B1=" << B1_adj << ", B2=" << B2_adj 
+                      << ", SBA1=" << sieve_adj1 << ", SBA2=" << sieve_adj2 
+                      << ", IC=" << cutoff_adj << std::endl;
+        }
+        
+        apply_parameter_adjustments(B1_adj, B2_adj, sieve_adj1, sieve_adj2, cutoff_adj);
+        
+        if (verbose())
+        {
+            std::cout << "New parameters: B1=" << B1_ << ", B2=" << B2_ 
+                      << ", SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
+                      << ", SBA2=" << SIEVE_BOUND_ADJUSTMENT2_ 
+                      << ", IC=" << INITIAL_CUTOFF_ << std::endl;
+            std::cout << "###################################" << std::endl;
+        }
+    }
+}
+
+// Apply parameter adjustments with safety bounds
+void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj,
+                                                long int sieve_bound_adj1, long int sieve_bound_adj2,
+                                                long int initial_cutoff_adj)
+{
+    // Apply adjustments with safety bounds
+    const long int B1_min = 100000, B1_max = 5000000;
+    const long int B2_min = 50000, B2_max = 3000000;
+    const long int sieve_adj_min = 0, sieve_adj_max = 50;
+    const long int cutoff_min = 5, cutoff_max = 100;
+    
+    B1_ += B1_adj;
+    if (B1_ < B1_min) B1_ = B1_min;
+    if (B1_ > B1_max) B1_ = B1_max;
+    
+    B2_ += B2_adj;
+    if (B2_ < B2_min) B2_ = B2_min;
+    if (B2_ > B2_max) B2_ = B2_max;
+    
+    SIEVE_BOUND_ADJUSTMENT1_ += sieve_bound_adj1;
+    if (SIEVE_BOUND_ADJUSTMENT1_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_min;
+    if (SIEVE_BOUND_ADJUSTMENT1_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_max;
+    
+    SIEVE_BOUND_ADJUSTMENT2_ += sieve_bound_adj2;
+    if (SIEVE_BOUND_ADJUSTMENT2_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_min;
+    if (SIEVE_BOUND_ADJUSTMENT2_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_max;
+    
+    INITIAL_CUTOFF_ += initial_cutoff_adj;
+    if (INITIAL_CUTOFF_ < cutoff_min) INITIAL_CUTOFF_ = cutoff_min;
+    if (INITIAL_CUTOFF_ > cutoff_max) INITIAL_CUTOFF_ = cutoff_max;
+    
+    // Note: Factor bases would need to be rebuilt for B1/B2 changes to take effect
+    // For now, we log the change but it will only affect the next sieving session
+    // A more sophisticated implementation would rebuild the factor bases dynamically
 }
