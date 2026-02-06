@@ -1810,47 +1810,18 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
     // The factor bases are built once at session start. If we change B1/B2,
     // the sieving uses old factor bases but checking uses new bounds.
     // This mismatch causes relations to appear smooth when they're not.
+    // Therefore: B1/B2 adjustments are DISABLED.
     //
-    // Similarly, SIEVE_BOUND_ADJUSTMENT values affect precomputed values like
-    // L1_pow_LP1_ and log_L2_pow_LP2_ which are computed at session start.
-    // Changing them mid-session creates inconsistencies.
-    //
-    // ONLY INITIAL_CUTOFF_ is safe to change mid-session as it's just a
-    // threshold comparison that doesn't depend on precomputed values.
+    // SAFE TO CHANGE: SIEVE_BOUND_ADJUSTMENT1/2 and INITIAL_CUTOFF
+    // These parameters are applied directly in check_interval1/2 (lines 354, 397, 435)
+    // They do NOT affect precomputed values (L1_pow_LP1_, log_L2_pow_LP2_)
+    // Changing them mid-session is safe and takes effect immediately.
     
-    // For now, DISABLE all parameter adjustments to prevent invalid relations
-    // A proper implementation would:
-    // 1. Rebuild factor bases when B1/B2 change
-    // 2. Recompute L1_pow_LP1_ and log_L2_pow_LP2_ when adjustments change
-    // 3. Only apply changes at special-q boundaries, not mid-sieve
-    
-    if (verbose())
-    {
-        std::cerr << "NOTE: Parameter auto-tuning disabled to prevent invalid relations" << std::endl;
-        std::cerr << "      Changing B1/B2 requires factor base rebuild (not implemented)" << std::endl;
-        std::cerr << "      Changing SIEVE_BOUND_ADJUSTMENT requires recomputing precomputed values" << std::endl;
-    }
-    
-    // TODO: Implement safe parameter adjustment:
-    // - Queue adjustments to apply at next special-q (not mid-sieve)
-    // - Rebuild factor bases if B1/B2 change
-    // - Recompute precomputed values if SIEVE_BOUND_ADJUSTMENT changes
-    
-    /* DISABLED TO PREVENT INVALID RELATIONS
-    // Apply adjustments with safety bounds
-    const long int B1_min = 100000, B1_max = 5000000;
-    const long int B2_min = 50000, B2_max = 3000000;
+    // Apply safe adjustments with bounds
     const long int sieve_adj_min = 0, sieve_adj_max = 50;
     const long int cutoff_min = 5, cutoff_max = 100;
     
-    B1_ += B1_adj;
-    if (B1_ < B1_min) B1_ = B1_min;
-    if (B1_ > B1_max) B1_ = B1_max;
-    
-    B2_ += B2_adj;
-    if (B2_ < B2_min) B2_ = B2_min;
-    if (B2_ > B2_max) B2_ = B2_max;
-    
+    // Apply SIEVE_BOUND_ADJUSTMENT adjustments (SAFE)
     SIEVE_BOUND_ADJUSTMENT1_ += sieve_bound_adj1;
     if (SIEVE_BOUND_ADJUSTMENT1_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_min;
     if (SIEVE_BOUND_ADJUSTMENT1_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_max;
@@ -1859,15 +1830,32 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
     if (SIEVE_BOUND_ADJUSTMENT2_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_min;
     if (SIEVE_BOUND_ADJUSTMENT2_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_max;
     
+    // Apply INITIAL_CUTOFF adjustment (SAFE)
     INITIAL_CUTOFF_ += initial_cutoff_adj;
     if (INITIAL_CUTOFF_ < cutoff_min) INITIAL_CUTOFF_ = cutoff_min;
     if (INITIAL_CUTOFF_ > cutoff_max) INITIAL_CUTOFF_ = cutoff_max;
-    */
     
-    // Suppress unused parameter warnings
+    // Log the adjustments if verbose
+    if (verbose() && (sieve_bound_adj1 != 0 || sieve_bound_adj2 != 0 || initial_cutoff_adj != 0))
+    {
+        std::cerr << "### Auto-tuning: Adjusting parameters ###" << std::endl;
+        std::cerr << "Adjustments: SBA1=" << sieve_bound_adj1 
+                  << ", SBA2=" << sieve_bound_adj2 
+                  << ", IC=" << initial_cutoff_adj << std::endl;
+        std::cerr << "New values: SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
+                  << ", SBA2=" << SIEVE_BOUND_ADJUSTMENT2_ 
+                  << ", IC=" << INITIAL_CUTOFF_ << std::endl;
+        std::cerr << "###################################" << std::endl;
+    }
+    
+    // B1/B2 adjustments are DISABLED (would cause invalid relations)
+    // TODO: Implement factor base rebuild to enable B1/B2 adjustments
+    if (verbose() && (B1_adj != 0 || B2_adj != 0))
+    {
+        std::cerr << "NOTE: B1/B2 adjustments ignored (requires factor base rebuild)" << std::endl;
+    }
+    
+    // Suppress unused parameter warnings for disabled adjustments
     (void)B1_adj;
     (void)B2_adj;
-    (void)sieve_bound_adj1;
-    (void)sieve_bound_adj2;
-    (void)initial_cutoff_adj;
 }
