@@ -1335,12 +1335,10 @@ void LatticeSiever::sieve_by_vectors1()
         }
     }
     
-    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
-    sieveCache_.remove_duplicate_buckets();
-    
     // Second pass: dump cache block by block for better cache locality
     // This is more efficient than the original attempt because we only process
     // buckets that overlap with each block, avoiding O(N×32) overhead
+    // Note: tracked_ flag prevents duplicate bucket entries, so no need for deduplication
     if (debug_)
     {
         std::cerr << "sieve_by_vectors1: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
@@ -1418,10 +1416,8 @@ void LatticeSiever::sieve_by_vectors1_again()
         }
     }
     
-    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
-    sieveCache_.remove_duplicate_buckets();
-    
     // Second pass: dump cache block by block
+    // Note: tracked_ flag prevents duplicate bucket entries
     if (debug_)
     {
         std::cerr << "sieve_by_vectors1_again: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
@@ -1489,10 +1485,8 @@ void LatticeSiever::sieve_by_vectors2()
         }
     }
     
-    // Remove any duplicate bucket entries that could occur from auto-dump during accumulation
-    sieveCache_.remove_duplicate_buckets();
-    
     // Second pass: dump cache block by block for better cache locality
+    // Note: tracked_ flag prevents duplicate bucket entries
     if (debug_)
     {
         std::cerr << "sieve_by_vectors2: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;

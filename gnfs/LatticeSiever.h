@@ -227,13 +227,15 @@ private:
         SieveCacheItem* next_cache_;
         LatticeSiever::SIEVE_TYPE* base_;
         SieveCacheItem cache_[cache_size];
+        bool tracked_;  // True if this bucket is in non_empty_buckets_ list
 
-        SieveCacheBucket() : next_cache_(cache_) {}
+        SieveCacheBucket() : next_cache_(cache_), tracked_(false) {}
 
         void init(LatticeSiever::SIEVE_TYPE* base)
         {
             base_ = base;
             next_cache_ = cache_;
+            tracked_ = false;
         }
     };
 //#define BUCKET_BITS 1
@@ -308,10 +310,11 @@ private:
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
-                // Track if this bucket was previously empty
-                if (item == scb.cache_)
+                // Track bucket if it's not already tracked
+                if (item == scb.cache_ && !scb.tracked_)
                 {
                     non_empty_buckets_.push_back(bucket_idx);
+                    scb.tracked_ = true;
                 }
                 
                 item->offset_ = offset;
@@ -504,13 +507,28 @@ private:
                 {
                     buckets_to_keep.push_back(bucket_index);
                 }
+                else
+                {
+                    // Bucket is now empty, clear tracked flag
+                    scb.tracked_ = false;
+                }
             }
             
-            // Update non_empty_buckets_ to only contain buckets with unprocessed items
+            // Update non_empty_buckets_: Clear all tracked flags, then set only for kept buckets
+            for (size_t bucket_index : non_empty_buckets_)
+            {
+                buckets_[bucket_index].tracked_ = false;
+            }
+            for (size_t bucket_index : buckets_to_keep)
+            {
+                buckets_[bucket_index].tracked_ = true;
+            }
             non_empty_buckets_ = std::move(buckets_to_keep);
         }
         
         // Remove duplicate bucket indices that can occur due to auto-dump and refill
+        // NOTE: With tracked_ flag in place, this should no longer be necessary
+        // Kept for safety/debugging purposes
         void remove_duplicate_buckets()
         {
             if (non_empty_buckets_.size() <= 1) return;
