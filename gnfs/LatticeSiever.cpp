@@ -1806,6 +1806,37 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
                                                 long int sieve_bound_adj1, long int sieve_bound_adj2,
                                                 long int initial_cutoff_adj)
 {
+    // IMPORTANT: Changing B1/B2 mid-session causes INVALID RELATIONS!
+    // The factor bases are built once at session start. If we change B1/B2,
+    // the sieving uses old factor bases but checking uses new bounds.
+    // This mismatch causes relations to appear smooth when they're not.
+    //
+    // Similarly, SIEVE_BOUND_ADJUSTMENT values affect precomputed values like
+    // L1_pow_LP1_ and log_L2_pow_LP2_ which are computed at session start.
+    // Changing them mid-session creates inconsistencies.
+    //
+    // ONLY INITIAL_CUTOFF_ is safe to change mid-session as it's just a
+    // threshold comparison that doesn't depend on precomputed values.
+    
+    // For now, DISABLE all parameter adjustments to prevent invalid relations
+    // A proper implementation would:
+    // 1. Rebuild factor bases when B1/B2 change
+    // 2. Recompute L1_pow_LP1_ and log_L2_pow_LP2_ when adjustments change
+    // 3. Only apply changes at special-q boundaries, not mid-sieve
+    
+    if (verbose())
+    {
+        std::cerr << "NOTE: Parameter auto-tuning disabled to prevent invalid relations" << std::endl;
+        std::cerr << "      Changing B1/B2 requires factor base rebuild (not implemented)" << std::endl;
+        std::cerr << "      Changing SIEVE_BOUND_ADJUSTMENT requires recomputing precomputed values" << std::endl;
+    }
+    
+    // TODO: Implement safe parameter adjustment:
+    // - Queue adjustments to apply at next special-q (not mid-sieve)
+    // - Rebuild factor bases if B1/B2 change
+    // - Recompute precomputed values if SIEVE_BOUND_ADJUSTMENT changes
+    
+    /* DISABLED TO PREVENT INVALID RELATIONS
     // Apply adjustments with safety bounds
     const long int B1_min = 100000, B1_max = 5000000;
     const long int B2_min = 50000, B2_max = 3000000;
@@ -1831,8 +1862,12 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
     INITIAL_CUTOFF_ += initial_cutoff_adj;
     if (INITIAL_CUTOFF_ < cutoff_min) INITIAL_CUTOFF_ = cutoff_min;
     if (INITIAL_CUTOFF_ > cutoff_max) INITIAL_CUTOFF_ = cutoff_max;
+    */
     
-    // Note: Factor bases would need to be rebuilt for B1/B2 changes to take effect
-    // For now, we log the change but it will only affect the next sieving session
-    // A more sophisticated implementation would rebuild the factor bases dynamically
+    // Suppress unused parameter warnings
+    (void)B1_adj;
+    (void)B2_adj;
+    (void)sieve_bound_adj1;
+    (void)sieve_bound_adj2;
+    (void)initial_cutoff_adj;
 }
