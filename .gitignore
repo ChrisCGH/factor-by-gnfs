@@ -5,3 +5,4 @@ gnfs/*.gch
 gnfs/RateOptimizerTest
 gnfs/examples/*/*
 gnfs/gbin/*
+*.o
