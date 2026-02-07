@@ -180,9 +180,12 @@ public:
             if (best_rate_ < 0.001 || std::abs(B1_adj) < 100)
             {
                 // Small exploratory changes
+                // Note: With cutoff -= adjustment semantics:
+                //   Negative adjustment → Higher cutoff → Stricter → Faster
+                //   Positive adjustment → Lower cutoff → More lenient → Slower
                 B1_adj = (sample_count_ % 2 == 0) ? 1000 : -1000;
-                sieve_bound_adj1 = (sample_count_ % 3 == 0) ? 1 : -1;
-                initial_cutoff_adj = (sample_count_ % 4 == 0) ? 5 : -5;
+                sieve_bound_adj1 = (sample_count_ % 3 == 0) ? -1 : 1;  // Inverted: try stricter first
+                initial_cutoff_adj = (sample_count_ % 4 == 0) ? -5 : 5;  // Inverted: try higher first
             }
             
             adjustment_count_ = sample_count_;
