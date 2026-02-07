@@ -394,7 +394,7 @@ long int LatticeSiever::check_interval1(long int q)
                     double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
                     double abs_value1 = (value1 < 0.0) ? -value1 : value1;
                     int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                    cutoff += adjustment;
+                    cutoff -= adjustment;
 
                     if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
                     {
@@ -479,7 +479,7 @@ void LatticeSiever::check_interval2()
                     double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
                     double abs_value1 = (value1 < 0.0) ? -value1 : value1;
                     int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                    cutoff += adjustment;
+                    cutoff -= adjustment;
                     
                     if ((int)(*sieve_ptr) > cutoff)
                     {
