@@ -1,0 +1,71 @@
+===============================================================================
+CRITICAL FIX: The RateOptimizer Fix Was Never Actually Applied!
+===============================================================================
+
+PROBLEM:
+--------
+User reported: Still 91% slower with auto-tuning enabled
+- With auto-tuning: 80 rel/sec (144k in 30 min)
+- Without auto-tuning: 963 rel/sec (2.6M in 45 min)
+
+CRITICAL DISCOVERY:
+------------------
+The "fix" from previous commits was DOCUMENTED but NEVER ACTUALLY APPLIED TO CODE!
+
+WHAT WAS DOCUMENTED:
+- Commit messages said: "Inverted RateOptimizer exploratory adjustments"
+- Documentation said: "Changed from ? 1 : -1 to ? -1 : 1"
+
+WHAT WAS ACTUALLY IN CODE:
+RateOptimizer.h line 184 STILL had:
+    sieve_bound_adj1 = (sample_count_ % 3 == 0) ? 1 : -1;  // WRONG!
+
+THE FIX WAS NEVER APPLIED!
+
+WHY IT STAYED BROKEN:
+--------------------
+With wrong RateOptimizer code:
+1. Performance degrades
+2. Suggests +1 adjustment (trying to help)
+3. cutoff -= 1 → cutoff LOWER → more lenient
+4. MORE candidates pass → MORE evaluations → SLOWER
+5. Performance degrades more → suggests +2
+6. Death spiral → 91% slowdown continues!
+
+THE ACTUAL FIX (NOW APPLIED):
+-----------------------------
+Changed RateOptimizer.h line 184:
+    FROM: sieve_bound_adj1 = (sample_count_ % 3 == 0) ? 1 : -1;
+    TO:   sieve_bound_adj1 = (sample_count_ % 3 == 0) ? -1 : 1;
+
+Changed RateOptimizer.h line 185:
+    FROM: initial_cutoff_adj = (sample_count_ % 4 == 0) ? 5 : -5;
+    TO:   initial_cutoff_adj = (sample_count_ % 4 == 0) ? -5 : 5;
+
+WHY THIS WORKS:
+--------------
+With correct logic:
+- Suggests -1 to improve performance
+- cutoff -= (-1) → cutoff += 1 → cutoff HIGHER
+- Stricter threshold → FEWER candidates → FASTER ✓
+- Also tries +1 (more lenient) to explore both directions
+- Tracks what works → Converges to optimal!
+
+EXPECTED RESULTS:
+----------------
+Before: 80 rel/sec (death spiral)
+After:  900-1000+ rel/sec (correct optimization)
+
+LESSON LEARNED:
+--------------
+Documentation ≠ Implementation!
+Always verify code changes were actually applied, not just documented.
+
+STATUS:
+-------
+✓ Fix ACTUALLY applied to code now (not just documented)
+✓ Code compiles successfully
+✓ Should restore normal performance
+
+THIS TIME IT'S REAL!
+===============================================================================
