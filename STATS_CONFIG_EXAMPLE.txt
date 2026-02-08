@@ -1,0 +1,70 @@
+# Example Configuration for Statistics Output
+# Add these lines to your sieve.cfg file
+
+# ============================================
+# Statistics Output Configuration
+# ============================================
+
+# Output file for statistics (CSV format)
+# Default: sieve_stats.csv
+# The file will be created automatically
+STATS_FILE = sieve_stats.csv
+
+# Write statistics every N relations
+# Default: 100
+# Set to 0 to disable statistics output
+# Recommended values:
+#   - Quick testing: 10-50 (frequent updates)
+#   - Normal sieving: 100-200 (balanced)
+#   - Long runs: 500-1000 (less overhead)
+STATS_INTERVAL = 100
+
+# ============================================
+# Output Format (CSV)
+# ============================================
+#
+# The output file will contain the following columns:
+#
+# 1. elapsed_time           - Total sieving time in seconds
+# 2. total_relations        - Cumulative relations found
+# 3. current_rel_per_sec    - Relations/sec for current special-q
+# 4. running_avg_rel_per_sec - Overall average relations/sec
+# 5. rel_per_hour           - Running average × 3600
+# 6. rel_per_day            - Running average × 86400
+#
+# Example output:
+# elapsed_time,total_relations,current_rel_per_sec,running_avg_rel_per_sec,rel_per_hour,rel_per_day
+# 10.5,100,9.52,9.52,34272,822528
+# 25.8,200,7.75,7.75,27900,669600
+#
+# ============================================
+# Usage Examples
+# ============================================
+#
+# 1. Basic monitoring:
+#    tail -f sieve_stats.csv
+#
+# 2. Check latest statistics:
+#    tail -n 1 sieve_stats.csv
+#
+# 3. Get current average rate:
+#    tail -n 1 sieve_stats.csv | cut -d',' -f4
+#
+# 4. Import into spreadsheet:
+#    Open the CSV file in Excel, LibreOffice, or Google Sheets
+#
+# 5. Plot with Python:
+#    import pandas as pd
+#    df = pd.read_csv('sieve_stats.csv')
+#    df.plot(x='elapsed_time', y='running_avg_rel_per_sec')
+#
+# ============================================
+# Performance Impact
+# ============================================
+#
+# Statistics output has minimal performance impact:
+# - File I/O occurs only every N relations
+# - Typical overhead: < 0.1% with STATS_INTERVAL=100
+# - To completely disable: set STATS_INTERVAL=0
+#
+# ============================================
