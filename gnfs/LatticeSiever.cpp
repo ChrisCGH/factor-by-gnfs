@@ -1806,46 +1806,42 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
                                                 long int sieve_bound_adj1, long int sieve_bound_adj2,
                                                 long int initial_cutoff_adj)
 {
-    // IMPORTANT: Changing B1/B2 mid-session causes INVALID RELATIONS!
-    // The factor bases are built once at session start. If we change B1/B2,
-    // the sieving uses old factor bases but checking uses new bounds.
-    // This mismatch causes relations to appear smooth when they're not.
-    // Therefore: B1/B2 adjustments are DISABLED.
+    // ============================================================================
+    // AUTO-TUNING DISABLED DUE TO FUNDAMENTAL ISSUES
+    // ============================================================================
     //
-    // SAFE TO CHANGE: SIEVE_BOUND_ADJUSTMENT1/2 and INITIAL_CUTOFF
-    // These parameters are applied directly in check_interval1/2 (lines 354, 397, 435)
-    // They do NOT affect precomputed values (L1_pow_LP1_, log_L2_pow_LP2_)
-    // Changing them mid-session is safe and takes effect immediately.
+    // After extensive testing and multiple attempted fixes, the auto-tuning feature
+    // has proven to be unreliable and consistently degrades performance:
+    //
+    // Baseline (no auto-tune): ~963 relations/sec
+    // With auto-tuning attempt #1: ~80 rel/sec (91% slower)
+    // With auto-tuning attempt #2: ~14 rel/sec (98.5% slower!)
+    //
+    // ROOT CAUSES:
+    // 1. Complex interaction between parameter accumulation (+=) and cutoff semantics (-=)
+    // 2. Exploration logic doesn't account for cumulative effects
+    // 3. B1/B2 changes cause invalid relations (factor bases not rebuilt)
+    // 4. No clear optimal direction for SIEVE_BOUND_ADJUSTMENT and INITIAL_CUTOFF
+    //
+    // DECISION: Disable all parameter adjustments until a fundamentally better
+    // approach can be designed, tested, and validated.
+    //
+    // Rate tracking remains enabled for monitoring purposes (it's harmless).
+    // ============================================================================
     
-    // Apply safe adjustments with bounds
-    const long int sieve_adj_min = 0, sieve_adj_max = 50;
-    const long int cutoff_min = 5, cutoff_max = 100;
+    // ALL PARAMETER ADJUSTMENTS DISABLED
+    // Do not modify any parameters - just return immediately
     
-    // Apply SIEVE_BOUND_ADJUSTMENT adjustments (SAFE)
-    SIEVE_BOUND_ADJUSTMENT1_ += sieve_bound_adj1;
-    if (SIEVE_BOUND_ADJUSTMENT1_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_min;
-    if (SIEVE_BOUND_ADJUSTMENT1_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT1_ = sieve_adj_max;
-    
-    SIEVE_BOUND_ADJUSTMENT2_ += sieve_bound_adj2;
-    if (SIEVE_BOUND_ADJUSTMENT2_ < sieve_adj_min) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_min;
-    if (SIEVE_BOUND_ADJUSTMENT2_ > sieve_adj_max) SIEVE_BOUND_ADJUSTMENT2_ = sieve_adj_max;
-    
-    // Apply INITIAL_CUTOFF adjustment (SAFE)
-    INITIAL_CUTOFF_ += initial_cutoff_adj;
-    if (INITIAL_CUTOFF_ < cutoff_min) INITIAL_CUTOFF_ = cutoff_min;
-    if (INITIAL_CUTOFF_ > cutoff_max) INITIAL_CUTOFF_ = cutoff_max;
-    
-    // Log the adjustments if verbose
     if (verbose() && (sieve_bound_adj1 != 0 || sieve_bound_adj2 != 0 || initial_cutoff_adj != 0))
     {
-        std::cerr << "### Auto-tuning: Adjusting parameters ###" << std::endl;
-        std::cerr << "Adjustments: SBA1=" << sieve_bound_adj1 
+        std::cerr << "### Auto-tuning disabled (parameters not adjusted) ###" << std::endl;
+        std::cerr << "Suggested adjustments ignored: SBA1=" << sieve_bound_adj1 
                   << ", SBA2=" << sieve_bound_adj2 
                   << ", IC=" << initial_cutoff_adj << std::endl;
-        std::cerr << "New values: SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
+        std::cerr << "Keeping current values: SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
                   << ", SBA2=" << SIEVE_BOUND_ADJUSTMENT2_ 
                   << ", IC=" << INITIAL_CUTOFF_ << std::endl;
-        std::cerr << "###################################" << std::endl;
+        std::cerr << "###################################################" << std::endl;
     }
     
     // B1/B2 adjustments are DISABLED (would cause invalid relations)
