@@ -13,6 +13,8 @@ public:
     {
         SIEVE_ID_ = "ctc4";
         RELATION_FILE_ = "relations.out";
+        STATS_FILE_ = "sieve_stats.csv";
+        STATS_INTERVAL_ = 100;
         SMALL_PRIME_BOUND1_ = 0L;
         SMALL_PRIME_BOUND2_ = 0L;
         RESIEVE_ = true;
@@ -182,6 +184,14 @@ public:
                 {
                     RELATION_FILE_ = s;
                 }
+                else if (str.find("STATS_FILE = ") == 0)
+                {
+                    STATS_FILE_ = s;
+                }
+                else if (str.find("STATS_INTERVAL = ") == 0)
+                {
+                    STATS_INTERVAL_ = std::atol(s.c_str());
+                }
                 else if (str.find("ENABLE_AUTO_TUNING = ") == 0)
                 {
                     if (s == "true" || s == "TRUE" || s == "1")
@@ -306,6 +316,16 @@ public:
         return RELATION_FILE_;
     }
 
+    std::string STATS_FILE() const
+    {
+        return STATS_FILE_;
+    }
+
+    long int STATS_INTERVAL() const
+    {
+        return STATS_INTERVAL_;
+    }
+
     bool DEBUG() const
     {
         return DEBUG_;
@@ -348,6 +368,8 @@ public:
         if (RESIEVE_) std::cerr << "RESIEVE = true" << std::endl;
         else std::cerr << "RESIEVE = false" << std::endl;
         std::cerr << "RELATION_FILE = " << RELATION_FILE() << std::endl;
+        std::cerr << "STATS_FILE = " << STATS_FILE() << std::endl;
+        std::cerr << "STATS_INTERVAL = " << STATS_INTERVAL() << std::endl;
         if (DEBUG_) std::cerr << "DEBUG = true" << std::endl;
         else std::cerr << "DEBUG = false" << std::endl;
         if (FIXED_SIEVE_REGION_) std::cerr << "FIXED_SIEVE_REGION = true" << std::endl;
@@ -380,6 +402,8 @@ private:
     double SKEWEDNESS_;
     bool RESIEVE_;
     std::string RELATION_FILE_;
+    std::string STATS_FILE_;
+    long int STATS_INTERVAL_;
     bool DEBUG_;
     bool FIXED_SIEVE_REGION_;
     bool ENABLE_AUTO_TUNING_;

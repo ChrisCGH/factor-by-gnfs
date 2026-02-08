@@ -290,6 +290,22 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     enable_auto_tuning_ = config.ENABLE_AUTO_TUNING();
     rate_optimizer_.set_auto_tuning(enable_auto_tuning_);
     
+    // Initialize statistics output
+    stats_file_ = config.STATS_FILE();
+    stats_interval_ = config.STATS_INTERVAL();
+    relations_since_last_stats_ = 0;
+    statsfile_ = nullptr;
+    
+    // Open stats file and write header
+    if (stats_interval_ > 0)
+    {
+        statsfile_ = new std::ofstream(stats_file_.c_str(), std::ios::out | std::ios::trunc);
+        if (statsfile_ && statsfile_->is_open())
+        {
+            *statsfile_ << "elapsed_time,total_relations,current_rel_per_sec,running_avg_rel_per_sec,rel_per_hour,rel_per_day" << std::endl;
+        }
+    }
+    
     // Initialize cached small primes once
     initialize_small_primes(SMALL_PRIME_BOUND1_, SMALL_PRIME_BOUND2_);
 
@@ -323,6 +339,16 @@ LatticeSiever::~LatticeSiever()
     delete alg_factor_base_;
     delete rat_factor_base_;
     delete [] potentially_smooth_point_;
+    
+    // Close statistics file if open
+    if (statsfile_)
+    {
+        if (statsfile_->is_open())
+        {
+            statsfile_->close();
+        }
+        delete statsfile_;
+    }
 }
 // The offset of (c,d) from start of sieve_array_ is
 //
@@ -1671,6 +1697,9 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     // Record rate sample for optimization
     record_rate_sample(running_average_relations_per_second, relations);
     
+    // Write statistics to output file
+    write_statistics(relations, sieving_time);
+    
     if (verbose())
     {
         std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
@@ -1854,4 +1883,40 @@ void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj
     // Suppress unused parameter warnings for disabled adjustments
     (void)B1_adj;
     (void)B2_adj;
+}
+
+// Write statistics to output file
+void LatticeSiever::write_statistics(int relations_this_q, double sieving_time)
+{
+    // Only write stats if enabled (stats_interval_ > 0) and file is open
+    if (stats_interval_ <= 0 || !statsfile_ || !statsfile_->is_open())
+    {
+        return;
+    }
+    
+    relations_since_last_stats_ += relations_this_q;
+    
+    // Check if we should write stats (reached interval)
+    if (relations_since_last_stats_ >= stats_interval_)
+    {
+        // Calculate statistics
+        double average_relations_per_second = (double)relations_this_q / sieving_time;
+        double running_average_relations_per_second = (double)total_relations_ / total_sieving_time_;
+        double running_average_relations_per_hour = running_average_relations_per_second * 60 * 60;
+        double running_average_relations_per_day = running_average_relations_per_hour * 24;
+        
+        // Write to CSV file
+        *statsfile_ << total_sieving_time_ << ","
+                    << total_relations_ << ","
+                    << average_relations_per_second << ","
+                    << running_average_relations_per_second << ","
+                    << running_average_relations_per_hour << ","
+                    << running_average_relations_per_day << std::endl;
+        
+        // Flush to ensure data is written
+        statsfile_->flush();
+        
+        // Reset counter
+        relations_since_last_stats_ = 0;
+    }
 }

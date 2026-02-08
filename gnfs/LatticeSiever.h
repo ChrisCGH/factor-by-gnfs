@@ -680,6 +680,13 @@ private:
 
     std::string relation_file_;
     std::fstream* relfile_;
+    
+    // Statistics output
+    std::string stats_file_;
+    std::ofstream* statsfile_;
+    long int stats_interval_;
+    long int relations_since_last_stats_;
+    
     FactorBase* alg_factor_base_;
     FactorBase* rat_factor_base_;
     
@@ -752,5 +759,8 @@ private:
                                      long int sieve_bound_adj1, long int sieve_bound_adj2,
                                      long int initial_cutoff_adj);
     void record_rate_sample(double rate, int relations_count);
+    
+    // Statistics output
+    void write_statistics(int relations_this_q, double sieving_time);
 };
 #endif
