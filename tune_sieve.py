@@ -304,6 +304,17 @@ def random_perturbation(params):
     return candidate
 
 
+def _describe_param_changes(old_params, new_params):
+    """Return a human-readable string describing which tunable params changed."""
+    changes = []
+    for key, _step, _lo, _hi in TUNABLE_PARAMS:
+        old_val = _get_param(old_params, key)
+        new_val = _get_param(new_params, key)
+        if old_val != new_val:
+            changes.append(f"{key}={new_val}")
+    return ", ".join(changes) if changes else "(no change)"
+
+
 def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                max_iterations, verbose=False, timeout=600,
                random_restarts=5):
@@ -383,9 +394,11 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
             for attempt in range(1, random_restarts + 1):
                 candidate_params = random_perturbation(current_params)
                 if verbose:
+                    changes_str = _describe_param_changes(
+                        current_params, candidate_params)
                     print(f"  Iteration {iteration}: random restart attempt "
-                          f"{attempt}/{random_restarts} ...", end=" ",
-                          flush=True)
+                          f"{attempt}/{random_restarts} [{changes_str}] ...",
+                          end=" ", flush=True)
 
                 rate = evaluate(candidate_params, lines, config_path,
                                 lsieve_path, min_q, max_q, timeout=timeout)
@@ -406,8 +419,10 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                     if verbose:
                         print(f"  ** NEW BEST (random) **")
                     else:
+                        changes_str = _describe_param_changes(
+                            params, candidate_params)
                         print(f"  Iteration {iteration}: random restart "
-                              f"attempt {attempt} -> "
+                              f"attempt {attempt} [{changes_str}] -> "
                               f"{rate:.2f} rel/sec  ** NEW BEST **")
                     break
                 else:

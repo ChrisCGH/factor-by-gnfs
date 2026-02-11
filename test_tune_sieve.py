@@ -405,6 +405,51 @@ class TestHillClimbRandomRestarts(unittest.TestCase):
             )
         self.assertAlmostEqual(best_rate, 200.0)
 
+    def test_random_restart_verbose_shows_param_changes(self):
+        """Verbose output for random restarts should show changed parameters."""
+        call_count = [0]
+
+        def fake_evaluate(params, lines, config_path, lsieve_path,
+                          min_q, max_q, timeout=600):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return 100.0  # baseline
+            return 50.0
+
+        import io
+        import unittest.mock
+
+        params = {
+            "SIEVE_BOUND_ADJUSTMENT1": "20",
+            "SIEVE_BOUND_ADJUSTMENT2": "10",
+            "SMALL_PRIME_BOUND1": "500",
+            "SMALL_PRIME_BOUND2": "500",
+            "INITIAL_CUTOFF": "50",
+            "MIN_A": "-2000000000",
+            "MAX_A": "2000000000",
+            "MIN_B": "1",
+            "MAX_B": "1000",
+        }
+        captured = io.StringIO()
+        random.seed(42)
+        with unittest.mock.patch("tune_sieve.evaluate", side_effect=fake_evaluate), \
+             unittest.mock.patch("sys.stdout", captured):
+            tune_sieve.hill_climb(
+                [], dict(params), "/fake/cfg", "/fake/lsieve",
+                1000000, 1000500, max_iterations=1,
+                verbose=True, random_restarts=3,
+            )
+        output = captured.getvalue()
+        # The random restart lines should contain "[" with parameter changes
+        restart_lines = [l for l in output.splitlines()
+                         if "random restart attempt" in l]
+        self.assertTrue(len(restart_lines) > 0,
+                        "Expected random restart lines in verbose output")
+        for line in restart_lines:
+            self.assertIn("[", line,
+                          "Random restart line should show parameter changes")
+            self.assertIn("]", line)
+
 
 if __name__ == "__main__":
     unittest.main()
