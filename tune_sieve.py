@@ -16,6 +16,7 @@ Options:
     --max-q Q           Maximum q for sampling (default: 1000500)
     --max-iterations N  Maximum hill-climbing iterations (default: 50)
     --output FILE       Write best config to FILE (default: sieve.cfg)
+    --timeout SECS      Timeout per lsieve run in seconds (default: 600)
     --dry-run           Show what would be done without running lsieve
     --verbose           Show detailed output
 """
@@ -60,23 +61,34 @@ def write_sieve_config(lines, params, dest):
     """Write *lines* back to *dest*, replacing any parameter present in *params*."""
     with open(dest, "w") as fh:
         in_polynomial = False
+        poly_coeffs_remaining = 0
         for raw in lines:
             stripped = raw.strip()
-            # Track multi-line polynomial blocks (DEGREE + coefficient lines)
+            # Track multi-line polynomial blocks using DEGREE to know how
+            # many coefficient lines to expect.
             if in_polynomial:
                 if stripped and not stripped.startswith("#"):
                     eqpos = stripped.find("=")
-                    # A line with '=' that is a known key ends the polynomial
                     if eqpos >= 0:
                         key = stripped[:eqpos].strip()
-                        if key != "DEGREE" and key in params:
-                            in_polynomial = False
-                            # fall through to normal handling
-                        else:
+                        if key == "DEGREE":
+                            val = stripped[eqpos + 1:].strip()
+                            try:
+                                poly_coeffs_remaining = int(val) + 1
+                            except ValueError:
+                                poly_coeffs_remaining = 0
                             fh.write(raw)
                             continue
+                        else:
+                            # Any other key = line ends the polynomial block
+                            in_polynomial = False
+                            # fall through to normal handling
                     else:
+                        # Coefficient line
                         fh.write(raw)
+                        poly_coeffs_remaining -= 1
+                        if poly_coeffs_remaining <= 0:
+                            in_polynomial = False
                         continue
                 else:
                     fh.write(raw)
@@ -110,7 +122,7 @@ def write_sieve_config(lines, params, dest):
 # Running the siever and measuring the relation rate
 # ---------------------------------------------------------------------------
 
-def run_lsieve(lsieve_path, config_path, min_q, max_q):
+def run_lsieve(lsieve_path, config_path, min_q, max_q, timeout=600):
     """Run lsieve in sampling mode and return the relation rate (rel/sec).
 
     Returns *None* if the run fails or no rate can be parsed.
@@ -130,7 +142,7 @@ def run_lsieve(lsieve_path, config_path, min_q, max_q):
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=600,
+            timeout=timeout,
         )
     except FileNotFoundError:
         print(f"Error: lsieve binary not found at {lsieve_abs}", file=sys.stderr)
@@ -150,7 +162,10 @@ def run_lsieve(lsieve_path, config_path, min_q, max_q):
 
     # Fallback: try to parse the stats CSV if present.
     if rate is None:
-        stats_path = os.path.join(cfg_dir, "sieve_stats.csv")
+        # Try the stats file name from the config, or default.
+        _lines, cfg_params = parse_sieve_config(config_path)
+        stats_name = cfg_params.get("STATS_FILE", "sieve_stats.csv")
+        stats_path = os.path.join(cfg_dir, stats_name)
         rate = _parse_stats_csv(stats_path)
 
     if rate is None and stderr_output:
@@ -230,20 +245,42 @@ def _get_param(params, key):
     return int(params.get(key, "0"))
 
 
-def evaluate(params, lines, config_path, lsieve_path, min_q, max_q):
-    """Write *params* to a temporary config and measure the relation rate."""
+def evaluate(params, lines, config_path, lsieve_path, min_q, max_q,
+             timeout=600):
+    """Write *params* to a temporary config and measure the relation rate.
+
+    Uses a temporary directory so the original config is never overwritten
+    during tuning.
+    """
     cfg_dir = os.path.dirname(os.path.abspath(config_path)) or "."
-    tmp_cfg = os.path.join(cfg_dir, "sieve.cfg")
 
-    # Write config
-    write_sieve_config(lines, params, tmp_cfg)
+    with tempfile.TemporaryDirectory(dir=cfg_dir, prefix=".tune_") as tmpdir:
+        # Copy all non-config files that lsieve might need (e.g. savedq.txt)
+        # by symlinking the original directory contents into the temp dir.
+        for entry in os.listdir(cfg_dir):
+            if entry.startswith(".tune_"):
+                continue
+            src = os.path.join(cfg_dir, entry)
+            dst = os.path.join(tmpdir, entry)
+            if not os.path.exists(dst):
+                try:
+                    os.symlink(src, dst)
+                except OSError:
+                    pass
 
-    rate = run_lsieve(lsieve_path, tmp_cfg, min_q, max_q)
+        # Write the candidate sieve.cfg into the temp dir (overrides symlink)
+        tmp_cfg = os.path.join(tmpdir, "sieve.cfg")
+        if os.path.islink(tmp_cfg):
+            os.unlink(tmp_cfg)
+        write_sieve_config(lines, params, tmp_cfg)
+
+        rate = run_lsieve(lsieve_path, tmp_cfg, min_q, max_q,
+                          timeout=timeout)
     return rate
 
 
 def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
-               max_iterations, verbose=False):
+               max_iterations, verbose=False, timeout=600):
     """Perform hill-climbing over the tunable sieve parameters.
 
     Returns (best_params, best_rate).
@@ -252,7 +289,7 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
 
     print("=== Measuring baseline rate ===")
     best_rate = evaluate(current_params, lines, config_path,
-                         lsieve_path, min_q, max_q)
+                         lsieve_path, min_q, max_q, timeout=timeout)
     if best_rate is None:
         print("Error: could not measure baseline rate. "
               "Check that lsieve runs correctly.", file=sys.stderr)
@@ -281,7 +318,7 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                           f"(was {current_val}) ...", end=" ", flush=True)
 
                 rate = evaluate(candidate_params, lines, config_path,
-                                lsieve_path, min_q, max_q)
+                                lsieve_path, min_q, max_q, timeout=timeout)
 
                 if rate is None:
                     if verbose:
@@ -349,6 +386,10 @@ def main():
         help="Write best config to FILE (default: same as --config)"
     )
     parser.add_argument(
+        "--timeout", type=int, default=600,
+        help="Timeout in seconds for each lsieve run (default: 600)"
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="Show what would be done without running lsieve"
     )
@@ -394,7 +435,7 @@ def main():
     best_params, best_rate = hill_climb(
         lines, params, config_path, args.lsieve,
         args.min_q, args.max_q, args.max_iterations,
-        verbose=args.verbose,
+        verbose=args.verbose, timeout=args.timeout,
     )
 
     print()
