@@ -2,6 +2,7 @@
 """Unit tests for tune_sieve.py"""
 
 import os
+import random
 import sys
 import tempfile
 import textwrap
@@ -250,6 +251,159 @@ class TestInlinePoly(unittest.TestCase):
             os.unlink(path)
             if os.path.exists(path + ".out"):
                 os.unlink(path + ".out")
+
+
+class TestRandomPerturbation(unittest.TestCase):
+    """Tests for random_perturbation."""
+
+    def test_returns_valid_params(self):
+        """Perturbed params should still be within allowed ranges."""
+        params = {
+            "SIEVE_BOUND_ADJUSTMENT1": "20",
+            "SIEVE_BOUND_ADJUSTMENT2": "10",
+            "SMALL_PRIME_BOUND1": "500",
+            "SMALL_PRIME_BOUND2": "500",
+            "INITIAL_CUTOFF": "50",
+            "MIN_A": "-2000000000",
+            "MAX_A": "2000000000",
+            "MIN_B": "1",
+            "MAX_B": "1000",
+        }
+        random.seed(42)
+        result = tune_sieve.random_perturbation(params)
+        for key, _step, lo, hi in tune_sieve.TUNABLE_PARAMS:
+            val = int(result[key])
+            self.assertGreaterEqual(val, lo, f"{key} below minimum")
+            self.assertLessEqual(val, hi, f"{key} above maximum")
+
+    def test_does_not_mutate_original(self):
+        """Original params dict should be unchanged."""
+        params = {"SIEVE_BOUND_ADJUSTMENT1": "20", "INITIAL_CUTOFF": "50"}
+        original_copy = dict(params)
+        tune_sieve.random_perturbation(params)
+        self.assertEqual(params, original_copy)
+
+    def test_clamps_at_boundaries(self):
+        """Params at boundaries should stay within range after perturbation."""
+        params = {
+            "SIEVE_BOUND_ADJUSTMENT1": "0",
+            "SIEVE_BOUND_ADJUSTMENT2": "40",
+            "SMALL_PRIME_BOUND1": "0",
+            "SMALL_PRIME_BOUND2": "5000",
+            "INITIAL_CUTOFF": "0",
+            "MIN_A": "0",
+            "MAX_A": "0",
+            "MIN_B": "1",
+            "MAX_B": "1",
+        }
+        random.seed(123)
+        for _ in range(20):
+            result = tune_sieve.random_perturbation(params)
+            for key, _step, lo, hi in tune_sieve.TUNABLE_PARAMS:
+                val = int(result[key])
+                self.assertGreaterEqual(val, lo, f"{key} below minimum")
+                self.assertLessEqual(val, hi, f"{key} above maximum")
+
+
+class TestHillClimbRandomRestarts(unittest.TestCase):
+    """Tests for the random restart behaviour of hill_climb."""
+
+    def test_random_restarts_zero_stops_immediately(self):
+        """With random_restarts=0, hill_climb should stop at first local max."""
+        call_count = [0]
+
+        def fake_evaluate(params, lines, config_path, lsieve_path,
+                          min_q, max_q, timeout=600):
+            call_count[0] += 1
+            # Baseline call returns a rate; all others return worse.
+            if call_count[0] == 1:
+                return 100.0
+            return 50.0
+
+        import unittest.mock
+        with unittest.mock.patch("tune_sieve.evaluate", side_effect=fake_evaluate):
+            params = {
+                "SIEVE_BOUND_ADJUSTMENT1": "20",
+                "SIEVE_BOUND_ADJUSTMENT2": "10",
+                "SMALL_PRIME_BOUND1": "500",
+                "SMALL_PRIME_BOUND2": "500",
+                "INITIAL_CUTOFF": "50",
+                "MIN_A": "-2000000000",
+                "MAX_A": "2000000000",
+                "MIN_B": "1",
+                "MAX_B": "1000",
+            }
+            calls_before = call_count[0]
+            _best_params, best_rate = tune_sieve.hill_climb(
+                [], params, "/fake/cfg", "/fake/lsieve",
+                1000000, 1000500, max_iterations=3,
+                random_restarts=0,
+            )
+        self.assertAlmostEqual(best_rate, 100.0)
+        # With random_restarts=0 there should be no random-restart evaluate
+        # calls after the greedy phase of iteration 1 fails.  The total
+        # calls are: 1 (baseline) + N (greedy tries) + 0 (restarts).
+        # We just verify the count doesn't include extra restart calls.
+        total = call_count[0] - calls_before
+        # Greedy tries = up to 2 per param (some may be skipped at boundary)
+        max_greedy = 2 * len(tune_sieve.TUNABLE_PARAMS)
+        self.assertLessEqual(total, 1 + max_greedy)
+
+    def test_random_restart_finds_improvement(self):
+        """If a random perturbation beats best_rate, hill-climbing continues."""
+        call_count = [0]
+        greedy_per_iter = [0]  # track how many greedy calls iteration 1 made
+
+        def fake_evaluate(params, lines, config_path, lsieve_path,
+                          min_q, max_q, timeout=600):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return 100.0  # baseline
+            return 50.0  # everything else fails
+
+        import unittest.mock
+
+        # First run: figure out how many greedy calls one iteration makes.
+        with unittest.mock.patch("tune_sieve.evaluate", side_effect=fake_evaluate):
+            params = {
+                "SIEVE_BOUND_ADJUSTMENT1": "20",
+                "SIEVE_BOUND_ADJUSTMENT2": "10",
+                "SMALL_PRIME_BOUND1": "500",
+                "SMALL_PRIME_BOUND2": "500",
+                "INITIAL_CUTOFF": "50",
+                "MIN_A": "-2000000000",
+                "MAX_A": "2000000000",
+                "MIN_B": "1",
+                "MAX_B": "1000",
+            }
+            tune_sieve.hill_climb(
+                [], dict(params), "/fake/cfg", "/fake/lsieve",
+                1000000, 1000500, max_iterations=1,
+                random_restarts=0,
+            )
+        # calls: 1 baseline + N greedy
+        greedy_count = call_count[0] - 1
+
+        # Second run: make the first random restart after greedy-fail succeed.
+        call_count[0] = 0
+
+        def fake_evaluate2(params, lines, config_path, lsieve_path,
+                           min_q, max_q, timeout=600):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return 100.0  # baseline
+            # First random restart attempt of iteration 1:
+            if call_count[0] == 1 + greedy_count + 1:
+                return 200.0
+            return 50.0
+
+        with unittest.mock.patch("tune_sieve.evaluate", side_effect=fake_evaluate2):
+            _best_params, best_rate = tune_sieve.hill_climb(
+                [], dict(params), "/fake/cfg", "/fake/lsieve",
+                1000000, 1000500, max_iterations=2,
+                random_restarts=3,
+            )
+        self.assertAlmostEqual(best_rate, 200.0)
 
 
 if __name__ == "__main__":

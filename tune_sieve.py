@@ -6,24 +6,30 @@ Reads an existing sieve.cfg, runs lsieve in sampling mode with different
 parameter combinations, and uses hill-climbing to find parameters that
 maximise the relation generation rate (relations per second).
 
+When the greedy hill-climbing phase reaches a local maximum, the algorithm
+tries random multi-parameter perturbations (up to a configurable number of
+attempts) before giving up.
+
 Usage:
     python3 tune_sieve.py [OPTIONS]
 
 Options:
-    --config FILE       Path to sieve.cfg (default: sieve.cfg)
-    --lsieve PATH       Path to lsieve binary (default: gnfs/gbin/lsieve)
-    --min-q Q           Minimum q for sampling (default: 1000000)
-    --max-q Q           Maximum q for sampling (default: 1000500)
-    --max-iterations N  Maximum hill-climbing iterations (default: 50)
-    --output FILE       Write best config to FILE (default: sieve.cfg)
-    --timeout SECS      Timeout per lsieve run in seconds (default: 600)
-    --dry-run           Show what would be done without running lsieve
-    --verbose           Show detailed output
+    --config FILE           Path to sieve.cfg (default: sieve.cfg)
+    --lsieve PATH           Path to lsieve binary (default: gnfs/gbin/lsieve)
+    --min-q Q               Minimum q for sampling (default: 1000000)
+    --max-q Q               Maximum q for sampling (default: 1000500)
+    --max-iterations N      Maximum hill-climbing iterations (default: 50)
+    --random-restarts N     Random restart attempts per local max (default: 5)
+    --output FILE           Write best config to FILE (default: sieve.cfg)
+    --timeout SECS          Timeout per lsieve run in seconds (default: 600)
+    --dry-run               Show what would be done without running lsieve
+    --verbose               Show detailed output
 """
 
 import argparse
 import copy
 import os
+import random
 import re
 import subprocess
 import sys
@@ -283,9 +289,30 @@ def evaluate(params, lines, config_path, lsieve_path, min_q, max_q,
     return rate
 
 
+def random_perturbation(params):
+    """Return a copy of *params* with random adjustments to tunable parameters.
+
+    Each tunable parameter is randomly moved by -step, 0, or +step,
+    clamped to its allowed range.
+    """
+    candidate = copy.deepcopy(params)
+    for key, step, lo, hi in TUNABLE_PARAMS:
+        current_val = _get_param(candidate, key)
+        delta = random.choice([-1, 0, +1]) * step
+        new_val = max(lo, min(hi, current_val + delta))
+        _set_param(candidate, key, new_val)
+    return candidate
+
+
 def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
-               max_iterations, verbose=False, timeout=600):
+               max_iterations, verbose=False, timeout=600,
+               random_restarts=5):
     """Perform hill-climbing over the tunable sieve parameters.
+
+    When the greedy hill-climbing phase finds no single-step improvement
+    (a local maximum), the algorithm tries up to *random_restarts* random
+    multi-parameter perturbations.  If any random perturbation improves
+    on the best known rate, hill-climbing resumes from there.
 
     Returns (best_params, best_rate).
     """
@@ -351,8 +378,46 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                 break  # restart parameter scan from first param
 
         if not improved:
-            print(f"  Iteration {iteration}: no improvement found – stopping.")
-            break
+            # --- Random restart phase ---
+            restarted = False
+            for attempt in range(1, random_restarts + 1):
+                candidate_params = random_perturbation(current_params)
+                if verbose:
+                    print(f"  Iteration {iteration}: random restart attempt "
+                          f"{attempt}/{random_restarts} ...", end=" ",
+                          flush=True)
+
+                rate = evaluate(candidate_params, lines, config_path,
+                                lsieve_path, min_q, max_q, timeout=timeout)
+
+                if rate is None:
+                    if verbose:
+                        print("FAILED")
+                    continue
+
+                if verbose:
+                    print(f"{rate:.2f} rel/sec", end="")
+
+                if rate > best_rate:
+                    best_rate = rate
+                    best_params = copy.deepcopy(candidate_params)
+                    current_params = copy.deepcopy(candidate_params)
+                    restarted = True
+                    if verbose:
+                        print(f"  ** NEW BEST (random) **")
+                    else:
+                        print(f"  Iteration {iteration}: random restart "
+                              f"attempt {attempt} -> "
+                              f"{rate:.2f} rel/sec  ** NEW BEST **")
+                    break
+                else:
+                    if verbose:
+                        print()
+
+            if not restarted:
+                print(f"  Iteration {iteration}: no improvement found after "
+                      f"{random_restarts} random restart(s) – stopping.")
+                break
 
     return best_params, best_rate
 
@@ -384,6 +449,10 @@ def main():
     parser.add_argument(
         "--max-iterations", type=int, default=50,
         help="Maximum hill-climbing iterations (default: 50)"
+    )
+    parser.add_argument(
+        "--random-restarts", type=int, default=5,
+        help="Random restart attempts after reaching a local maximum (default: 5)"
     )
     parser.add_argument(
         "--output", default=None,
@@ -440,6 +509,7 @@ def main():
         lines, params, config_path, args.lsieve,
         args.min_q, args.max_q, args.max_iterations,
         verbose=args.verbose, timeout=args.timeout,
+        random_restarts=args.random_restarts,
     )
 
     print()
