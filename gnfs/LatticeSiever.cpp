@@ -286,6 +286,26 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
 
     SKEWEDNESS_ = config.SKEWEDNESS();
     
+    // Initialize rate optimizer
+    enable_auto_tuning_ = config.ENABLE_AUTO_TUNING();
+    rate_optimizer_.set_auto_tuning(enable_auto_tuning_);
+    
+    // Initialize statistics output
+    stats_file_ = config.STATS_FILE();
+    stats_interval_ = config.STATS_INTERVAL();
+    relations_since_last_stats_ = 0;
+    statsfile_ = nullptr;
+    
+    // Open stats file and write header
+    if (stats_interval_ > 0)
+    {
+        statsfile_ = new std::ofstream(stats_file_.c_str(), std::ios::out | std::ios::trunc);
+        if (statsfile_ && statsfile_->is_open())
+        {
+            *statsfile_ << "elapsed_time,total_relations,current_rel_per_sec,running_avg_rel_per_sec,rel_per_hour,rel_per_day" << std::endl;
+        }
+    }
+    
     // Initialize cached small primes once
     initialize_small_primes(SMALL_PRIME_BOUND1_, SMALL_PRIME_BOUND2_);
 
@@ -319,6 +339,16 @@ LatticeSiever::~LatticeSiever()
     delete alg_factor_base_;
     delete rat_factor_base_;
     delete [] potentially_smooth_point_;
+    
+    // Close statistics file if open
+    if (statsfile_)
+    {
+        if (statsfile_->is_open())
+        {
+            statsfile_->close();
+        }
+        delete statsfile_;
+    }
 }
 // The offset of (c,d) from start of sieve_array_ is
 //
@@ -343,110 +373,220 @@ size_t LatticeSiever::c_d_to_offset(const std::pair<long int, long int>& cd)
 
 long int LatticeSiever::check_interval1(long int q)
 {
-    // Use precomputed value, only divide by q
+    // Use precomputed value
     double L1d2 = L1_pow_LP1_ / static_cast<double>(q);
-    // LOGQ_BASE is always 10 (see logq function definition)
     double log_L1d2 = log10(L1d2);
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
     int cutoff0 = INITIAL_CUTOFF_;
     long int potential = 0;
 
-    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-
-    while (sieve_ptr < sieve_end_ptr)
+    if (debug_)
     {
-        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
-        __builtin_prefetch(sieve_ptr + 64, 0, 1);
-        
-        // Check hot sieve value first before bit array
-        if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))
-        {
-            if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
-            {
-                std::pair<long int, long int> cd = offset_to_c_d(sieve_ptr - fixed_sieve_array_);
-                double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
-                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
-                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                cutoff -= adjustment;
+        std::cerr << "check_interval1: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
+        std::cerr << "Total blocks: " << BLOCKS_PER_SIEVE << std::endl;
+    }
 
-                if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
+    // Process sieve array in cache-sized blocks
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
+        
+        SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
+        SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
+        
+        if (debug_ && block % 100 == 0)
+        {
+            std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " (offset " << block_start << " to " << block_end << ")" << std::endl;
+        }
+
+        while (sieve_ptr < sieve_end_ptr)
+        {
+            // Prefetch next cache line within this block
+            if (sieve_ptr + 64 < sieve_end_ptr)
+            {
+                __builtin_prefetch(sieve_ptr + 64, 0, 1);
+            }
+            
+            // Check hot sieve value first before bit array
+            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 0))
+            {
+                size_t offset = sieve_ptr - fixed_sieve_array_;
+                if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
                 {
-                    *sieve_ptr = 0;
-                    ++potential;
-                }
-                else
-                {
-                    sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                    std::pair<long int, long int> cd = offset_to_c_d(offset);
+                    double value1 = evaluate_on_lattice(f1d_, cd.first, cd.second, c1_, c2_);
+                    double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                    int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
+                    cutoff -= adjustment;
+
+                    if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
+                    {
+                        *sieve_ptr = 0;
+                        ++potential;
+                    }
+                    else
+                    {
+                        sieve_bit_array_.set(offset);
+                    }
                 }
             }
+            else
+            {
+                size_t offset = sieve_ptr - fixed_sieve_array_;
+                if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
+                {
+                    sieve_bit_array_.set(offset);
+                }
+            }
+            ++sieve_ptr;
         }
-        else if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
-        {
-            sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
-        }
-        ++sieve_ptr;
     }
+    
+    if (debug_)
+    {
+        std::cerr << "check_interval1 complete: " << potential << " potentially smooth" << std::endl;
+    }
+    
     return potential;
 }
 
 void LatticeSiever::check_interval2()
 {
-    // Use precomputed values directly
+    // Use precomputed values
     double log_L1d2 = log_L2_pow_LP2_;
 
     int adjustment = SIEVE_BOUND_ADJUSTMENT2_;
-    SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_;
-    SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + fixed_sieve_array_size;
-    long int c = min_c;
-    long int d = min_d;
-
     int cutoff0 = 0;
-    while (sieve_ptr < sieve_end_ptr)
+    
+    if (debug_)
     {
-        // Prefetch next cache line (64 bytes ahead, read-only, low temporal locality)
-        __builtin_prefetch(sieve_ptr + 64, 0, 1);
+        std::cerr << "check_interval2: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
+    }
+
+    // Process sieve array in cache-sized blocks
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
         
-        if (__builtin_expect(!sieve_bit_array_.isSet(sieve_ptr - fixed_sieve_array_), 1))
+        // Calculate starting c and d for this block
+        long int start_c = min_c + (block_start % c_span);
+        long int start_d = min_d + (block_start / c_span);
+        
+        SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
+        SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
+        
+        long int c = start_c;
+        long int d = start_d;
+        
+        if (debug_ && block % 100 == 0)
         {
-            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
+            std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " starting at (c,d)=(" << c << "," << d << ")" << std::endl;
+        }
+
+        while (sieve_ptr < sieve_end_ptr)
+        {
+            // Prefetch next cache line within this block
+            if (sieve_ptr + 64 < sieve_end_ptr)
             {
-                double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
-                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
-                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                cutoff -= adjustment;
-                if ((int)(*sieve_ptr) > cutoff)
+                __builtin_prefetch(sieve_ptr + 64, 0, 1);
+            }
+            
+            size_t offset = sieve_ptr - fixed_sieve_array_;
+            
+            if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
+            {
+                if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
                 {
-                    VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
-                    potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
-                    if (number_potentially_smooth_ > 0)
+                    double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
+                    double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                    int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
+                    cutoff -= adjustment;
+                    
+                    if ((int)(*sieve_ptr) > cutoff)
                     {
-                        potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
-                            potentially_smooth_point_ + number_potentially_smooth_;
+                        VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
+                        
+                        // Bounds check before array access
+                        if (number_potentially_smooth_ >= max_potentially_smooth)
+                        {
+                            if (debug_)
+                            {
+                                std::cerr << "WARNING: Reached max_potentially_smooth limit" << std::endl;
+                            }
+                            return;  // Early exit to avoid overflow
+                        }
+                        
+                        potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
+                        if (number_potentially_smooth_ > 0)
+                        {
+                            potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
+                                potentially_smooth_point_ + number_potentially_smooth_;
+                        }
+                        ++number_potentially_smooth_;
                     }
-                    ++number_potentially_smooth_;
+                    else
+                    {
+                        sieve_bit_array_.set(offset);
+                    }
                 }
                 else
                 {
-                    //*sieve_ptr = -128;
-                    sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                    sieve_bit_array_.set(offset);
                 }
             }
-            else
+            
+            ++c;
+            ++sieve_ptr;
+            if (c > max_c)
             {
-                //*sieve_ptr = -128;
-                sieve_bit_array_.set(sieve_ptr - fixed_sieve_array_);
+                c = min_c;
+                ++d;
             }
         }
-        ++c;
-        ++sieve_ptr;
-        if (c > max_c)
+    }
+    
+    if (debug_)
+    {
+        std::cerr << "check_interval2 complete: " << number_potentially_smooth_ << " potentially smooth" << std::endl;
+    }
+}
+
+void LatticeSiever::validate_sieve_array(const char* checkpoint_name)
+{
+    if (!debug_) return;
+    
+    std::cerr << "=== Validation at " << checkpoint_name << " ===" << std::endl;
+    
+    // Count non-zero entries
+    size_t non_zero_count = 0;
+    size_t set_bit_count = 0;
+    int min_val = 127;
+    int max_val = -128;
+    
+    for (size_t i = 0; i < fixed_sieve_array_size; ++i)
+    {
+        if (fixed_sieve_array_[i] != 0)
         {
-            c = min_c;
-            ++d;
+            ++non_zero_count;
+            if (fixed_sieve_array_[i] < min_val) min_val = fixed_sieve_array_[i];
+            if (fixed_sieve_array_[i] > max_val) max_val = fixed_sieve_array_[i];
+        }
+        if (sieve_bit_array_.isSet(i))
+        {
+            ++set_bit_count;
         }
     }
+    
+    std::cerr << "  Non-zero sieve entries: " << non_zero_count << std::endl;
+    std::cerr << "  Set bit array entries: " << set_bit_count << std::endl;
+    std::cerr << "  Sieve value range: [" << min_val << ", " << max_val << "]" << std::endl;
+    std::cerr << "  Number potentially smooth: " << number_potentially_smooth_ << std::endl;
+    std::cerr << "========================" << std::endl;
 }
 
 void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
@@ -1186,6 +1326,7 @@ void LatticeSiever::sieve_by_vectors1()
     auto iter = alg_factor_base_->begin();
     auto enditer = alg_factor_base_->end();
 
+    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
@@ -1219,6 +1360,35 @@ void LatticeSiever::sieve_by_vectors1()
             }
         }
     }
+    
+    // Second pass: dump cache block by block for better cache locality
+    // This is more efficient than the original attempt because we only process
+    // buckets that overlap with each block, avoiding O(N×32) overhead
+    // Note: tracked_ flag prevents duplicate bucket entries, so no need for deduplication
+    if (debug_)
+    {
+        std::cerr << "sieve_by_vectors1: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
+    }
+    
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
+        
+        if (debug_ && block % 100 == 0)
+        {
+            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " [" << block_start << ", " << block_end << ")" << std::endl;
+        }
+        
+#ifdef RESIEVE1
+        sieveCache_.dump_block_efficient(block_start, block_end, false);
+#else
+        sieveCache_.dump_block_efficient(block_start, block_end, true);
+#endif
+    }
+    
+    // Final cleanup: should be empty, but call dump to reset state
 #ifdef RESIEVE1
     sieveCache_.dump(false);
 #else
@@ -1238,6 +1408,7 @@ void LatticeSiever::sieve_by_vectors1_again()
     auto iter = alg_factor_base_->begin();
     auto enditer = alg_factor_base_->end();
 
+    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
@@ -1270,6 +1441,29 @@ void LatticeSiever::sieve_by_vectors1_again()
             }
         }
     }
+    
+    // Second pass: dump cache block by block
+    // Note: tracked_ flag prevents duplicate bucket entries
+    if (debug_)
+    {
+        std::cerr << "sieve_by_vectors1_again: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
+    }
+    
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
+        
+        if (debug_ && block % 100 == 0)
+        {
+            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " [" << block_start << ", " << block_end << ")" << std::endl;
+        }
+        
+        sieveCache_.dump_block_efficient(block_start, block_end, true);
+    }
+    
+    // Final cleanup
     sieveCache_.dump(true);
 }
 #endif
@@ -1285,6 +1479,7 @@ void LatticeSiever::sieve_by_vectors2()
     auto iter = rat_factor_base_->begin();
     auto enditer = rat_factor_base_->end();
 
+    // First pass: accumulate all sieve operations into cache
     for (; iter != enditer; ++iter)
     {
         long int p = iter->get_p();
@@ -1315,6 +1510,29 @@ void LatticeSiever::sieve_by_vectors2()
             }
         }
     }
+    
+    // Second pass: dump cache block by block for better cache locality
+    // Note: tracked_ flag prevents duplicate bucket entries
+    if (debug_)
+    {
+        std::cerr << "sieve_by_vectors2: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
+    }
+    
+    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    {
+        size_t block_start = block * CACHE_BLOCK_SIZE;
+        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
+        
+        if (debug_ && block % 100 == 0)
+        {
+            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
+                      << " [" << block_start << ", " << block_end << ")" << std::endl;
+        }
+        
+        sieveCache_.dump_block_efficient(block_start, block_end, true);
+    }
+    
+    // Final cleanup
     sieveCache_.dump();
 }
 
@@ -1398,13 +1616,21 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     }
     head_psp_ = potentially_smooth_point_;
     number_potentially_smooth_ = 0;
+    
+    validate_sieve_array("After allocate_c_d_region");
+    
     timer_.start("sieve by vectors 1");
     sieve_by_vectors1();
     timer_.stop();
+    
+    validate_sieve_array("After sieve_by_vectors1");
 
     timer_.start("check interval 1");
     int number_of_potentially_alg_smooth = check_interval1(q);
     timer_.stop();
+    
+    validate_sieve_array("After check_interval1");
+    
     if (verbose())
     {
         std::cout << number_of_potentially_alg_smooth << " -> " << std::flush;
@@ -1413,10 +1639,14 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     timer_.start("sieve by vectors 2");
     sieve_by_vectors2();
     timer_.stop();
+    
+    validate_sieve_array("After sieve_by_vectors2");
 
     timer_.start("check interval 2");
     check_interval2();
     timer_.stop();
+    
+    validate_sieve_array("After check_interval2");
 
     timer_.start("remove factors for rational");
     remove_sieved_factors2();
@@ -1463,10 +1693,25 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
     double running_average_relations_per_day = running_average_relations_per_hour * 24;
     static double prev_running_average_relations_per_day = 0;
     static double prev_total_sieving_time = 0;
+    
+    // Record rate sample for optimization
+    record_rate_sample(running_average_relations_per_second, relations);
+    
+    // Write statistics to output file
+    write_statistics(relations, sieving_time);
+    
     if (verbose())
     {
         std::cout << " (" << average_relations_per_second << "," << (int)average_relations_per_hour << "," << (int)average_relations_per_day << "),";
         std::cout << " (" << running_average_relations_per_second << "," << (int)running_average_relations_per_hour << "," << (int)running_average_relations_per_day << "),";
+        
+        // Display optimization statistics
+        if (enable_auto_tuning_)
+        {
+            double trend = rate_optimizer_.get_rate_trend();
+            double moving_avg = rate_optimizer_.get_moving_average();
+            std::cout << " [trend:" << trend << ", avg:" << moving_avg << ", best:" << rate_optimizer_.get_best_rate() << "]";
+        }
     }
     if (prev_running_average_relations_per_day > 0 &&
             running_average_relations_per_day / prev_running_average_relations_per_day < 0.5)
@@ -1544,5 +1789,134 @@ bool LatticeSiever::sieve(long int q)
     else
     {
         return true;
+    }
+}
+
+// Record a rate sample and potentially adjust parameters
+void LatticeSiever::record_rate_sample(double rate, int relations_count)
+{
+    rate_optimizer_.record_sample(rate, total_sieving_time_, relations_count,
+                                   B1_, B2_, SIEVE_BOUND_ADJUSTMENT1_, 
+                                   SIEVE_BOUND_ADJUSTMENT2_, INITIAL_CUTOFF_);
+    
+    if (!enable_auto_tuning_) return;
+    
+    // Check if we should adjust parameters
+    long int B1_adj = 0, B2_adj = 0, sieve_adj1 = 0, sieve_adj2 = 0, cutoff_adj = 0;
+    
+    if (rate_optimizer_.suggest_adjustments(B1_adj, B2_adj, sieve_adj1, sieve_adj2, cutoff_adj))
+    {
+        if (verbose())
+        {
+            std::cout << std::endl << "### Auto-tuning: Adjusting parameters ###" << std::endl;
+            std::cout << "Rate trend: " << rate_optimizer_.get_rate_trend() << std::endl;
+            std::cout << "Current rate: " << rate << " rel/sec" << std::endl;
+            std::cout << "Best rate: " << rate_optimizer_.get_best_rate() << " rel/sec" << std::endl;
+            std::cout << "Adjustments: B1=" << B1_adj << ", B2=" << B2_adj 
+                      << ", SBA1=" << sieve_adj1 << ", SBA2=" << sieve_adj2 
+                      << ", IC=" << cutoff_adj << std::endl;
+        }
+        
+        apply_parameter_adjustments(B1_adj, B2_adj, sieve_adj1, sieve_adj2, cutoff_adj);
+        
+        if (verbose())
+        {
+            std::cout << "New parameters: B1=" << B1_ << ", B2=" << B2_ 
+                      << ", SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
+                      << ", SBA2=" << SIEVE_BOUND_ADJUSTMENT2_ 
+                      << ", IC=" << INITIAL_CUTOFF_ << std::endl;
+            std::cout << "###################################" << std::endl;
+        }
+    }
+}
+
+// Apply parameter adjustments with safety bounds
+void LatticeSiever::apply_parameter_adjustments(long int B1_adj, long int B2_adj,
+                                                long int sieve_bound_adj1, long int sieve_bound_adj2,
+                                                long int initial_cutoff_adj)
+{
+    // ============================================================================
+    // AUTO-TUNING DISABLED DUE TO FUNDAMENTAL ISSUES
+    // ============================================================================
+    //
+    // After extensive testing and multiple attempted fixes, the auto-tuning feature
+    // has proven to be unreliable and consistently degrades performance:
+    //
+    // Baseline (no auto-tune): ~963 relations/sec
+    // With auto-tuning attempt #1: ~80 rel/sec (91% slower)
+    // With auto-tuning attempt #2: ~14 rel/sec (98.5% slower!)
+    //
+    // ROOT CAUSES:
+    // 1. Complex interaction between parameter accumulation (+=) and cutoff semantics (-=)
+    // 2. Exploration logic doesn't account for cumulative effects
+    // 3. B1/B2 changes cause invalid relations (factor bases not rebuilt)
+    // 4. No clear optimal direction for SIEVE_BOUND_ADJUSTMENT and INITIAL_CUTOFF
+    //
+    // DECISION: Disable all parameter adjustments until a fundamentally better
+    // approach can be designed, tested, and validated.
+    //
+    // Rate tracking remains enabled for monitoring purposes (it's harmless).
+    // ============================================================================
+    
+    // ALL PARAMETER ADJUSTMENTS DISABLED
+    // Do not modify any parameters - just return immediately
+    
+    if (verbose() && (sieve_bound_adj1 != 0 || sieve_bound_adj2 != 0 || initial_cutoff_adj != 0))
+    {
+        std::cerr << "### Auto-tuning disabled (parameters not adjusted) ###" << std::endl;
+        std::cerr << "Suggested adjustments ignored: SBA1=" << sieve_bound_adj1 
+                  << ", SBA2=" << sieve_bound_adj2 
+                  << ", IC=" << initial_cutoff_adj << std::endl;
+        std::cerr << "Keeping current values: SBA1=" << SIEVE_BOUND_ADJUSTMENT1_ 
+                  << ", SBA2=" << SIEVE_BOUND_ADJUSTMENT2_ 
+                  << ", IC=" << INITIAL_CUTOFF_ << std::endl;
+        std::cerr << "###################################################" << std::endl;
+    }
+    
+    // B1/B2 adjustments are DISABLED (would cause invalid relations)
+    // TODO: Implement factor base rebuild to enable B1/B2 adjustments
+    if (verbose() && (B1_adj != 0 || B2_adj != 0))
+    {
+        std::cerr << "NOTE: B1/B2 adjustments ignored (requires factor base rebuild)" << std::endl;
+    }
+    
+    // Suppress unused parameter warnings for disabled adjustments
+    (void)B1_adj;
+    (void)B2_adj;
+}
+
+// Write statistics to output file
+void LatticeSiever::write_statistics(int relations_this_q, double sieving_time)
+{
+    // Only write stats if enabled (stats_interval_ > 0) and file is open
+    if (stats_interval_ <= 0 || !statsfile_ || !statsfile_->is_open())
+    {
+        return;
+    }
+    
+    relations_since_last_stats_ += relations_this_q;
+    
+    // Check if we should write stats (reached interval)
+    if (relations_since_last_stats_ >= stats_interval_)
+    {
+        // Calculate statistics
+        double average_relations_per_second = (double)relations_this_q / sieving_time;
+        double running_average_relations_per_second = (double)total_relations_ / total_sieving_time_;
+        double running_average_relations_per_hour = running_average_relations_per_second * 60 * 60;
+        double running_average_relations_per_day = running_average_relations_per_hour * 24;
+        
+        // Write to CSV file
+        *statsfile_ << total_sieving_time_ << ","
+                    << total_relations_ << ","
+                    << average_relations_per_second << ","
+                    << running_average_relations_per_second << ","
+                    << running_average_relations_per_hour << ","
+                    << running_average_relations_per_day << std::endl;
+        
+        // Flush to ensure data is written
+        statsfile_->flush();
+        
+        // Reset counter
+        relations_since_last_stats_ = 0;
     }
 }

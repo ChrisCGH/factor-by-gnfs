@@ -4,11 +4,13 @@
 #include "Polynomial.h"
 #include "FactorBase.h"
 #include "SieveConfig.h"
+#include "RateOptimizer.h"
 #include <utility>
 #include <string>
 #include <sstream>
 #include <exception>
 #include <vector>
+#include <algorithm>
 #include "PointerHashTable.h"
 #include "Parallelogram.h"
 #include "BitOperations.h"
@@ -225,13 +227,15 @@ private:
         SieveCacheItem* next_cache_;
         LatticeSiever::SIEVE_TYPE* base_;
         SieveCacheItem cache_[cache_size];
+        bool tracked_;  // True if this bucket is in non_empty_buckets_ list
 
-        SieveCacheBucket() : next_cache_(cache_) {}
+        SieveCacheBucket() : next_cache_(cache_), tracked_(false) {}
 
         void init(LatticeSiever::SIEVE_TYPE* base)
         {
             base_ = base;
             next_cache_ = cache_;
+            tracked_ = false;
         }
     };
 //#define BUCKET_BITS 1
@@ -312,10 +316,11 @@ private:
 #endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
-                // Track if this bucket was previously empty
-                if (item == scb.cache_)
+                // Track bucket if it's not already tracked
+                if (item == scb.cache_ && !scb.tracked_)
                 {
                     non_empty_buckets_.push_back(bucket_idx);
+                    scb.tracked_ = true;
                 }
                 
                 item->offset_ = offset;
@@ -508,6 +513,101 @@ private:
             }
             non_empty_buckets_.clear();
         }
+        
+        // Efficient block-based dump: process only buckets that overlap with the current block
+        // Key insight: buckets partition the sieve array, so we only need to process
+        // buckets whose range intersects [block_start, block_end)
+        void dump_block_efficient(size_t block_start, size_t block_end, bool add_to_pf_list = true)
+        {
+            // Calculate bucket range that overlaps with this block
+            size_t first_bucket = block_start / bucket_size;
+            size_t last_bucket = (block_end - 1) / bucket_size;
+            
+            // Track which buckets still have unprocessed items
+            std::vector<size_t> buckets_to_keep;
+            buckets_to_keep.reserve(non_empty_buckets_.size());
+            
+            for (size_t bucket_index : non_empty_buckets_)
+            {
+                // Skip buckets that don't overlap with current block
+                if (bucket_index < first_bucket || bucket_index > last_bucket)
+                {
+                    buckets_to_keep.push_back(bucket_index);
+                    continue;
+                }
+                
+                SieveCacheBucket<cache_size>& scb = buckets_[bucket_index];
+                SieveCacheItem* read_ptr = scb.cache_;
+                SieveCacheItem* write_ptr = scb.cache_;
+                bool bucket_still_has_items = false;
+                
+                while (read_ptr != scb.next_cache_)
+                {
+                    // Check if this item is in the current block
+                    if (read_ptr->offset_ >= block_start && read_ptr->offset_ < block_end)
+                    {
+                        // Process this item
+                        if (!sieve_bit_array_.isSet(read_ptr->offset_))
+                        {
+                            *(read_ptr->offset_ + sieve_array_) += read_ptr->logp_;
+                            if (add_to_pf_list)
+                            {
+                                SieveCacheItem::pf_list_->add(read_ptr->offset_ + sieve_array_, read_ptr->p_);
+                            }
+                        }
+                        // Item processed, don't keep it
+                    }
+                    else
+                    {
+                        // Keep this item for later blocks
+                        if (write_ptr != read_ptr)
+                        {
+                            *write_ptr = *read_ptr;
+                        }
+                        ++write_ptr;
+                        bucket_still_has_items = true;
+                    }
+                    ++read_ptr;
+                }
+                
+                // Update next_cache_ to reflect removed items
+                scb.next_cache_ = write_ptr;
+                
+                // If bucket still has items, keep it in the list
+                if (bucket_still_has_items)
+                {
+                    buckets_to_keep.push_back(bucket_index);
+                }
+                else
+                {
+                    // Bucket is now empty, clear tracked flag
+                    scb.tracked_ = false;
+                }
+            }
+            
+            // Update non_empty_buckets_: Clear all tracked flags, then set only for kept buckets
+            for (size_t bucket_index : non_empty_buckets_)
+            {
+                buckets_[bucket_index].tracked_ = false;
+            }
+            for (size_t bucket_index : buckets_to_keep)
+            {
+                buckets_[bucket_index].tracked_ = true;
+            }
+            non_empty_buckets_ = std::move(buckets_to_keep);
+        }
+        
+        // Remove duplicate bucket indices that can occur due to auto-dump and refill
+        // NOTE: With tracked_ flag in place, this should no longer be necessary
+        // Kept for safety/debugging purposes
+        void remove_duplicate_buckets()
+        {
+            if (non_empty_buckets_.size() <= 1) return;
+            
+            std::sort(non_empty_buckets_.begin(), non_empty_buckets_.end());
+            auto last = std::unique(non_empty_buckets_.begin(), non_empty_buckets_.end());
+            non_empty_buckets_.erase(last, non_empty_buckets_.end());
+        }
 
     private:
         SieveCacheBucket<cache_size> buckets_[bucket_count];
@@ -617,6 +717,7 @@ private:
     size_t c_d_to_offset(const std::pair<long int, long int>& cd);
     bool allocate_c_d_region();
     bool in_range(long int c, long int d);
+    void validate_sieve_array(const char* checkpoint_name);
 
     Polynomial<VeryLong> f1_;
     Polynomial<double> f1d_;
@@ -650,6 +751,13 @@ private:
 
     std::string relation_file_;
     std::fstream* relfile_;
+    
+    // Statistics output
+    std::string stats_file_;
+    std::ofstream* statsfile_;
+    long int stats_interval_;
+    long int relations_since_last_stats_;
+    
     FactorBase* alg_factor_base_;
     FactorBase* rat_factor_base_;
     
@@ -683,6 +791,12 @@ private:
     static const int fixed_sieve_array_size = c_span * (max_d - min_d + 1); // 2^26
     //static const int sieve_cache_size = 7424;
     static const int sieve_cache_size = 7424;
+    
+    // Cache blocking parameters
+    // Block size chosen to fit in L2 cache (256KB typical)
+    // Each sieve entry is 1 byte, so 256K entries = 256KB
+    static const size_t CACHE_BLOCK_SIZE = 262144;  // 256KB worth of sieve entries
+    static const size_t BLOCKS_PER_SIEVE = (fixed_sieve_array_size + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE;
 
     SIEVE_TYPE fixed_sieve_array_[fixed_sieve_array_size];
     BitArray64<fixed_sieve_array_size> sieve_bit_array_;
@@ -706,5 +820,18 @@ private:
     Timing timer_;
     static long int total_relations_;
     static double total_sieving_time_;
+    
+    // Rate optimization
+    RateOptimizer rate_optimizer_;
+    bool enable_auto_tuning_;
+    
+    // Methods for parameter adjustment
+    void apply_parameter_adjustments(long int B1_adj, long int B2_adj,
+                                     long int sieve_bound_adj1, long int sieve_bound_adj2,
+                                     long int initial_cutoff_adj);
+    void record_rate_sample(double rate, int relations_count);
+    
+    // Statistics output
+    void write_statistics(int relations_this_q, double sieving_time);
 };
 #endif
