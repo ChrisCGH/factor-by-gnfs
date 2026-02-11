@@ -192,6 +192,26 @@ class TestParamHelpers(unittest.TestCase):
         tune_sieve._set_param(params, "INITIAL_CUTOFF", 25)
         self.assertEqual(int(params["INITIAL_CUTOFF"]), 25)
 
+    def test_set_param_min_a_clamps_low(self):
+        params = {}
+        tune_sieve._set_param(params, "MIN_A", -5000000000)
+        self.assertEqual(int(params["MIN_A"]), -4000000000)
+
+    def test_set_param_max_a_clamps_high(self):
+        params = {}
+        tune_sieve._set_param(params, "MAX_A", 5000000000)
+        self.assertEqual(int(params["MAX_A"]), 4000000000)
+
+    def test_set_param_min_b_clamps_low(self):
+        params = {}
+        tune_sieve._set_param(params, "MIN_B", 0)
+        self.assertEqual(int(params["MIN_B"]), 1)
+
+    def test_set_param_max_b_normal(self):
+        params = {}
+        tune_sieve._set_param(params, "MAX_B", 500)
+        self.assertEqual(int(params["MAX_B"]), 500)
+
 
 class TestInlinePoly(unittest.TestCase):
     """Test that configs with inline (single-line) polynomials are handled."""
