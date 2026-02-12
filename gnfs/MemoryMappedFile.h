@@ -181,6 +181,10 @@ private:
         else
         {
             pos_ = base_;
+            if (!writeable_)
+            {
+                madvise(base_, view_size_, MADV_SEQUENTIAL);
+            }
         }
     }
     void unmap_file()
@@ -193,10 +197,10 @@ private:
     }
     const char* end() const
     {
-        off_t end_offset = size() - view_offset_;
-        if (end_offset >> 31)
+        unsigned long long int end_offset = size() - view_offset_;
+        if (end_offset > view_size_)
         {
-            return reinterpret_cast<char*>(~0);
+            return reinterpret_cast<char*>(~0ULL);
         }
         else
         {
@@ -452,18 +456,44 @@ private:
 inline bool getline(MemoryMappedFile& mmfile, std::string& str)
 {
     const char* p = mmfile.pos();
-    const char* q = p;
     const char* e = mmfile.end();
     const char* ve = mmfile.view_end();
-    while (q != e && q < ve && *q != 0x0d && *q != 0x0a) ++q;
-    if (q == e)
+    if (p == e)
         return false;
-    if (q >= ve) mmfile.move_view(p);
-    p = mmfile.pos();
-    q = p;
-    e = mmfile.end();
-    ve = mmfile.view_end();
-    while (q != e && q != ve && *q != 0x0d && *q != 0x0a) ++q;
+    // Use memchr for fast newline scanning
+    size_t search_len = static_cast<size_t>((ve < e ? ve : e) - p);
+    const char* cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
+    const char* lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
+    const char* q;
+    if (cr && lf)
+        q = (cr < lf) ? cr : lf;
+    else if (cr)
+        q = cr;
+    else if (lf)
+        q = lf;
+    else
+        q = p + search_len;
+    if (q >= ve && q != e)
+    {
+        // Line spans the view boundary; remap and rescan
+        mmfile.move_view(p);
+        p = mmfile.pos();
+        e = mmfile.end();
+        ve = mmfile.view_end();
+        if (p == e)
+            return false;
+        search_len = static_cast<size_t>((ve < e ? ve : e) - p);
+        cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
+        lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
+        if (cr && lf)
+            q = (cr < lf) ? cr : lf;
+        else if (cr)
+            q = cr;
+        else if (lf)
+            q = lf;
+        else
+            q = p + search_len;
+    }
     if (q == e)
         return false;
     size_t s = q - p + 1;
