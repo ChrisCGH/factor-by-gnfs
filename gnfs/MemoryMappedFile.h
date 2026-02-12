@@ -453,6 +453,20 @@ private:
 };
 #endif
 
+inline const char* find_newline(const char* p, const char* e, const char* ve)
+{
+    size_t search_len = static_cast<size_t>((ve < e ? ve : e) - p);
+    const char* cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
+    const char* lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
+    if (cr && lf)
+        return (cr < lf) ? cr : lf;
+    if (cr)
+        return cr;
+    if (lf)
+        return lf;
+    return p + search_len;
+}
+
 inline bool getline(MemoryMappedFile& mmfile, std::string& str)
 {
     const char* p = mmfile.pos();
@@ -460,39 +474,16 @@ inline bool getline(MemoryMappedFile& mmfile, std::string& str)
     const char* ve = mmfile.view_end();
     if (p == e)
         return false;
-    // Use memchr for fast newline scanning
-    size_t search_len = static_cast<size_t>((ve < e ? ve : e) - p);
-    const char* cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
-    const char* lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
-    const char* q;
-    if (cr && lf)
-        q = (cr < lf) ? cr : lf;
-    else if (cr)
-        q = cr;
-    else if (lf)
-        q = lf;
-    else
-        q = p + search_len;
+    const char* q = find_newline(p, e, ve);
     if (q >= ve && q != e)
     {
-        // Line spans the view boundary; remap and rescan
         mmfile.move_view(p);
         p = mmfile.pos();
         e = mmfile.end();
         ve = mmfile.view_end();
         if (p == e)
             return false;
-        search_len = static_cast<size_t>((ve < e ? ve : e) - p);
-        cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
-        lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
-        if (cr && lf)
-            q = (cr < lf) ? cr : lf;
-        else if (cr)
-            q = cr;
-        else if (lf)
-            q = lf;
-        else
-            q = p + search_len;
+        q = find_newline(p, e, ve);
     }
     if (q == e)
         return false;
