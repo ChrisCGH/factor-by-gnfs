@@ -135,25 +135,44 @@ struct xorer
 
 long int RelationSetManager::merge(long int rs1, long int rs2)
 {
-    std::unordered_set<long int> s;
-    for (auto it = relation_set_relation_map_.begin(rs1);
-            it != relation_set_relation_map_.end(rs1);
-            ++it)
+    // Compute symmetric difference (XOR) using sorted merge,
+    // since SparseRow elements are kept in sorted order.
+    std::vector<size_t> merged;
+    merged.reserve(relation_set_relation_map_.row_size(rs1) + relation_set_relation_map_.row_size(rs2));
+
+    auto it1 = relation_set_relation_map_.begin(rs1);
+    auto it1_end = relation_set_relation_map_.end(rs1);
+    auto it2 = relation_set_relation_map_.begin(rs2);
+    auto it2_end = relation_set_relation_map_.end(rs2);
+
+    while (it1 != it1_end && it2 != it2_end)
     {
-        s.insert(*it);
-    }
-    for (auto it = relation_set_relation_map_.begin(rs2);
-            it != relation_set_relation_map_.end(rs2);
-            ++it)
-    {
-        if (s.find(*it) == s.end())
+        if (*it1 < *it2)
         {
-            s.insert(*it);
+            merged.push_back(*it1);
+            ++it1;
+        }
+        else if (*it2 < *it1)
+        {
+            merged.push_back(*it2);
+            ++it2;
         }
         else
         {
-            s.erase(*it);
+            // equal elements cancel out (XOR)
+            ++it1;
+            ++it2;
         }
+    }
+    while (it1 != it1_end)
+    {
+        merged.push_back(*it1);
+        ++it1;
+    }
+    while (it2 != it2_end)
+    {
+        merged.push_back(*it2);
+        ++it2;
     }
 
     long int new_rs = next_relation_set_;
@@ -166,9 +185,7 @@ long int RelationSetManager::merge(long int rs1, long int rs2)
     {
         ++next_relation_set_;
     }
-    std::for_each(s.begin(), s.end(), [this, new_rs](size_t col) {
-        return relation_set_relation_map_.do_xor(new_rs, col);
-    });
+    relation_set_relation_map_.set_row(new_rs, merged);
     return new_rs;
 }
 
@@ -446,6 +463,12 @@ long int RelationManager::merge(long int rs1, long int rs2, long int prime)
     SparseRow sr2(relation_set_prime_map_.row_size(rs2));
     relation_set_prime_map_.copy_row(rs2, sr2);
 
+    // Collect the symmetric difference into a vector first,
+    // then build the new row directly with set_row() to avoid
+    // repeated binary searches from do_xor on the growing row.
+    std::vector<size_t> merged;
+    merged.reserve(relation_set_prime_map_.row_size(rs1) + relation_set_prime_map_.row_size(rs2));
+
     auto it1 = sr1.begin();
     auto it1_end = sr1.end();
     auto it2 = sr2.begin();
@@ -455,49 +478,43 @@ long int RelationManager::merge(long int rs1, long int rs2, long int prime)
     {
         if (*it1 < *it2)
         {
-            relation_set_prime_map_.do_xor(new_rs, *it1);
-            if (prime_relation_set_map_.row_size(*it1))
-            {
-                prime_relation_set_map_.do_xor(*it1, new_rs);
-            }
-            frequency_table_.increment_prime(*it1);
+            merged.push_back(*it1);
             ++it1;
         }
         else if (*it2 < *it1)
         {
-            relation_set_prime_map_.do_xor(new_rs, *it2);
-            if (prime_relation_set_map_.row_size(*it2))
-            {
-                prime_relation_set_map_.do_xor(*it2, new_rs);
-            }
-            frequency_table_.increment_prime(*it2);
+            merged.push_back(*it2);
             ++it2;
         }
-        else // it1->second == it2->second
+        else
         {
+            // equal elements cancel out (XOR)
             ++it1;
             ++it2;
         }
     }
     while (it1 != it1_end)
     {
-        relation_set_prime_map_.do_xor(new_rs, *it1);
-        if (prime_relation_set_map_.row_size(*it1))
-        {
-            prime_relation_set_map_.do_xor(*it1, new_rs);
-        }
-        frequency_table_.increment_prime(*it1);
+        merged.push_back(*it1);
         ++it1;
     }
     while (it2 != it2_end)
     {
-        relation_set_prime_map_.do_xor(new_rs, *it2);
-        if (prime_relation_set_map_.row_size(*it2))
-        {
-            prime_relation_set_map_.do_xor(*it2, new_rs);
-        }
-        frequency_table_.increment_prime(*it2);
+        merged.push_back(*it2);
         ++it2;
+    }
+
+    // Build the new row directly (already sorted)
+    relation_set_prime_map_.set_row(new_rs, merged);
+
+    // Update prime_relation_set_map_ and frequency_table_
+    for (const auto& col : merged)
+    {
+        if (prime_relation_set_map_.row_size(col))
+        {
+            prime_relation_set_map_.do_xor(col, new_rs);
+        }
+        frequency_table_.increment_prime(col);
     }
 
     return new_rs;
