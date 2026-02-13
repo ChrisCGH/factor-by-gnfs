@@ -197,10 +197,10 @@ private:
     }
     const char* end() const
     {
-        unsigned long long int end_offset = size() - view_offset_;
-        if (end_offset > view_size_)
+        off_t end_offset = size() - view_offset_;
+        if (end_offset >> 31)
         {
-            return reinterpret_cast<char*>(~0ULL);
+            return reinterpret_cast<char*>(~0);
         }
         else
         {
@@ -453,38 +453,21 @@ private:
 };
 #endif
 
-inline const char* find_newline(const char* p, const char* e, const char* ve)
-{
-    size_t search_len = static_cast<size_t>((ve < e ? ve : e) - p);
-    const char* cr = static_cast<const char*>(memchr(p, 0x0d, search_len));
-    const char* lf = static_cast<const char*>(memchr(p, 0x0a, search_len));
-    if (cr && lf)
-        return (cr < lf) ? cr : lf;
-    if (cr)
-        return cr;
-    if (lf)
-        return lf;
-    return p + search_len;
-}
-
 inline bool getline(MemoryMappedFile& mmfile, std::string& str)
 {
     const char* p = mmfile.pos();
+    const char* q = p;
     const char* e = mmfile.end();
     const char* ve = mmfile.view_end();
-    if (p == e)
+    while (q != e && q < ve && *q != 0x0d && *q != 0x0a) ++q;
+    if (q == e)
         return false;
-    const char* q = find_newline(p, e, ve);
-    if (q >= ve && q != e)
-    {
-        mmfile.move_view(p);
-        p = mmfile.pos();
-        e = mmfile.end();
-        ve = mmfile.view_end();
-        if (p == e)
-            return false;
-        q = find_newline(p, e, ve);
-    }
+    if (q >= ve) mmfile.move_view(p);
+    p = mmfile.pos();
+    q = p;
+    e = mmfile.end();
+    ve = mmfile.view_end();
+    while (q != e && q != ve && *q != 0x0d && *q != 0x0a) ++q;
     if (q == e)
         return false;
     size_t s = q - p + 1;
