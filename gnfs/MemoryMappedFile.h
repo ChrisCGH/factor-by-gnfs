@@ -181,6 +181,10 @@ private:
         else
         {
             pos_ = base_;
+            if (!writeable_)
+            {
+                madvise(base_, view_size_, MADV_SEQUENTIAL);
+            }
         }
     }
     void unmap_file()
