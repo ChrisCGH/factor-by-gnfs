@@ -21,11 +21,8 @@ public:
         {
             throw std::string("Combinations(m, n) : n must be greater than zero");
         }
-        if (m_ <= n_)
-        {
-            combination_.resize(m_);
-            for (size_t i = 0; i < m_; i++) combination_[i] = i;
-        }
+        combination_.resize(m_);
+        for (size_t i = 0; i < m_; i++) combination_[i] = i;
         if (m_ == n_)
         {
             done_ = true;
@@ -34,7 +31,7 @@ public:
 
     bool next()
     {
-        if (done_) return !done_;
+        if (done_) return false;
         size_t pos = m_ - 1;
         combination_[pos]++;
         while (!done_ && combination_[pos] > (n_ - m_ + pos))
@@ -62,7 +59,7 @@ public:
 
     size_t operator() (size_t i) const
     {
-        if (i >= combination_.size())
+        if (i >= m_)
         {
             throw std::string("Combination::operator() : index out of range");
         }
@@ -71,7 +68,7 @@ public:
 
     size_t size() const
     {
-        return combination_.size();
+        return m_;
     }
 
     bool done() const
@@ -134,7 +131,7 @@ public:
     {
         if (done_)
         {
-            return !done_;
+            return false;
         }
         // Step T2. [Visit.]
         // Note: we assume any "visiting" has already been done at this point
@@ -155,13 +152,12 @@ public:
                 j_ = 2;
                 // Step T4. [Find j.]
                 size_t x = 0;
-                bool done = false;
-                while (!done)
+                for (;;)
                 {
                     c_[j_ - 2] = j_ - 2;
                     x = c_[j_ - 1] + 1;
-                    if (x == c_[j_]) ++j_;
-                    else done = true;
+                    if (x != c_[j_]) break;
+                    ++j_;
                 }
                 // Step T5. [Done?]
                 if (j_ > t_) done_ = true;
@@ -183,7 +179,7 @@ public:
 
     size_t size() const
     {
-        return (c_.size() - 2);
+        return t_;
     }
 
     bool done() const
