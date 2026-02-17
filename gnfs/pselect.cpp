@@ -395,19 +395,26 @@ Polynomial<VeryLong> base_m_polynomial(const VeryLong& N, const VeryLong& a, con
     std::vector<VeryLong> r(d + 1);
     std::vector<VeryLong> c(d + 1);
 
+    // Pre-compute all powers of b: b_powers[i] = b^i
+    std::vector<VeryLong> b_powers(d + 1);
+    b_powers[0] = VeryLong(1L);
+    for (int i = 1; i <= d; ++i)
+    {
+        b_powers[i] = b_powers[i - 1] * b;
+    }
+
     c[d] = c_d;
     r[d] = N;
 
     c[d-1] = c_d_1;
-    r[d-1] = (r[d] - c[d] * pow<VeryLong, long int>(b, d)) / a;
+    r[d-1] = (r[d] - c[d] * b_powers[d]) / a;
 
     for (int i = d - 2; i >= 0; --i)
     {
-        r[i] = (r[i+1] - c[i+1] * pow<VeryLong, long int>(b, i+1)) / a;
-        VeryLong b_power = pow<VeryLong, long int>(b, i);
-        VeryLong b_power_inv = b_power.inverse(a);
+        r[i] = (r[i+1] - c[i+1] * b_powers[i+1]) / a;
+        VeryLong b_power_inv = b_powers[i].inverse(a);
         VeryLong c_i_mod_a = (r[i] * b_power_inv) % a;
-        VeryLong c_i = r[i] / pow<VeryLong, long int>(b, i);
+        VeryLong c_i = r[i] / b_powers[i];
         c[i] = c_i - c_i % a + c_i_mod_a;
         VeryLong delta = c[i] - c_i;
         while (delta < zero)
@@ -638,38 +645,45 @@ private:
             // i.e. -item.sum_ is close to it->sum_
             double lb = -item.sum_ - epsilon;
             double ub = -item.sum_ + epsilon;
-            size_t slot = (-item.sum_ + 0.5) * S;
-            if (slot >= S)
-                slot = S - 1;
+            size_t center_slot = (-item.sum_ + 0.5) * S;
+            if (center_slot >= S)
+                center_slot = S - 1;
+            // Check the center slot and its immediate neighbors to handle
+            // floating-point rounding at slot boundaries
+            size_t slot_lo = (center_slot > 0) ? center_slot - 1 : 0;
+            size_t slot_hi = (center_slot < S - 1) ? center_slot + 1 : S - 1;
             if (debug)
             {
-                std::cout << "Looking for match in slot " << slot << " for item : ";
+                std::cout << "Looking for match in slots " << slot_lo << "-" << slot_hi << " for item : ";
                 item.display(degree, flist1_mu_length);
             }
-            flist_list& fl = hash_table_[slot];
-            if (debug)
+            for (size_t slot = slot_lo; slot <= slot_hi; ++slot)
             {
-                if (fl.item_count_ > 0)
+                flist_list& fl = hash_table_[slot];
+                if (debug)
                 {
-                    std::cout << "Slot " << slot << std::endl;
-                    fl.display();
-                }
-            }
-            for (flist_item* it = fl.item_;
-                    it != fl.item_ + fl.item_count_;
-                    ++it)
-            {
-                if (it->sum_ >= lb && it->sum_ <= ub)
-                {
-                    std::vector<long int> mu;
-                    mu.reserve(flist1_mu_length + flist2_mu_length);
-                    item.get_mu(d, mu, flist1_mu_length);
-                    it->get_mu(d, mu, flist2_mu_length);
-                    good_mu.push_back(mu);
-                    if (debug)
+                    if (fl.item_count_ > 0)
                     {
-                        std::cout << std::setprecision(16) << "Match found: epsilon = " << epsilon << ", it->sum_ = " << it->sum_ << ", item.sum_ = " << item.sum_ << ", ";
-                        display_mu(mu);
+                        std::cout << "Slot " << slot << std::endl;
+                        fl.display();
+                    }
+                }
+                for (flist_item* it = fl.item_;
+                        it != fl.item_ + fl.item_count_;
+                        ++it)
+                {
+                    if (it->sum_ >= lb && it->sum_ <= ub)
+                    {
+                        std::vector<long int> mu;
+                        mu.reserve(flist1_mu_length + flist2_mu_length);
+                        item.get_mu(d, mu, flist1_mu_length);
+                        it->get_mu(d, mu, flist2_mu_length);
+                        good_mu.push_back(mu);
+                        if (debug)
+                        {
+                            std::cout << std::setprecision(16) << "Match found: epsilon = " << epsilon << ", it->sum_ = " << it->sum_ << ", item.sum_ = " << item.sum_ << ", ";
+                            display_mu(mu);
+                        }
                     }
                 }
             }
@@ -941,7 +955,7 @@ void PolynomialPairCalculator::XYZ::make_x()
         {
             const LongModular& r = ppc_.roots_mod_p_[combination_(0)][j];
             m_[0].push_back(r.get_long());
-            VeryLong& x_i_j = m_[0][m_[0].size() - 1];
+            VeryLong& x_i_j = m_[0].back();
             x_i_j *= a_p_i_inv;
             x_i_j *= a_p_i;
             x_i_j %= a_;
@@ -979,7 +993,7 @@ void PolynomialPairCalculator::XYZ::make_x()
         {
             const LongModular& r = ppc_.roots_mod_p_[combination_(i)][j];
             m_[i].push_back(r.get_long());
-            VeryLong& x_i_j = m_[i][m_[i].size() - 1];
+            VeryLong& x_i_j = m_[i].back();
             x_i_j *= a_p_i_inv;
             x_i_j *= a_p_i;
             x_i_j %= a_;
@@ -1063,11 +1077,13 @@ void PolynomialPairCalculator::XYZ::make_f()
     // f  is dependent on m
     //  0                  0
     //
+    VeryLong m0_pow_d_minus_1 = pow<VeryLong, long int>(m0_, ppc_.d_ - 1);
+    VeryLong m0_pow_d = m0_pow_d_minus_1 * m0_;
     VeryLong f0_vl(ppc_.N_);
-    f0_vl -= ppc_.c_d_ * pow<VeryLong, long int>(m0_, ppc_.d_);
+    f0_vl -= ppc_.c_d_ * m0_pow_d;
     f0_ = f0_vl.get_double();
     f0_ /= a_d_2;
-    f0_ /= (pow<VeryLong, long int>(m0_, ppc_.d_-1)).get_double();
+    f0_ /= m0_pow_d_minus_1.get_double();
 
     if (ppc_.debug_)
     {
@@ -1313,8 +1329,9 @@ void PolynomialPairCalculator::XYZ::process_good_mu(std::vector<Kleinjung_poly_i
             {
                 std::cout << "Adding (" << a_ << ", " << b << ", " << fm << ") to top_polys" << std::endl;
             }
-            top_polys.push_back(pi);
-            std::sort(top_polys.begin(), top_polys.end());
+            // Insert in sorted position (vector is already sorted)
+            auto pos = std::lower_bound(top_polys.begin(), top_polys.end(), pi);
+            top_polys.insert(pos, pi);
             VeryLong top_c_d_1 = top_polys[0].fm_.coefficient(0);
             if (top_c_d_1 != ppc_.prev_top_c_d_1_)
             {
@@ -1326,7 +1343,7 @@ void PolynomialPairCalculator::XYZ::process_good_mu(std::vector<Kleinjung_poly_i
                 }
             }
         }
-        if (top_polys.size() >= max_top_polys)
+        if (top_polys.size() > max_top_polys)
         {
             top_polys.erase(top_polys.end() - 1);
         }
@@ -1519,11 +1536,13 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
 
     double old_f0(f0_);
 
+    VeryLong m0_pow_d_minus_1 = pow<VeryLong, long int>(m0_, ppc_.d_ - 1);
+    VeryLong m0_pow_d = m0_pow_d_minus_1 * m0_;
     VeryLong f0_vl(ppc_.N_);
-    f0_vl -= ppc_.c_d_ * pow<VeryLong, long int>(m0_, ppc_.d_);
+    f0_vl -= ppc_.c_d_ * m0_pow_d;
     f0_ = f0_vl.get_double();
     f0_ /= a_d_2;
-    f0_ /= (pow<VeryLong, long int>(m0_, ppc_.d_-1)).get_double();
+    f0_ /= m0_pow_d_minus_1.get_double();
 
     for (size_t j = 0; j < f_[0].size(); ++j)
     {
