@@ -8,11 +8,11 @@ struct BitOperations
     enum { BITS_IN_WORD = 32 };
     static inline uint32_t colMask(size_t cols)
     {
-        if (cols >= BITS_IN_WORD)
+        if (cols > BITS_IN_WORD)
         {
             return 0xFFFFFFFF;
         }
-        return (1U << cols) - 1U;
+        return (cols == BITS_IN_WORD) ? 0xFFFFFFFF : (1U << cols) - 1U;
     }
 
     static inline bool bitSet(size_t i, uint32_t w)
@@ -159,11 +159,11 @@ struct BitOperations64
     enum { BITS_IN_WORD = 64 };
     static inline unsigned long long int colMask(size_t cols)
     {
-        if (cols >= BITS_IN_WORD)
+        if (cols > BITS_IN_WORD)
         {
             return 0xFFFFFFFFFFFFFFFFULL;
         }
-        return (1ULL << cols) - 1ULL;
+        return (cols == BITS_IN_WORD) ? 0xFFFFFFFFFFFFFFFFULL : (1ULL << cols) - 1ULL;
     }
 
     static inline bool bitSet(size_t i, unsigned long long int w)
