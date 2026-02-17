@@ -8,15 +8,13 @@
 #include "PriorityQueue.h"
 #include "MPFloat.h"
 #include "PolynomialOptimizer.h"
-#include <time.h>
+#include <ctime>
 #include <iomanip>
 #include <fstream>
 #include "timings.h"
 #include "lip.h"
 #include "pselect.h"
 #include "gcd.h"
-#include <math.h>
-#include <set>
 #include <cmath>
 
 #define CHECK 1
@@ -28,9 +26,8 @@ Skewed_selection_config Skewed_config("skewed.cfg");
 struct Kleinjung_poly_info
 {
     Kleinjung_poly_info(const VeryLong& a, const VeryLong& b, const Polynomial<VeryLong>& fm)
-        : a_(a), b_(b), fm_(fm)
+        : a_(a), b_(b), fm_(fm), als_(0.0)
     {
-        //als_ = average_log_size(fm, 1000);
     }
     Kleinjung_poly_info(const Kleinjung_poly_info& pi)
     {
@@ -52,14 +49,10 @@ struct Kleinjung_poly_info
     }
     bool operator<(const Kleinjung_poly_info& pi) const
     {
-        //return (als_ < pi.als_);
         int d = fm_.deg();
-        //VeryLong x = fm_.coefficient(d - 1) * fm_.coefficient(d - 2);
-        //VeryLong y = pi.fm_.coefficient(d - 1) * pi.fm_.coefficient(d - 2);
         VeryLong x = fm_.coefficient(d - 2);
         VeryLong y = pi.fm_.coefficient(d - 2);
         return (abs(x) < abs(y));
-//      return (abs(fm_.coefficient(d - 2)) < abs(pi.fm_.coefficient(d - 2)));
     }
 
     VeryLong a_;
@@ -89,8 +82,6 @@ Polynomial<VeryLong> adjust_base_m_polynomial(const Polynomial<VeryLong>& poly, 
             a = adjusted_poly.coefficient(i);
         }
     }
-//   std::cout << "Original polynomial = " << poly << std::endl;
-//   std::cout << "Adjusted polynomial = " << adjusted_poly << std::endl;
     return adjusted_poly;
 }
 };
@@ -138,8 +129,7 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
     {
         j0_array = new short [ MAX_J0 ];
     }
-    unsigned long int p_k;  // p^k
-    //long int k = 0;
+    unsigned long int p_k;
 
     memset((char*)cont_array_data, 0, cont_array_data_size * sizeof(short));
     long int p = zpnextb(2);
@@ -148,17 +138,13 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
     while (p < MAX_SMALL_PRIME)
     {
         p_k = p;
-        //k = 1;
         int projective_root = (leading_coefficient % p == 0L);
         double logp = log((double)p);
         while (p_k < MAX_P_K)
         {
             p_k *= p;
-            //k++;
         }
         p_k /= p;
-        //k--;
-        //cout << "p^k = " << p_k << std::endl;
 
         double prob_here = (double)p / (p_k * (p + 1.0));
 
@@ -269,7 +255,6 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
                         {
                             short addonj_s = (short)floor(addon * 1000.0 + 0.5);
                             unsigned long int j0 = j0_start.get_long() % p_q;
-                            //if (j0 < 0) j0 += p_q;
                             while (j0 < p_k)
                             {
                                 j0_array[j0] += addonj_s;
@@ -352,14 +337,10 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
                     poly_list.push_back(PolynomialOptimizer::Poly_info(F, s, I_F_S, cont));
                 }
 
-                // since calculating alpha is fairly slow, only
-                // do it if we have a hope of beating the best E so far
                 if (I_F_S + cont < best_E)
                 {
-                    //double alpha = alpha_F(F, 100, 50);
                     double alpha = cont;
                     double E = I_F_S + alpha;
-                    //cerr << alpha << "   " << cont << "   " << alpha - cont << std::endl;
                     if (E < best_E)
                     {
                         best_alpha = alpha;
@@ -429,7 +410,6 @@ Polynomial<VeryLong> base_m_polynomial(const VeryLong& N, const VeryLong& a, con
         VeryLong c_i = r[i] / pow<VeryLong, long int>(b, i);
         c[i] = c_i - c_i % a + c_i_mod_a;
         VeryLong delta = c[i] - c_i;
-        //std::cout << "base_m_polynomial() : delta[" << i << "] = " << delta << std::endl;
         while (delta < zero)
         {
             delta += a;
@@ -438,120 +418,20 @@ Polynomial<VeryLong> base_m_polynomial(const VeryLong& N, const VeryLong& a, con
 
         while (delta >= a)
         {
-            delta += a;
-            c[i] += a;
+            delta -= a;
+            c[i] -= a;
         }
-
-
     }
     Polynomial<VeryLong> poly(c);
     return poly;
 }
-
-#if 0
-Polynomial<VeryLong> base_m_polynomial(const VeryLong& N, const VeryLong& a, const VeryLong& b,
-                                       const VeryLong& c_d, int d)
-{
-    const VeryLong zero(0L);
-    std::vector<VeryLong> r(d + 1);
-    std::vector<VeryLong> c(d + 1);
-
-    c[d] = c_d;
-    r[d] = N;
-
-    for (int i = d - 1; i >= 0; --i)
-    {
-        r[i] = (r[i+1] - c[i+1] * pow<VeryLong, long int>(b, i+1)) / a;
-        VeryLong b_power = pow<VeryLong, long int>(b, i);
-        VeryLong b_power_inv = b_power.inverse(a);
-        VeryLong c_i_mod_a = (r[i] * b_power_inv) % a;
-        VeryLong c_i = r[i] / pow<VeryLong, long int>(b, i);
-        c[i] = c_i - c_i % a + c_i_mod_a;
-        VeryLong delta = c[i] - c_i;
-        //std::cout << "base_m_polynomial() : delta[" << i << "] = " << delta << std::endl;
-        while (delta < zero)
-        {
-            delta += a;
-            c[i] += a;
-        }
-
-        while (delta >= a)
-        {
-            delta += a;
-            c[i] += a;
-        }
-
-
-    }
-    Polynomial<VeryLong> poly(c);
-    return poly;
-}
-
-void mpz_set_ll(mpz_t& vl_, long long l)
-{
-    int negative = 0;
-    if (l < 0)
-    {
-        l = -l;
-        negative = 1;
-    }
-    unsigned long int q = (unsigned long int)(l >> 32);
-    unsigned long int r = (unsigned long int)(l & 0x00000000ffffffff);
-    mpz_set_ui(vl_, q);
-    mpz_mul_2exp(vl_, vl_, 32);
-    mpz_add_ui(vl_, vl_, r);
-    if (negative) mpz_neg(vl_, vl_);
-}
-
-void mpz_set_ull(mpz_t& vl_, unsigned long long l)
-{
-    unsigned long int q = (unsigned long int)(l >> 32);
-    unsigned long int r = (unsigned long int)(l & 0x00000000ffffffff);
-    mpz_set_ui(vl_, q);
-    mpz_mul_2exp(vl_, vl_, 32);
-    mpz_add_ui(vl_, vl_, r);
-}
-#endif
-};
-namespace
-{
-#if 0
-Polynomial<VeryLong> base_m_polynomial(const VeryLong& N, const long int degree, VeryLong* m)
-{
-    // create a Polynomial of degree d from N, by
-    // expanding N base m where m ~ N^(1/d) or should it be N^(1/(d+1)) ?
-    // if m ~ N^(1/d) then we get a monic polynomial,
-    // but m ~ N^(1/(d+1)) gives a polynomial with more evenly matched coefficients
-    *m = N.nth_root(degree+1);
-    VeryLong mp = exp(*m, VeryLong(degree));
-    VeryLong r = N;
-
-    vector<VeryLong> coefficients;
-    coefficients.resize(degree + 1);
-    int d = degree;
-    while (d >= 0)
-    {
-        VeryLong c = r / mp;
-        coefficients[d] = c;
-        std::cout << d << " : " << c << std::endl;
-        r -= c * mp;
-        mp /= *m;
-        d--;
-    }
-
-    Polynomial<VeryLong> poly(coefficients);
-    std::cout << "m = " << *m << std::endl;
-    std::cout << poly.evaluate(*m) << std::endl;
-    return poly;
-}
-#endif
 
 Polynomial<VeryLong> base_m_polynomial_1(const VeryLong& N, const long int degree, const VeryLong& m)
 {
     VeryLong mp = exp(m, VeryLong(degree));
     VeryLong r = N;
 
-    vector<VeryLong> coefficients;
+    std::vector<VeryLong> coefficients;
     coefficients.resize(degree + 1);
     int d = degree;
     while (d >= 0)
@@ -566,67 +446,7 @@ Polynomial<VeryLong> base_m_polynomial_1(const VeryLong& N, const long int degre
     Polynomial<VeryLong> poly(coefficients);
     return poly;
 }
-#if 0
-// Polynomial selection for NFS
-
-double rate_polynomial(const Polynomial<VeryLong>& f1,
-                       const Polynomial<VeryLong>& f2,
-                       double alpha,
-                       long int B1, long int B2, long int d)
-{
-    const int K = 1000;
-
-    Polynomial<double> F1 = Polynomial<VeryLong>::convert_to_double<double>(f1);
-    Polynomial<double> F2 = Polynomial<VeryLong>::convert_to_double<double>(f2);
-    double rating = 0.0;
-    double logB1 = log((double)B1);
-    double logB2 = log((double)B2);
-    for (int i = 1; i <= K; i++)
-    {
-        double theta = M_PI/K*(i - 0.5);
-        double tmp = F1.evaluate_homogeneous(cos(theta), sin(theta));
-        if (tmp < 0) tmp = -tmp;
-        double u1 = (log(tmp) + alpha) / logB1 + d;
-        tmp = F2.evaluate_homogeneous(cos(theta), sin(theta));
-        if (tmp < 0) tmp = -tmp;
-        double u2 = log(tmp) / logB2 + 1.0;
-        rating += dickman_rho(u1) * dickman_rho(u2);
-    }
-    return rating / K;
-}
-
-double rate_skewed_polynomial(const Polynomial<VeryLong>& f1,
-                              const Polynomial<VeryLong>& f2,
-                              double alpha, double alpha2,
-                              long int B1, long int B2, long int d, long int s)
-{
-    const int K = 1000;
-
-    Polynomial<double> F1 = Polynomial<VeryLong>::convert_to_double<double>(f1);
-    Polynomial<double> F2 = Polynomial<VeryLong>::convert_to_double<double>(f2);
-    if (s == 0L)
-    {
-        std::cerr << "Bad s passed to rate_skewed_polynomial, s set to 1000" << std::endl;
-        s = 1000L;
-    }
-    double s1 = sqrt((double)s);
-    double s2 = 1 / s1;
-    double rating = 0.0;
-    double logB1 = log((double)B1);
-    double logB2 = log((double)B2);
-    for (int i = 1; i <= K; i++)
-    {
-        double theta = M_PI/K*(i - 0.5);
-        double tmp = fabs(F1.evaluate_homogeneous(s1 * cos(theta), s2 * sin(theta)));
-        double u1 = (log(tmp) + alpha) / logB1;
-        tmp = fabs(F2.evaluate_homogeneous(s1 * cos(theta), s2 * sin(theta)));
-        double u2 = (log(tmp) + alpha2) / logB2;
-        rating += dickman_rho(u1) * dickman_rho(u2);
-    }
-    return rating;
-}
-#endif
-}
+};
 
 void display_mu(const std::vector<long int>& mu)
 {
@@ -996,8 +816,6 @@ VeryLong PolynomialPairCalculator::calculate_c_d_1(const VeryLong& N,
         const std::vector<std::vector<VeryLong> >& m,
         const std::vector<long int>& mu)
 {
-    //std::cout << "DEBUG : ";
-    //display_mu(mu);
     const VeryLong zero(0L);
     //
     //           ---
@@ -1007,7 +825,6 @@ VeryLong PolynomialPairCalculator::calculate_c_d_1(const VeryLong& N,
     //            i
     //
     VeryLong c_d_1(zero);
-    //const int d(5L);
     const int d(degree);
     // i = 0
     {
@@ -1285,7 +1102,6 @@ void PolynomialPairCalculator::XYZ::make_f()
             f_[0].push_back(f_i_j);
         }
 
-        //for (long int j = 1; j < ppc_.d_; ++j)
         for (long int j = 1; j < (long int)ppc_.roots_mod_p_[combination_(0)].size(); ++j)
         {
             double f_i_j(ppc_.minus_c_d_d_d_);
@@ -1317,7 +1133,6 @@ void PolynomialPairCalculator::XYZ::make_f()
         f_i_j /= a_d_2;
         f_[i].push_back(f_i_j);
 
-        //for (long int j = 1; j < ppc_.d_; ++j)
         for (long int j = 1; j < (long int)ppc_.roots_mod_p_[combination_(i)].size(); ++j)
         {
             double f_i_j(ppc_.minus_c_d_d_d_);
@@ -1366,15 +1181,15 @@ void PolynomialPairCalculator::XYZ::make_flists()
     flist1_mu_length_ = u;
     flist2_mu_length_ = primes_to_combine_ - u;
 
-    long int d_u = std::pow(ppc_.d_, u);
-    long int d_l_u = std::pow(ppc_.d_, primes_to_combine_ - u);
+    size_t d_u = ppc_.d_powers_[u];
+    size_t d_l_u = ppc_.d_powers_[primes_to_combine_ - u];
     flist1_.clear();
-    flist1_.reserve(ppc_.d_powers_[u]);
+    flist1_.reserve(d_u);
     flist2_.clear();
     for (size_t n = 0; n < d_u; ++n)
     {
         double sum = f0_;
-        for (size_t i = 0; i < u; ++i)
+        for (size_t i = 0; i < static_cast<size_t>(u); ++i)
         {
             sum += f_[i][(n / ppc_.d_powers_[i]) % ppc_.d_];
         }
@@ -1383,7 +1198,7 @@ void PolynomialPairCalculator::XYZ::make_flists()
     for (size_t n = 0; n < d_l_u; ++n)
     {
         double sum = 0.0;
-        for (size_t i = 0; i < primes_to_combine_ - u; ++i)
+        for (size_t i = 0; i < static_cast<size_t>(primes_to_combine_ - u); ++i)
         {
             sum += f_[u + i][(n / ppc_.d_powers_[i]) % ppc_.d_];
         }
@@ -1490,34 +1305,6 @@ void PolynomialPairCalculator::XYZ::process_good_mu(std::vector<Kleinjung_poly_i
             std::cout << "fm(b,a) mod N = " << fm_b_a_mod_N << std::endl;
         }
 
-#if 0
-        {
-            VeryLongModular::set_default_modulus(ppc_.N_);
-            VeryLongModular tmp1 = VeryLongModular(b) / VeryLongModular(a_);
-            VeryLong m = tmp1.get_very_long();
-            long int s = (long int)PolynomialOptimizer::minimize_I_over_s(Polynomial<VeryLong>::convert_to_double<double>(fm), 1000.0);
-            //std::cout << "1. s = " << s << std::endl;
-            VeryLong s_vl = s;
-            //MPFloat::set_precision(100);
-            //MPFloat I_F_S = 0.0;
-            double I_F_S = 0.0;
-            VeryLong new_b;
-            VeryLong new_m;
-            //Polynomial<VeryLong> new_poly = PolynomialOptimizer::minimize_I<MPFloat>(fm, a_, b, m, s_vl, I_F_S, new_b, new_m);
-            Polynomial<VeryLong> new_poly = PolynomialOptimizer::minimize_I<double>(fm, a_, b, m, s_vl, I_F_S, new_b, new_m);
-            //std::cout << "2. new_poly = " << new_poly << std::endl;
-            //std::cout << "3. new_b = " << new_b << std::endl;
-            //std::cout << "4. new_m = " << new_m << std::endl;
-            if (ppc_.debug_)
-            {
-                VeryLong fm_b_a_mod_N = new_poly.evaluate_homogeneous(new_b, a_) % ppc_.N_;
-                std::cout << "fm(b,a) mod N = " << fm_b_a_mod_N << std::endl;
-            }
-            b = new_b;
-            fm = new_poly;
-        }
-#endif
-
         Kleinjung_poly_info pi(a_, b, fm);
         const size_t max_top_polys = 20;
         if (top_polys.size() < max_top_polys || pi < top_polys[max_top_polys - 1])
@@ -1567,17 +1354,6 @@ void PolynomialPairCalculator::XYZ::generate(std::vector<Kleinjung_poly_info>& t
     find_good_mu();
 
     process_good_mu(top_polys);
-
-#if 0
-    for (int iteration = 1; iteration < 30; ++iteration)
-    {
-        PolynomialPairCalculator::XYZ newer_xyz(*this, iteration * 30000L);
-        newer_xyz.good_mu_.clear();
-        newer_xyz.find_good_mu();
-
-        newer_xyz.process_good_mu(top_polys);
-    }
-#endif
 }
 
 PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, const VeryLong& q, const VeryLong& s)
@@ -1749,7 +1525,6 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
     f0_ /= a_d_2;
     f0_ /= (pow<VeryLong, long int>(m0_, ppc_.d_-1)).get_double();
 
-    //for (size_t j = 0; j < (size_t)ppc_.d_; ++j)
     for (size_t j = 0; j < f_[0].size(); ++j)
     {
         double old_f = f_[0][j];
@@ -1818,7 +1593,6 @@ bool PolynomialPairCalculator::generate(long int degree)
     m_ = (N_ / c_d_).nth_root(d_);
 
     const VeryLong M = N_.nth_root(d_ + 1);
-    //const VeryLong M = N_.nth_root(d_ + 1) / 10L;
 
     const VeryLong c_d_max = (pow<VeryLong, long int>(M, 2*d_ - 2) / N_).nth_root(d_ - 3);
 
@@ -1874,16 +1648,12 @@ bool PolynomialPairCalculator::generate(long int degree)
     // for each p in primes_, roots_mod_p_ is a vector containing the d roots of f(X) mod p
 
     long int p = VeryLong::firstPrime();
-    //p = VeryLong::nextPrime();
     while (p < small_prime_limit)
     {
         if (p % d_ == 1L && c_d_ % p != 0L)
-        //if (c_d_ % p != 0L)
         {
             std::vector<LongModular> roots;
             find_roots_mod_p<VeryLong, long int, LongModular>(poly_, p, roots);
-            //std::cout << "p = " << p << ", roots.size() = " << roots.size() << std::endl;
-            //if (roots.size() > 0)
             if (static_cast<long int>(roots.size()) == d_)
             {
                 primes_.push_back(p);
@@ -1897,12 +1667,10 @@ bool PolynomialPairCalculator::generate(long int degree)
     while (p < large_prime_min + 200)
     {
         if (p % d_ == 1L && c_d_ % p != 0L)
-        //if (c_d_ % p != 0L)
         {
             std::vector<LongModular> roots;
             find_roots_mod_p<VeryLong, long int, LongModular>(poly_, p, roots);
             std::cout << "p = " << p << ", roots.size() = " << roots.size() << std::endl;
-            //if (roots.size() > 0)
             if (static_cast<long int>(roots.size()) == d_)
             {
                 primes_.push_back(p);
@@ -2039,7 +1807,6 @@ bool PolynomialPairCalculator::generate(long int degree)
 #endif
 
         double tmp_als = PolynomialOptimizer::average_log_size(fm, 80000);
-//      std::cout << "tmp_als = " << tmp_als << ", ALS_MAX = " << ALS_MAX << std::endl;
         if (tmp_als < min_als_max)
         {
             min_als_max = tmp_als;
@@ -2278,15 +2045,12 @@ void skewed_polynomial_selection()
         23, 29, 31, 37, 41
     };
     int finished = 0;
-    //long int try_count = 0;
-    //long int s; // best s for skewed region of integration
     VeryLong s_vl;
     Polynomial<VeryLong> min_poly;
     VeryLong ad;
 
     while (!finished)
     {
-        //long int p = primes[genrand() % NUMBER_OF_PRIMES];
         VeryLong c = Skewed_config.C_START();
 
         if (Skewed_config.C_FACTOR() != 0L)
@@ -2320,7 +2084,6 @@ void skewed_polynomial_selection()
             else
             {
                 VeryLong tmp = N / ad;
-                //try_count++;
                 // calculate x = (N - a_d m^d) / m^(d-1)
                 // then integer part is a_(d-1) and fractional part ~ a_(d-2) / m
                 VeryLong m;
@@ -2350,7 +2113,6 @@ void skewed_polynomial_selection()
                     }
 
                     nleft = N - ad * m_powers[degree]; // N - a_d m^d
-                    //cout << "nleft = " << nleft << std::endl;
                     err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
                     const VeryLong zero(0L);
                     if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
@@ -2359,7 +2121,6 @@ void skewed_polynomial_selection()
                     {
                         quotient = VeryLong(err);
                         m += quotient;
-                        //             std::cout << "err = " << err << ", quotient = " << quotient << ", m = " << m << std::endl;
                     }
                 }
 
@@ -2374,17 +2135,12 @@ void skewed_polynomial_selection()
                 }
                 double fraction = remainder.get_double() / md_powers[degree - 1];
 
-                //std::cout << "fraction = " << fraction << std::endl;
-
                 if (fabs(fraction) <= MAX_FRACTION)
                 {
                     nleft = remainder;
                     Polynomial<VeryLong> poly = base_m_polynomial_1(N, degree, m);
                     Polynomial<VeryLong> fm = adjust_base_m_polynomial(poly, m);
 
-                    //cout << "quotient = " << quotient << std::endl;
-                    //std::cout << "m = " << m << std::endl;
-                    //std::cout << "f = " << fm << std::endl;
                     VeryLong new_ad = fm.coefficient(degree);
                     if (new_ad < ad)
                     {
@@ -2392,7 +2148,6 @@ void skewed_polynomial_selection()
                     }
                     else ad = new_ad;
 
-                    //try_count = 0;
                     // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
                     // but only for degree 5 and above.
                     std::vector<VeryLong> ca_coeff;
@@ -2427,7 +2182,6 @@ void skewed_polynomial_selection()
                             change = prev_als - average_log_size;
                             if (change > 0.0)
                             {
-                                //std::cout << "Average log size = " << average_log_size << std::endl;
                                 try_poly = min_poly;
                                 try_m = new_m;
                                 prev_als = average_log_size;
@@ -2439,7 +2193,6 @@ void skewed_polynomial_selection()
                                 new_m = try_m;
                             }
                         }
-                        //std::cout << "Average log size = " << average_log_size << std::endl;
                         if (average_log_size < ALS_MAX)
                         {
                             // step 3
@@ -2512,8 +2265,6 @@ void skewed_polynomial_selection()
                         fm = fm + cubic_adjustment;
                     }
                 }
-                //cout << "c_inc = " << c_inc << std::endl;
-                //cout << "ad = " << ad << std::endl;
             }
             ad += c_inc;
         }
