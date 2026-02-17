@@ -1173,7 +1173,7 @@ void PolynomialPairCalculator::XYZ::make_flists()
     //
     // where u = [ l / 2 ]
 
-    long int u = (primes_to_combine_ / 2) + 1;
+    size_t u = (primes_to_combine_ / 2) + 1;
     if ((primes_to_combine_ & 1) == 0)
     {
         --u;
@@ -1189,7 +1189,7 @@ void PolynomialPairCalculator::XYZ::make_flists()
     for (size_t n = 0; n < d_u; ++n)
     {
         double sum = f0_;
-        for (size_t i = 0; i < static_cast<size_t>(u); ++i)
+        for (size_t i = 0; i < u; ++i)
         {
             sum += f_[i][(n / ppc_.d_powers_[i]) % ppc_.d_];
         }
@@ -1198,7 +1198,7 @@ void PolynomialPairCalculator::XYZ::make_flists()
     for (size_t n = 0; n < d_l_u; ++n)
     {
         double sum = 0.0;
-        for (size_t i = 0; i < static_cast<size_t>(primes_to_combine_ - u); ++i)
+        for (size_t i = 0; i < static_cast<size_t>(primes_to_combine_) - u; ++i)
         {
             sum += f_[u + i][(n / ppc_.d_powers_[i]) % ppc_.d_];
         }
