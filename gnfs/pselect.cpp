@@ -1343,7 +1343,7 @@ void PolynomialPairCalculator::XYZ::process_good_mu(std::vector<Kleinjung_poly_i
                 }
             }
         }
-        if (top_polys.size() > max_top_polys)
+        if (top_polys.size() >= max_top_polys)
         {
             top_polys.erase(top_polys.end() - 1);
         }
