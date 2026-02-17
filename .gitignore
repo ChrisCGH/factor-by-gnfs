@@ -2,6 +2,8 @@ gnfs/*.o
 gnfs/*.d
 gnfs/*.lst
 gnfs/*.gch
+gnfs/*.tim
+gnfs/ut_skewed.cfg
 gnfs/RateOptimizerTest
 gnfs/examples/*/*
 gnfs/gbin/*
