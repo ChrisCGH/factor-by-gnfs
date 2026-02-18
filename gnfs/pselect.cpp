@@ -2167,6 +2167,9 @@ void skewed_polynomial_selection()
                     }
                     else ad = new_ad;
 
+                    if (new_ad >= min_ad)
+                    {
+
                     // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
                     // but only for degree 5 and above.
                     std::vector<VeryLong> ca_coeff;
@@ -2283,6 +2286,7 @@ void skewed_polynomial_selection()
                         }
                         fm = fm + cubic_adjustment;
                     }
+                    } // if (new_ad >= min_ad)
                 }
             }
             ad += c_inc;
