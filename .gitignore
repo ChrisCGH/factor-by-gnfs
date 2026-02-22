@@ -2,6 +2,10 @@ gnfs/*.o
 gnfs/*.d
 gnfs/*.lst
 gnfs/*.gch
+gnfs/*.tim
+gnfs/ut_skewed.cfg
+gnfs/skewed.out
+gnfs/factorpoly.cpp
 gnfs/RateOptimizerTest
 gnfs/examples/*/*
 gnfs/gbin/*
