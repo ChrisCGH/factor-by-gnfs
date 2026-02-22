@@ -106,7 +106,7 @@ def parse_skewed_output(path):
             elif "f1" not in current and not line.startswith("#"):
                 # First non-key line before f1 is set: could be the
                 # polynomial without the "f1 = " prefix (older format)
-                if re.search(r'X\^?\d*', line) or re.match(r'^-?\d+\s', line):
+                if re.search(r'X(\^\d+)?', line) or re.match(r'^-?\d+\s', line):
                     current["f1"] = line
 
     # Don't forget the last block if not terminated by separator

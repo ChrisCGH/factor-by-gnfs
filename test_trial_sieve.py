@@ -337,14 +337,14 @@ class TestMultipleBlocks(unittest.TestCase):
 
     def test_three_blocks(self):
         content = ""
-        for i in range(3):
+        for i in range(1, 4):
             content += textwrap.dedent(f"""\
                 f1 = {i*100} + {i*10} X
                 m = {i*1000}
-                a = {i+1}
-                b = {(i+1)*10}
-                s = {(i+1)*100}
-                alpha = -{i+1}.0
+                a = {i}
+                b = {i*10}
+                s = {i*100}
+                alpha = -{i}.0
                 E(F) = {30+i}.0
                 N = {99999-i}
 
@@ -362,9 +362,9 @@ class TestMultipleBlocks(unittest.TestCase):
             self.assertEqual(blocks[0]["a"], "1")
             self.assertEqual(blocks[1]["a"], "2")
             self.assertEqual(blocks[2]["a"], "3")
-            self.assertEqual(blocks[0]["E_F"], "30.0")
-            self.assertEqual(blocks[1]["E_F"], "31.0")
-            self.assertEqual(blocks[2]["E_F"], "32.0")
+            self.assertEqual(blocks[0]["E_F"], "31.0")
+            self.assertEqual(blocks[1]["E_F"], "32.0")
+            self.assertEqual(blocks[2]["E_F"], "33.0")
         finally:
             os.unlink(path)
 
