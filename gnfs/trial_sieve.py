@@ -152,7 +152,8 @@ def generate_config(template, block):
 # ---------------------------------------------------------------------------
 
 def run_trial_sieve(lsieve_path, config_content, min_q, max_q,
-                    workdir, block_index, timeout=600):
+                    workdir, block_index, timeout=600,
+                    sample_count=None):
     """Run lsieve in sampling mode for one polynomial.
 
     Creates a temporary sieve.cfg in a subdirectory of workdir,
@@ -167,9 +168,14 @@ def run_trial_sieve(lsieve_path, config_content, min_q, max_q,
 
     lsieve_abs = os.path.abspath(lsieve_path)
 
+    cmd = [lsieve_abs, "-s"]
+    if sample_count is not None:
+        cmd.extend(["-n", str(sample_count)])
+    cmd.extend([str(min_q), str(max_q)])
+
     try:
         proc = subprocess.run(
-            [lsieve_abs, "-s", str(min_q), str(max_q)],
+            cmd,
             cwd=block_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -318,6 +324,10 @@ def main():
         help="Parse and generate configs without running lsieve"
     )
     parser.add_argument(
+        "--sample-count", type=int, default=None,
+        help="Number of sample points for lsieve -s (default: 100)"
+    )
+    parser.add_argument(
         "--verbose", action="store_true",
         help="Show detailed output"
     )
@@ -382,7 +392,8 @@ def main():
         print(f"Trial sieving polynomial {i}/{len(blocks)} ...", flush=True)
         relations = run_trial_sieve(
             args.lsieve, config, args.min_q, args.max_q,
-            args.workdir, i, timeout=args.timeout
+            args.workdir, i, timeout=args.timeout,
+            sample_count=args.sample_count
         )
         result = {"index": i, "block": block, "relations": relations}
         results.append(result)

@@ -128,7 +128,8 @@ def write_sieve_config(lines, params, dest):
 # Running the siever and measuring the relation rate
 # ---------------------------------------------------------------------------
 
-def run_lsieve(lsieve_path, config_path, min_q, max_q, timeout=600):
+def run_lsieve(lsieve_path, config_path, min_q, max_q, timeout=600,
+               sample_count=None):
     """Run lsieve in sampling mode and return the relation rate (rel/sec).
 
     Returns *None* if the run fails or no rate can be parsed.
@@ -141,9 +142,14 @@ def run_lsieve(lsieve_path, config_path, min_q, max_q, timeout=600):
     env = dict(os.environ)
     env["LATTICE_SIEVER_VERBOSE"] = "1"
 
+    cmd = [lsieve_abs, "-s"]
+    if sample_count is not None:
+        cmd.extend(["-n", str(sample_count)])
+    cmd.extend([str(min_q), str(max_q)])
+
     try:
         proc = subprocess.run(
-            [lsieve_abs, "-s", str(min_q), str(max_q)],
+            cmd,
             cwd=cfg_dir,
             env=env,
             stdout=subprocess.PIPE,
@@ -256,7 +262,7 @@ def _get_param(params, key):
 
 
 def evaluate(params, lines, config_path, lsieve_path, min_q, max_q,
-             timeout=600):
+             timeout=600, sample_count=None):
     """Write *params* to a temporary config and measure the relation rate.
 
     Uses a temporary directory so the original config is never overwritten
@@ -285,7 +291,7 @@ def evaluate(params, lines, config_path, lsieve_path, min_q, max_q,
         write_sieve_config(lines, params, tmp_cfg)
 
         rate = run_lsieve(lsieve_path, tmp_cfg, min_q, max_q,
-                          timeout=timeout)
+                          timeout=timeout, sample_count=sample_count)
     return rate
 
 
@@ -317,7 +323,7 @@ def _describe_param_changes(old_params, new_params):
 
 def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                max_iterations, verbose=False, timeout=600,
-               random_restarts=5):
+               random_restarts=5, sample_count=None):
     """Perform hill-climbing over the tunable sieve parameters.
 
     When the greedy hill-climbing phase finds no single-step improvement
@@ -331,7 +337,8 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
 
     print("=== Measuring baseline rate ===")
     best_rate = evaluate(current_params, lines, config_path,
-                         lsieve_path, min_q, max_q, timeout=timeout)
+                         lsieve_path, min_q, max_q, timeout=timeout,
+                         sample_count=sample_count)
     if best_rate is None:
         print("Error: could not measure baseline rate. "
               "Check that lsieve runs correctly.", file=sys.stderr)
@@ -360,7 +367,8 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                           f"(was {current_val}) ...", end=" ", flush=True)
 
                 rate = evaluate(candidate_params, lines, config_path,
-                                lsieve_path, min_q, max_q, timeout=timeout)
+                                lsieve_path, min_q, max_q, timeout=timeout,
+                                sample_count=sample_count)
 
                 if rate is None:
                     if verbose:
@@ -401,7 +409,8 @@ def hill_climb(lines, params, config_path, lsieve_path, min_q, max_q,
                           end=" ", flush=True)
 
                 rate = evaluate(candidate_params, lines, config_path,
-                                lsieve_path, min_q, max_q, timeout=timeout)
+                                lsieve_path, min_q, max_q, timeout=timeout,
+                                sample_count=sample_count)
 
                 if rate is None:
                     if verbose:
@@ -482,6 +491,10 @@ def main():
         help="Show what would be done without running lsieve"
     )
     parser.add_argument(
+        "--sample-count", type=int, default=None,
+        help="Number of sample points for lsieve -s (default: 100)"
+    )
+    parser.add_argument(
         "--verbose", action="store_true",
         help="Show detailed output"
     )
@@ -525,6 +538,7 @@ def main():
         args.min_q, args.max_q, args.max_iterations,
         verbose=args.verbose, timeout=args.timeout,
         random_restarts=args.random_restarts,
+        sample_count=args.sample_count,
     )
 
     print()
