@@ -49,7 +49,11 @@ int main(int argc, char** argv)
             if (arg < argc)
             {
                 sample_count = std::atoi(argv[arg]);
-                if (sample_count <= 0) sample_count = 100;
+                if (sample_count <= 0)
+                {
+                    std::cerr << "warning: invalid sample count, using default 100" << std::endl;
+                    sample_count = 100;
+                }
                 ++arg;
             }
         }
