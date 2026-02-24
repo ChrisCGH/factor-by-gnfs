@@ -35,12 +35,27 @@ int main(int argc, char** argv)
     long int max_q = -1L;
     int arg = 1;
     bool sample = false;
+    int sample_count = 100;
     while (arg < argc)
     {
         if (strcmp(argv[arg], "-s") == 0)
         {
             sample = true;
             ++arg;
+        }
+        else if (strcmp(argv[arg], "-n") == 0)
+        {
+            ++arg;
+            if (arg < argc)
+            {
+                sample_count = std::atoi(argv[arg]);
+                if (sample_count <= 0)
+                {
+                    std::cerr << "warning: invalid sample count, using default 100" << std::endl;
+                    sample_count = 100;
+                }
+                ++arg;
+            }
         }
         else if (isdigit(argv[arg][0]))
         {
@@ -79,7 +94,6 @@ int main(int argc, char** argv)
     }
     else
     {
-        const int sample_count = 100;
         int sample_span = (max_q - min_q) / sample_count;
         long int q = min_q;
         while (q < max_q)

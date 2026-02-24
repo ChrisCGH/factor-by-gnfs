@@ -313,7 +313,7 @@ class TestHillClimbRandomRestarts(unittest.TestCase):
         call_count = [0]
 
         def fake_evaluate(params, lines, config_path, lsieve_path,
-                          min_q, max_q, timeout=600):
+                          min_q, max_q, timeout=600, **kwargs):
             call_count[0] += 1
             # Baseline call returns a rate; all others return worse.
             if call_count[0] == 1:
@@ -355,7 +355,7 @@ class TestHillClimbRandomRestarts(unittest.TestCase):
         greedy_per_iter = [0]  # track how many greedy calls iteration 1 made
 
         def fake_evaluate(params, lines, config_path, lsieve_path,
-                          min_q, max_q, timeout=600):
+                          min_q, max_q, timeout=600, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
                 return 100.0  # baseline
@@ -388,7 +388,7 @@ class TestHillClimbRandomRestarts(unittest.TestCase):
         call_count[0] = 0
 
         def fake_evaluate2(params, lines, config_path, lsieve_path,
-                           min_q, max_q, timeout=600):
+                           min_q, max_q, timeout=600, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
                 return 100.0  # baseline
@@ -410,7 +410,7 @@ class TestHillClimbRandomRestarts(unittest.TestCase):
         call_count = [0]
 
         def fake_evaluate(params, lines, config_path, lsieve_path,
-                          min_q, max_q, timeout=600):
+                          min_q, max_q, timeout=600, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
                 return 100.0  # baseline
