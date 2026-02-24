@@ -1983,7 +1983,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                 std::cout << "translated poly = " << translated_poly << std::endl;
                 std::cout << "E(F) = " << translated_E_F << std::endl;
                 std::cout << "+++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-                output_file_ << translated_poly << std::endl;
+                output_file_ << "f1 = " << translated_poly << std::endl;
                 VeryLongModular::set_default_modulus(N_);
                 VeryLongModular tmp1 = VeryLongModular(translated_b) / VeryLongModular(a);
                 VeryLong m = tmp1.get_very_long();
@@ -1993,7 +1993,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                 output_file_ << "s = " << translated_s << std::endl;
                 output_file_ << "alpha = " << translated_alpha << std::endl;
                 output_file_ << "E(F) = " << translated_E_F << std::endl;
-                output_file_ << translated_poly.evaluate_homogeneous(translated_b, a) << std::endl;
+                output_file_ << "N = " << translated_poly.evaluate_homogeneous(translated_b, a) << std::endl;
                 output_file_ << std::endl;
                 output_file_ << "==============================================================================" << std::endl;
                 output_file_ << std::flush;
@@ -2009,7 +2009,7 @@ bool PolynomialPairCalculator::generate(long int degree)
         std::cout << "E(F) = " << E_F << std::endl;
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
-            output_file_ << better_poly << std::endl;
+            output_file_ << "f1 = " << better_poly << std::endl;
             VeryLongModular::set_default_modulus(N_);
             VeryLongModular tmp1 = VeryLongModular(new_b) / VeryLongModular(a);
             VeryLong m = tmp1.get_very_long();
@@ -2019,7 +2019,7 @@ bool PolynomialPairCalculator::generate(long int degree)
             output_file_ << "s = " << s_vl << std::endl;
             output_file_ << "alpha = " << alpha << std::endl;
             output_file_ << "E(F) = " << E_F << std::endl;
-            output_file_ << better_poly.evaluate_homogeneous(new_b, a) << std::endl;
+            output_file_ << "N = " << better_poly.evaluate_homogeneous(new_b, a) << std::endl;
             output_file_ << std::endl;
             output_file_ << "==============================================================================" << std::endl;
             output_file_ << std::flush;
