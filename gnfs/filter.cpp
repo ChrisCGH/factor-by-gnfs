@@ -71,6 +71,7 @@ size_t ExcessMin = 0;
 int MaxPass = 0;
 bool MergeOnly = false;
 int MaxDiscard = 0;
+long int MaxUniquePrimes = 0;
 long int RelationsMergedInThisPass = 0;
 const long int CutoffForRelationsMergedInThisPass = 600000;
 
@@ -162,6 +163,7 @@ void usage()
     std::cerr << "              [-[rsi|relation_sets_input] relation_sets_input_file]" << std::endl;
     std::cerr << "              [-[rspi|relation_sets_prime_input] relation_sets_prime_input_file]" << std::endl;
     std::cerr << "              [-merge[_only]]" << std::endl;
+    std::cerr << "              [-[mup|max_unique_primes] max_unique_primes]" << std::endl;
     exit(-1);
 }
 
@@ -218,6 +220,12 @@ void init(int argc, char* argv[])
             {
                 arg++;
                 MaxDiscard = atoi(argv[arg]);
+            }
+            else if (strcmp(argv[arg], "-max_unique_primes") == 0 ||
+                     strcmp(argv[arg], "-mup") == 0)
+            {
+                arg++;
+                MaxUniquePrimes = atol(argv[arg]);
             }
             else if (strcmp(argv[arg], "-ro") == 0 ||
                      strcmp(argv[arg], "-relations_output_file") == 0)
@@ -680,6 +688,11 @@ void read_relations()
     long int max_primes;
     long int max_unique_primes;
     calculate_relation_table_size(relmmfile, relations_file_size, max_relations, max_primes, max_unique_primes);
+    if (MaxUniquePrimes > 0)
+    {
+        max_unique_primes = MaxUniquePrimes;
+        std::cerr << "Overriding max_unique_primes with command line value: " << max_unique_primes << std::endl;
+    }
     relationTable = new RelationTable(max_relations, max_primes);
     frequencyTable = new PrimeFrequencyTable(max_unique_primes);
 
