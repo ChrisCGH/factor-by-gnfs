@@ -11,3 +11,5 @@ gnfs/examples/*/*
 gnfs/gbin/*
 *.o
 __pycache__/
+merge_record.txt
+gnfs/merge_record.txt
