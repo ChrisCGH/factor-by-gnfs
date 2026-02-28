@@ -274,7 +274,7 @@ private:
         SieveCache(SIEVE_TYPE* const sieve_array, const BitArray64<sieve_array_size>& sieve_bit_array)
             : sieve_array_(sieve_array), sieve_bit_array_(sieve_bit_array)
         {
-            non_empty_buckets_.reserve(bucket_count / 4);  // Reserve 25% capacity
+            non_empty_buckets_.reserve(bucket_count);  // Reserve full capacity to avoid reallocation
             
             LatticeSiever::SIEVE_TYPE* base = sieve_array_;
             for (size_t i = 0; i < bucket_count; ++i)
@@ -491,8 +491,18 @@ private:
             }
         }
 #endif
+        // Flush all remaining items from non-empty buckets to sieve_array_.
+        // Sorts buckets by index first so writes proceed in sequential memory order,
+        // improving spatial locality. Sorting ~1177 entries costs O(N log N) ≈ 12K
+        // comparisons, negligible against the flush work itself.
+        // After flushing, tracked_ is cleared so each new sieve iteration re-registers
+        // buckets as they receive items, ensuring no items are silently dropped.
+        // Must be called exactly once per sieve pass (after all add() calls complete).
         void dump(bool add_to_pf_list = true)
         {
+            // Sort by bucket index to write to sieve_array_ in sequential order,
+            // improving spatial locality during the write phase.
+            std::sort(non_empty_buckets_.begin(), non_empty_buckets_.end());
             for (size_t bucket_index : non_empty_buckets_)
             {
                 SieveCacheBucket<cache_size>& scb = buckets_[bucket_index];
@@ -510,6 +520,7 @@ private:
                     ++it;
                 }
                 scb.next_cache_ = scb.cache_;
+                scb.tracked_ = false;  // Reset so next sieve iteration re-registers this bucket
             }
             non_empty_buckets_.clear();
         }
@@ -798,8 +809,8 @@ private:
     static const size_t CACHE_BLOCK_SIZE = 262144;  // 256KB worth of sieve entries
     static const size_t BLOCKS_PER_SIEVE = (fixed_sieve_array_size + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE;
 
-    SIEVE_TYPE fixed_sieve_array_[fixed_sieve_array_size];
-    BitArray64<fixed_sieve_array_size> sieve_bit_array_;
+    alignas(64) SIEVE_TYPE fixed_sieve_array_[fixed_sieve_array_size];
+    alignas(64) BitArray64<fixed_sieve_array_size> sieve_bit_array_;
 
     typedef PointerHashTable<PotentiallySmoothPoint*, SIEVE_TYPE*, 1024> PSPHashTable;
     PotentiallySmoothPoint* potentially_smooth_point_;

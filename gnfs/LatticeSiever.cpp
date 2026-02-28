@@ -1361,34 +1361,9 @@ void LatticeSiever::sieve_by_vectors1()
         }
     }
     
-    // Second pass: dump cache block by block for better cache locality
-    // This is more efficient than the original attempt because we only process
-    // buckets that overlap with each block, avoiding O(N×32) overhead
-    // Note: tracked_ flag prevents duplicate bucket entries, so no need for deduplication
-    if (debug_)
-    {
-        std::cerr << "sieve_by_vectors1: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
-    }
-    
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " [" << block_start << ", " << block_end << ")" << std::endl;
-        }
-        
-#ifdef RESIEVE1
-        sieveCache_.dump_block_efficient(block_start, block_end, false);
-#else
-        sieveCache_.dump_block_efficient(block_start, block_end, true);
-#endif
-    }
-    
-    // Final cleanup: should be empty, but call dump to reset state
+    // Dump all remaining cache items: sort by bucket index for sequential
+    // sieve_array_ writes (spatial locality), then process in order.
+    // This is simpler and more efficient than block-by-block processing.
 #ifdef RESIEVE1
     sieveCache_.dump(false);
 #else
@@ -1442,28 +1417,7 @@ void LatticeSiever::sieve_by_vectors1_again()
         }
     }
     
-    // Second pass: dump cache block by block
-    // Note: tracked_ flag prevents duplicate bucket entries
-    if (debug_)
-    {
-        std::cerr << "sieve_by_vectors1_again: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
-    }
-    
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " [" << block_start << ", " << block_end << ")" << std::endl;
-        }
-        
-        sieveCache_.dump_block_efficient(block_start, block_end, true);
-    }
-    
-    // Final cleanup
+    // Dump all remaining cache items in sorted bucket order for spatial locality.
     sieveCache_.dump(true);
 }
 #endif
@@ -1511,28 +1465,7 @@ void LatticeSiever::sieve_by_vectors2()
         }
     }
     
-    // Second pass: dump cache block by block for better cache locality
-    // Note: tracked_ flag prevents duplicate bucket entries
-    if (debug_)
-    {
-        std::cerr << "sieve_by_vectors2: Dumping cache in " << BLOCKS_PER_SIEVE << " blocks" << std::endl;
-    }
-    
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
-    {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        if (debug_ && block % 100 == 0)
-        {
-            std::cerr << "  Block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " [" << block_start << ", " << block_end << ")" << std::endl;
-        }
-        
-        sieveCache_.dump_block_efficient(block_start, block_end, true);
-    }
-    
-    // Final cleanup
+    // Dump all remaining cache items in sorted bucket order for spatial locality.
     sieveCache_.dump();
 }
 
