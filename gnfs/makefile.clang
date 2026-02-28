@@ -88,7 +88,7 @@ endif
 	set -e; gcc -MM $(CPPFLAGS) $< \
        | sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; [ -s $@ ] || rm -f $@
 
-ALL_TESTS = AlgebraicNumberUnitTest BitOperationsUnitTest LongModularUnitTest VeryLongUnitTest VeryLongModularUnitTest MatrixUnitTest PolynomialUnitTest CombinationsUnitTest HashTableUnitTest QuotientUnitTest PolynomialOptimizerUnitTest LatticeSieverUnitTest MemoryMappedFileUnitTest SparseMatrixUnitTest
+ALL_TESTS = AlgebraicNumberUnitTest BitOperationsUnitTest LongModularUnitTest VeryLongUnitTest VeryLongModularUnitTest MatrixUnitTest PolynomialUnitTest CombinationsUnitTest HashTableUnitTest QuotientUnitTest PolynomialOptimizerUnitTest LatticeSieverUnitTest MemoryMappedFileUnitTest SparseMatrixUnitTest RelationManagerUnitTest
 ALL_PROGRAMS : skewed lsieve bl calcroot sieve filter buildMatrix processDependenciespl postProcessing DenseRowTest stest testan gen testhnf inv testmmf convert testfactor processDependencies 
 
 all : $(OUTPUTDIR) $(ALL_PROGRAMS) $(ALL_TESTS)
@@ -108,12 +108,13 @@ test : $(ALL_TESTS)
 	$(OUTPUTDIR)/PolynomialOptimizerUnitTest
 	$(OUTPUTDIR)/LatticeSieverUnitTest
 	$(OUTPUTDIR)/MemoryMappedFileUnitTest
+	$(OUTPUTDIR)/RelationManagerUnitTest
 
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
 
 ALL_HEADERS = Combinations.h Config.h ContinuedFraction.h ExceptionalPrimes.h FactorBase.h Ideal.h LatticeSiever.h LongModular.h MPFloat.h Matrix.h NumberField.h AlgebraicNumber.h AlgebraicNumber_in_O_pO.h Polynomial.h QuadraticCharacters.h Quotient.h RootConfig.h SieveConfig.h VeryLong.h VeryLongModular.h SparseMatrix.h crt.h dickman.h blockLanczos.h lip.h lippar.h lll.h mod.h mt19937int.h pow.h pselect.h root.h timings.h Siever.h squfof.h PointerHashTable.h graph.h RelationManager.h discriminant.h gcd.h convert.h qs.h PolynomialOptimizer.h SieveUtils.h pollard_rho.h
-ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp Logger.cpp pollard_rho.cpp
+ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp RelationManagerUnitTest.cpp Logger.cpp pollard_rho.cpp
 
 ALL_CS = lip.c mt19937int.c 
 ALL_SRCS = $(ALL_CPPS) $(ALL_CS) $(ALL_HEADERS)
@@ -251,6 +252,22 @@ $(OUTPUTDIR)/SparseMatrixUnitTest : $(SPARSE_MATRIX_UT_OBJS)
 
 cleansparsematrixut: 
 	rm -rf $(OUTPUTDIR)/SparseMatrixUnitTest $(SPARSE_MATRIX_UT_OBJS)
+
+RELATION_MANAGER_UT_CPP_SRCS = RelationManagerUnitTest.cpp RelationManager.cpp SparseMatrix.cpp Logger.cpp
+
+include $(RELATION_MANAGER_UT_CPP_SRCS:.cpp=.d)
+
+RELATION_MANAGER_UT_OBJS = $(RELATION_MANAGER_UT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
+
+RelationManagerUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/RelationManagerUnitTest
+	
+
+$(OUTPUTDIR)/RelationManagerUnitTest : $(RELATION_MANAGER_UT_OBJS) 
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/RelationManagerUnitTest $(RELATION_MANAGER_UT_OBJS) $(TEST_LIBS)
+
+cleanrelationmanagerut: 
+	rm -rf $(OUTPUTDIR)/RelationManagerUnitTest $(RELATION_MANAGER_UT_OBJS)
+
 
 COMBINATIONS_UT_CPP_SRCS = CombinationsUnitTest.cpp 
 
