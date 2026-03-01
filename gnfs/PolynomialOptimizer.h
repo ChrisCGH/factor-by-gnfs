@@ -694,21 +694,50 @@ DOUBLE ff(const Polynomial<DOUBLE>&f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s)
 template <typename DOUBLE>
 void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s, DOUBLE& c0, DOUBLE& c1, long int sample_size = 1)
 {
-    DOUBLE det = a(aa, bb, t, s) * d(aa, bb, t, s);
-    det -= b(aa, bb, t, s) * b(aa, bb, t, s);
-    //std::cout << "best_c0_and_c1 : aa = " << aa << ", bb = " << bb << ", t = " << t << ", s = " << s << std::endl;
-    //std::cout << "best_c0_and_c1 : det = " << det << std::endl;
-    if (fabs(det) < (DOUBLE)1e-10) return;
-    DOUBLE c0_d = (d(aa, bb, t, s) * e(f, aa, bb, t, s) - b(aa, bb, t, s) * ff(f, aa, bb, t, s)) / det;
-    //std::cout << "best_c0_and_c1 : c0_d = " << c0_d << std::endl;
+    // Cache repeated sub-expressions to avoid redundant function calls.
+    // a(), b(), c(), d() each appear multiple times with identical arguments.
+    const DOUBLE a_v = a(aa, bb, t, s);
+    const DOUBLE b_v = b(aa, bb, t, s);
+    const DOUBLE c_v = c(aa, bb, t, s);
+    const DOUBLE d_v = d(aa, bb, t, s);
 
-    DOUBLE c1_d = (a(aa, bb, t, s) * ff(f, aa, bb, t, s) - c(aa, bb, t, s) * e(f, aa, bb, t, s)) / det;
-    //std::cout << "best_c0_and_c1 : c1_d = " << c1_d << std::endl;
+    DOUBLE det = a_v * d_v - b_v * b_v;
+    if (fabs(det) < (DOUBLE)1e-10) return;
+
+    // Precompute polynomial evaluations used by e() and ff().
+    // Both call A, B, C, b3, b4, b5 independently; sharing them avoids
+    // ~24 redundant polynomial-traversal iterations for each I() call.
+    const DOUBLE A_v  = A(f, t);
+    const DOUBLE B_v  = B(f, t);
+    const DOUBLE C_v  = C(f, t);
+    const DOUBLE b3_v = b3(f, t);
+    const DOUBLE b4_v = b4(f, t);
+    const DOUBLE b5_v = b5(f);
+
+    // Inline e(f, aa, bb, t, s) and ff(f, aa, bb, t, s) using cached values.
+    const DOUBLE bat  = bb + aa * t;
+    const DOUBLE bat2 = bb + 2.0 * aa * t;
+    const DOUBLE s3   = s * s * s;
+    const DOUBLE s5   = s3 * s * s;
+
+    const DOUBLE e_v =
+        bat * A_v * 8.0 / (11.0 * s5)
+        + (-8.0 * aa * B_v + 8.0 * bat * C_v) / (27.0 * s3)
+        + (8.0 * bat * b4_v - 8.0 * aa * b3_v) / (35.0 * s)
+        - 8.0 * aa * b5_v * s / 35.0;
+
+    const DOUBLE ff_v =
+        -8.0 * t * bat * A_v / (11.0 * s5)
+        + (-8.0 * t * bat * C_v - 8.0 * aa * A_v + 8.0 * bat2 * B_v) / (27.0 * s3)
+        + (-8.0 * aa * C_v - 8.0 * t * bat * b4_v + 8.0 * bat2 * b3_v) / (35.0 * s)
+        + (-8.0 * aa * b4_v + 8.0 * bat2 * b5_v) * s / 35.0;
+
+    DOUBLE c0_d = (d_v * e_v - b_v * ff_v) / det;
+    DOUBLE c1_d = (a_v * ff_v - c_v * e_v) / det;
     VeryLong c0_vl(c0_d);
     VeryLong c1_vl(c1_d);
     c0 = c0_vl;
     c1 = c1_vl;
-    //std::cout << "best_c0_and_c1 : c0 = " << c0 << ", c1 = " << c1 << std::endl;
 }
 
 template <typename DOUBLE>
