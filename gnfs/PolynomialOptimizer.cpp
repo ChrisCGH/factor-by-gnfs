@@ -117,80 +117,91 @@ double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool
     else
     {
         // Compute v_p(f(a,b)) for each sample using modular arithmetic.
-        // Precompute polynomial coefficients mod p^k outside the sample loop
-        // to avoid repeated VeryLong operations per sample.
         int deg = poly.deg();
-        long long pk = p;  // p^k, grows as needed
 
+        // Precompute all reachable p^k levels and their coefficient residues
+        // before iterating over samples, so samples share the same tables.
         // coeffs_mod[k_idx][i] = poly.coefficient(i) mod p^(k_idx+1)
-        // We compute these lazily as higher valuations are discovered.
         std::vector<std::vector<long long>> coeffs_mod;
-
-        // Precompute for k=1 (mod p) - used for all samples
-        std::vector<long long> c_mod_p(deg + 1);
-        for (int i = 0; i <= deg; i++)
-        {
-            c_mod_p[i] = poly.coefficient(i) % (long int)p;
-        }
-        coeffs_mod.push_back(c_mod_p);
-
-        // Precompute the overflow guard for pk multiplication (constant per prime p)
         const long long pk_limit = (long long)9e18 / p;
+        long long pk = p;
+        while (true)
+        {
+            std::vector<long long> c_mod_pk(deg + 1);
+            for (int i = 0; i <= deg; i++)
+            {
+                c_mod_pk[i] = poly.coefficient(i) % (long int)pk;
+            }
+            coeffs_mod.push_back(c_mod_pk);
+            if (pk > pk_limit)
+                break;
+            pk *= p;
+        }
+
+        // ULL_SAFE_LIMIT: when pk is below this threshold the Horner evaluation
+        // fits within unsigned long long (pk^2 * 2 < ULLONG_MAX).
+        const long long ULL_SAFE_LIMIT = 3000000000LL;
 
         for (const auto& sample : F_sample)
         {
-            long long a_s = sample.first;
-            long long b_s = sample.second;
+            const long long a_s = sample.first;
+            const long long b_s = sample.second;
 
-            // Fast check for divisibility by p using precomputed coefficients
-            long long a_mod = a_s % p;
-            long long b_mod = b_s % p;
-            long long result = 0;
-            long long temp_a = 1;
-            for (int i = 0; i <= deg; i++)
+            // Fast initial check: is f(a_s, b_s) divisible by p?
+            // Use unsigned long long (always safe for pk=p < B <= few thousand).
             {
-                result = ((__int128)result * b_mod + (__int128)temp_a * coeffs_mod[0][i]) % p;
-                temp_a = ((__int128)temp_a * a_mod) % p;
+                unsigned long long pk_u = p;
+                unsigned long long a_mod = a_s % p;
+                unsigned long long b_mod = b_s % p;
+                unsigned long long result = 0, temp_a = 1;
+                for (int i = 0; i <= deg; i++)
+                {
+                    result = (result * b_mod + temp_a * (unsigned long long)coeffs_mod[0][i]) % pk_u;
+                    temp_a = (temp_a * a_mod) % pk_u;
+                }
+                if (result != 0)
+                    continue;  // Not divisible by p
             }
-            if (result != 0)
-                continue;  // Not divisible by p
 
             cont++;  // divisible by p^1
 
-            // Check higher powers of p (rare case)
-            int k_idx = 1;
+            // Check higher powers of p.
             pk = p;
-            while (true)
+            for (int k_idx = 1; k_idx < (int)coeffs_mod.size(); k_idx++)
             {
-                if (pk > pk_limit)
-                    break;
                 pk *= p;
 
-                // Precompute coefficients mod p^k if not done yet
-                if (k_idx >= (int)coeffs_mod.size())
+                long long result;
+                if (pk <= ULL_SAFE_LIMIT)
                 {
-                    std::vector<long long> c_mod_pk(deg + 1);
+                    unsigned long long pk_u = pk;
+                    unsigned long long a_mod = a_s % pk;
+                    unsigned long long b_mod = b_s % pk;
+                    unsigned long long res = 0, temp_a = 1;
                     for (int i = 0; i <= deg; i++)
                     {
-                        c_mod_pk[i] = poly.coefficient(i) % (long int)pk;
+                        res = (res * b_mod + temp_a * (unsigned long long)coeffs_mod[k_idx][i]) % pk_u;
+                        temp_a = (temp_a * a_mod) % pk_u;
                     }
-                    coeffs_mod.push_back(c_mod_pk);
+                    result = (long long)res;
+                }
+                else
+                {
+                    long long a_mod = a_s % pk;
+                    long long b_mod = b_s % pk;
+                    long long res = 0, temp_a = 1;
+                    for (int i = 0; i <= deg; i++)
+                    {
+                        res = ((__int128)res * b_mod + (__int128)temp_a * coeffs_mod[k_idx][i]) % pk;
+                        temp_a = ((__int128)temp_a * a_mod) % pk;
+                    }
+                    result = res;
                 }
 
-                a_mod = a_s % pk;
-                b_mod = b_s % pk;
-                result = 0;
-                temp_a = 1;
-                for (int i = 0; i <= deg; i++)
-                {
-                    result = ((__int128)result * b_mod + (__int128)temp_a * coeffs_mod[k_idx][i]) % pk;
-                    temp_a = ((__int128)temp_a * a_mod) % pk;
-                }
                 if (result != 0)
                     break;
 
                 cont++;
-                k_idx++;
             }
         }
         cont = cont / ((double)BOUND * (double)BOUND);
@@ -548,29 +559,42 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
 
                 }
                 // replicate through J0-space
+                // Tiled loops replace the original pointer-chasing loops with
+                // conditional wraps, allowing the compiler to auto-vectorize.
 
-                short* src_ptr = &j0_array [0];
-                short* src_end_ptr = &j0_array[p_k];
-                short* tar_ptr = &cont_array [MAX_J1 + j1] [MAX_J0]; // j1, j0 = 0
-                short* tar_end_ptr = &cont_array[MAX_J1 + j1][MAX_J0 + MAX_J0];
-                short* ptr = src_ptr;
-                while (tar_ptr != tar_end_ptr + 1)
+                // Forward: cont_array[j1][MAX_J0+k] -= j0_array[k % p_k]
+                // for k = 0 .. MAX_J0
                 {
-                    // scale, round and store in short
-                    *tar_ptr -= *ptr;
-                    ptr++;
-                    if (ptr == src_end_ptr) ptr = src_ptr; // wrap
-                    tar_ptr++;
+                    short* dst = &cont_array[MAX_J1 + j1][MAX_J0];
+                    const long int pki = (long int)p_k;
+                    const long int fwd_total = MAX_J0 + 1;
+                    long int k = 0;
+                    while (k + pki <= fwd_total)
+                    {
+                        for (long int i = 0; i < pki; i++) dst[k + i] -= j0_array[i];
+                        k += pki;
+                    }
+                    for (long int i = 0; i < fwd_total - k; i++) dst[k + i] -= j0_array[i];
                 }
-                tar_ptr = &cont_array [MAX_J1 + j1] [MAX_J0 - 1]; // j1, j0 = -1
-                tar_end_ptr = &cont_array [MAX_J1 + j1] [0];
-                ptr = src_end_ptr - 1;
-                while (tar_ptr != tar_end_ptr - 1)
+                // Backward: cont_array[j1][MAX_J0-k] -= j0_array[(p_k - k%p_k) % p_k]
+                // for k = 1 .. MAX_J0  (equivalent to reverse-replicating j0_array)
                 {
-                    *tar_ptr -= *ptr;
-                    ptr--;
-                    if (ptr == src_ptr - 1) ptr = src_end_ptr - 1; // wrap
-                    tar_ptr--;
+                    const long int pki = (long int)p_k;
+                    const long int bwd_total = MAX_J0;
+                    long int k = 0;
+                    while (k + pki <= bwd_total)
+                    {
+                        short* dst = &cont_array[MAX_J1 + j1][MAX_J0 - k - pki];
+                        for (long int i = 0; i < pki; i++) dst[i] -= j0_array[i];
+                        k += pki;
+                    }
+                    const long int rem = bwd_total - k;
+                    if (rem > 0)
+                    {
+                        short* dst = &cont_array[MAX_J1 + j1][0];
+                        const short* src = &j0_array[pki - rem];
+                        for (long int i = 0; i < rem; i++) dst[i] -= src[i];
+                    }
                 }
             }
             //p_k *= p;
