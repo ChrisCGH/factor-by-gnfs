@@ -13,3 +13,11 @@ gnfs/gbin/*
 __pycache__/
 merge_record.txt
 gnfs/merge_record.txt
+gnfs/C144_104_45_UT.fb.dat
+gnfs/C144_104_45_UT.rb.dat
+gnfs/C144_104_45_fixed_UT.relations
+gnfs/sieve_stats.csv
+gnfs/ut_sieve_fixed.cfg
+gnfs/gbin/
+gnfs/*.o
+gnfs/*.d
