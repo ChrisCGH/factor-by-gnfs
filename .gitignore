@@ -21,3 +21,5 @@ gnfs/ut_sieve_fixed.cfg
 gnfs/gbin/
 gnfs/*.o
 gnfs/*.d
+*.tim
+ut_skewed.cfg

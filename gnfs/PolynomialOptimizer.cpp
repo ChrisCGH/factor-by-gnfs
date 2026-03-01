@@ -54,7 +54,7 @@ VeryLong b2_vl (const Polynomial<VeryLong>& f, const VeryLong& a, const VeryLong
     return res;
 }
 
-std::vector<VeryLong> F_sample;
+std::vector<std::pair<long int, long int>> F_sample;
 
 void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
 {
@@ -74,8 +74,7 @@ void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
                 a = genrand() % UPPER_LIMIT + 1;
                 b = genrand() % UPPER_LIMIT + 1;
             }
-            VeryLong value = poly.evaluate_homogeneous((long int)a,(long int)b);
-            F_sample.push_back(value);
+            F_sample.push_back({(long int)a, (long int)b});
         }
     }
 }
@@ -117,12 +116,91 @@ double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool
     }
     else
     {
-        for (auto& i1: F_sample)
+        // Compute v_p(f(a,b)) for each sample using modular arithmetic.
+        int deg = poly.deg();
+
+        // Precompute all reachable p^k levels and their coefficient residues
+        // before iterating over samples, so samples share the same tables.
+        // coeffs_mod[k_idx][i] = poly.coefficient(i) mod p^(k_idx+1)
+        std::vector<std::vector<long long>> coeffs_mod;
+        const long long pk_limit = (long long)9e18 / p;
+        long long pk = p;
+        while (true)
         {
-            VeryLong value = i1;
-            while (value % p == 0L)
+            std::vector<long long> c_mod_pk(deg + 1);
+            for (int i = 0; i <= deg; i++)
             {
-                value /= p;
+                c_mod_pk[i] = poly.coefficient(i) % (long int)pk;
+            }
+            coeffs_mod.push_back(c_mod_pk);
+            if (pk > pk_limit)
+                break;
+            pk *= p;
+        }
+
+        // ULL_SAFE_LIMIT: when pk is below this threshold the Horner evaluation
+        // fits within unsigned long long (pk^2 * 2 < ULLONG_MAX).
+        const long long ULL_SAFE_LIMIT = 3000000000LL;
+
+        for (const auto& sample : F_sample)
+        {
+            const long long a_s = sample.first;
+            const long long b_s = sample.second;
+
+            // Fast initial check: is f(a_s, b_s) divisible by p?
+            // Use unsigned long long (always safe for pk=p < B <= few thousand).
+            {
+                unsigned long long pk_u = p;
+                unsigned long long a_mod = a_s % p;
+                unsigned long long b_mod = b_s % p;
+                unsigned long long result = 0, temp_a = 1;
+                for (int i = 0; i <= deg; i++)
+                {
+                    result = (result * b_mod + temp_a * (unsigned long long)coeffs_mod[0][i]) % pk_u;
+                    temp_a = (temp_a * a_mod) % pk_u;
+                }
+                if (result != 0)
+                    continue;  // Not divisible by p
+            }
+
+            cont++;  // divisible by p^1
+
+            // Check higher powers of p.
+            pk = p;
+            for (int k_idx = 1; k_idx < (int)coeffs_mod.size(); k_idx++)
+            {
+                pk *= p;
+
+                long long result;
+                if (pk <= ULL_SAFE_LIMIT)
+                {
+                    unsigned long long pk_u = pk;
+                    unsigned long long a_mod = a_s % pk;
+                    unsigned long long b_mod = b_s % pk;
+                    unsigned long long res = 0, temp_a = 1;
+                    for (int i = 0; i <= deg; i++)
+                    {
+                        res = (res * b_mod + temp_a * (unsigned long long)coeffs_mod[k_idx][i]) % pk_u;
+                        temp_a = (temp_a * a_mod) % pk_u;
+                    }
+                    result = (long long)res;
+                }
+                else
+                {
+                    long long a_mod = a_s % pk;
+                    long long b_mod = b_s % pk;
+                    long long res = 0, temp_a = 1;
+                    for (int i = 0; i <= deg; i++)
+                    {
+                        res = ((__int128)res * b_mod + (__int128)temp_a * coeffs_mod[k_idx][i]) % pk;
+                        temp_a = ((__int128)temp_a * a_mod) % pk;
+                    }
+                    result = res;
+                }
+
+                if (result != 0)
+                    break;
+
                 cont++;
             }
         }
@@ -132,11 +210,12 @@ double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool
 }
 bool verbose()
 {
-    if (std::getenv("POLYNOMIAL_OPTIMIZER_VERBOSE"))
+    static int result = -1;
+    if (result == -1)
     {
-        return true;
+        result = std::getenv("POLYNOMIAL_OPTIMIZER_VERBOSE") ? 1 : 0;
     }
-    return false;
+    return result != 0;
 }
 }
 
@@ -480,29 +559,42 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
 
                 }
                 // replicate through J0-space
+                // Tiled loops replace the original pointer-chasing loops with
+                // conditional wraps, allowing the compiler to auto-vectorize.
 
-                short* src_ptr = &j0_array [0];
-                short* src_end_ptr = &j0_array[p_k];
-                short* tar_ptr = &cont_array [MAX_J1 + j1] [MAX_J0]; // j1, j0 = 0
-                short* tar_end_ptr = &cont_array[MAX_J1 + j1][MAX_J0 + MAX_J0];
-                short* ptr = src_ptr;
-                while (tar_ptr != tar_end_ptr + 1)
+                // Forward: cont_array[j1][MAX_J0+k] -= j0_array[k % p_k]
+                // for k = 0 .. MAX_J0
                 {
-                    // scale, round and store in short
-                    *tar_ptr -= *ptr;
-                    ptr++;
-                    if (ptr == src_end_ptr) ptr = src_ptr; // wrap
-                    tar_ptr++;
+                    short* dst = &cont_array[MAX_J1 + j1][MAX_J0];
+                    const long int pki = (long int)p_k;
+                    const long int fwd_total = MAX_J0 + 1;
+                    long int k = 0;
+                    while (k + pki <= fwd_total)
+                    {
+                        for (long int i = 0; i < pki; i++) dst[k + i] -= j0_array[i];
+                        k += pki;
+                    }
+                    for (long int i = 0; i < fwd_total - k; i++) dst[k + i] -= j0_array[i];
                 }
-                tar_ptr = &cont_array [MAX_J1 + j1] [MAX_J0 - 1]; // j1, j0 = -1
-                tar_end_ptr = &cont_array [MAX_J1 + j1] [0];
-                ptr = src_end_ptr - 1;
-                while (tar_ptr != tar_end_ptr - 1)
+                // Backward: cont_array[j1][MAX_J0-k] -= j0_array[(p_k - k%p_k) % p_k]
+                // for k = 1 .. MAX_J0  (equivalent to reverse-replicating j0_array)
                 {
-                    *tar_ptr -= *ptr;
-                    ptr--;
-                    if (ptr == src_ptr - 1) ptr = src_end_ptr - 1; // wrap
-                    tar_ptr--;
+                    const long int pki = (long int)p_k;
+                    const long int bwd_total = MAX_J0;
+                    long int k = 0;
+                    while (k + pki <= bwd_total)
+                    {
+                        short* dst = &cont_array[MAX_J1 + j1][MAX_J0 - k - pki];
+                        for (long int i = 0; i < pki; i++) dst[i] -= j0_array[i];
+                        k += pki;
+                    }
+                    const long int rem = bwd_total - k;
+                    if (rem > 0)
+                    {
+                        short* dst = &cont_array[MAX_J1 + j1][0];
+                        const short* src = &j0_array[pki - rem];
+                        for (long int i = 0; i < rem; i++) dst[i] -= src[i];
+                    }
                 }
             }
             //p_k *= p;
