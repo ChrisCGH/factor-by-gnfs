@@ -54,7 +54,7 @@ VeryLong b2_vl (const Polynomial<VeryLong>& f, const VeryLong& a, const VeryLong
     return res;
 }
 
-std::vector<VeryLong> F_sample;
+std::vector<std::pair<long int, long int>> F_sample;
 
 void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
 {
@@ -74,8 +74,7 @@ void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
                 a = genrand() % UPPER_LIMIT + 1;
                 b = genrand() % UPPER_LIMIT + 1;
             }
-            VeryLong value = poly.evaluate_homogeneous((long int)a,(long int)b);
-            F_sample.push_back(value);
+            F_sample.push_back({(long int)a, (long int)b});
         }
     }
 }
@@ -117,13 +116,81 @@ double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool
     }
     else
     {
-        for (auto& i1: F_sample)
+        // Compute v_p(f(a,b)) for each sample using modular arithmetic.
+        // Precompute polynomial coefficients mod p^k outside the sample loop
+        // to avoid repeated VeryLong operations per sample.
+        int deg = poly.deg();
+        long long pk = p;  // p^k, grows as needed
+
+        // coeffs_mod[k_idx][i] = poly.coefficient(i) mod p^(k_idx+1)
+        // We compute these lazily as higher valuations are discovered.
+        std::vector<std::vector<long long>> coeffs_mod;
+
+        // Precompute for k=1 (mod p) - used for all samples
+        std::vector<long long> c_mod_p(deg + 1);
+        for (int i = 0; i <= deg; i++)
         {
-            VeryLong value = i1;
-            while (value % p == 0L)
+            c_mod_p[i] = poly.coefficient(i) % (long int)p;
+        }
+        coeffs_mod.push_back(c_mod_p);
+
+        // Precompute the overflow guard for pk multiplication (constant per prime p)
+        const long long pk_limit = (long long)9e18 / p;
+
+        for (const auto& sample : F_sample)
+        {
+            long long a_s = sample.first;
+            long long b_s = sample.second;
+
+            // Fast check for divisibility by p using precomputed coefficients
+            long long a_mod = a_s % p;
+            long long b_mod = b_s % p;
+            long long result = 0;
+            long long temp_a = 1;
+            for (int i = 0; i <= deg; i++)
             {
-                value /= p;
+                result = ((__int128)result * b_mod + (__int128)temp_a * coeffs_mod[0][i]) % p;
+                temp_a = ((__int128)temp_a * a_mod) % p;
+            }
+            if (result != 0)
+                continue;  // Not divisible by p
+
+            cont++;  // divisible by p^1
+
+            // Check higher powers of p (rare case)
+            int k_idx = 1;
+            pk = p;
+            while (true)
+            {
+                if (pk > pk_limit)
+                    break;
+                pk *= p;
+
+                // Precompute coefficients mod p^k if not done yet
+                if (k_idx >= (int)coeffs_mod.size())
+                {
+                    std::vector<long long> c_mod_pk(deg + 1);
+                    for (int i = 0; i <= deg; i++)
+                    {
+                        c_mod_pk[i] = poly.coefficient(i) % (long int)pk;
+                    }
+                    coeffs_mod.push_back(c_mod_pk);
+                }
+
+                a_mod = a_s % pk;
+                b_mod = b_s % pk;
+                result = 0;
+                temp_a = 1;
+                for (int i = 0; i <= deg; i++)
+                {
+                    result = ((__int128)result * b_mod + (__int128)temp_a * coeffs_mod[k_idx][i]) % pk;
+                    temp_a = ((__int128)temp_a * a_mod) % pk;
+                }
+                if (result != 0)
+                    break;
+
                 cont++;
+                k_idx++;
             }
         }
         cont = cont / ((double)BOUND * (double)BOUND);
@@ -132,11 +199,12 @@ double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool
 }
 bool verbose()
 {
-    if (std::getenv("POLYNOMIAL_OPTIMIZER_VERBOSE"))
+    static int result = -1;
+    if (result == -1)
     {
-        return true;
+        result = std::getenv("POLYNOMIAL_OPTIMIZER_VERBOSE") ? 1 : 0;
     }
-    return false;
+    return result != 0;
 }
 }
 
