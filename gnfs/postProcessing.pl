@@ -14,7 +14,7 @@ my $workfile1 = "workfile1";
 my $workfile2 = "workfile2";
 
 # variables set from command line
-my $input_relation_file;
+my @input_relation_files;
 my $output_relation_file;
 my $relation_set_file;
 my $output_primes_file = 0;
@@ -124,7 +124,7 @@ sub check_command_line()
 {
    if (command_includes($REMOVE_DUPLICATES))
    {
-      err_usage("input relation file not supplied with -r option") if (not defined $input_relation_file);
+      err_usage("input relation file not supplied with -r option") if (not @input_relation_files);
       err_usage("output relation file not supplied with -ro option") if (not defined $output_relation_file);
       $merge_level = 0 if (not defined $merge_level);
       return;
@@ -132,7 +132,7 @@ sub check_command_line()
 
    if (command_includes($REMOVE_SINGLETONS))
    {
-      err_usage("input relation file not supplied with -r option") if (not defined $input_relation_file);
+      err_usage("input relation file not supplied with -r option") if (not @input_relation_files);
       err_usage("output relation file not supplied with -ro option") if (not defined $output_relation_file);
       $merge_level = 1;
       $filtmin = 1000 if (not defined $filtmin);
@@ -142,7 +142,7 @@ sub check_command_line()
 
    if (command_includes($PRUNE))
    {
-      err_usage("input relation file not supplied with -r option") if (not defined $input_relation_file);
+      err_usage("input relation file not supplied with -r option") if (not @input_relation_files);
       err_usage("output relation file not supplied with -ro option") if (not defined $output_relation_file);
       $merge_level = 1 if (not defined $merge_level);
       $filtmin = 1000 if (not defined $filtmin);
@@ -167,7 +167,7 @@ sub check_command_line()
       }
       else
       {
-         err_usage("must supply input relation file with -r") if (not defined $input_relation_file);
+         err_usage("must supply input relation file with -r") if (not @input_relation_files);
       }
 
       # possible output files:
@@ -189,11 +189,10 @@ sub check_command_line()
 
    if (command_includes($BUILD_MATRIX))
    {
-      err_usage("input relation file not supplied with -r option") if (not defined $input_relation_file);
+      err_usage("input relation file not supplied with -r option") if (not @input_relation_files);
       err_usage("matrix file name not supplied with -m option") if (not defined $matrix);
       err_usage("filtmin not supplied with -f option") if (not defined $filtmin);
-      $relation_set_infile = $input_relation_file . ".sets" if (not defined $relation_set_infile);
-      $relation_set_primes_infile = $relation_set_infile . ".primes" if (not defined $relation_set_primes_infile and defined $relation_set_infile);
+      $relation_set_infile = $input_relation_files[0] . ".sets" if (not defined $relation_set_infile);
    }
 
    if (command_includes($SOLVE_MATRIX))
@@ -204,9 +203,9 @@ sub check_command_line()
 
    if (command_includes($PROCESS_DEPENDENCIES))
    {
-      err_usage("input relation file not supplied with -r option") if (not defined $input_relation_file);
+      err_usage("input relation file not supplied with -r option") if (not @input_relation_files);
       err_usage("dependencies file name not supplied with -d option") if (not defined $dependencies);
-      $relation_set_infile = $input_relation_file . ".sets" if (not defined $relation_set_infile);
+      $relation_set_infile = $input_relation_files[0] . ".sets" if (not defined $relation_set_infile);
       return;
    }
 
@@ -225,7 +224,7 @@ sub process_command_line()
       if ($ARGV[$arg] eq "-r")
       {
          $arg++;
-	 $input_relation_file = $ARGV[$arg];
+	 push @input_relation_files, $ARGV[$arg];
       }
       elsif ($ARGV[$arg] eq "-rs")
       {
@@ -324,35 +323,38 @@ sub process_command_line()
 
 sub remove_duplicates($$)
 {
-   my $input_relation_file = shift;
+   my $input_relation_files = shift;
    my $output_relation_file = shift;
-   print "$filter -r $input_relation_file -m 0 -ro $output_relation_file\n";
-   system("$filter -r $input_relation_file -m 0 -ro $output_relation_file");
+   my $r_args = join(" ", map { "-r $_" } @$input_relation_files);
+   print "$filter $r_args -m 0 -ro $output_relation_file\n";
+   system("$filter $r_args -m 0 -ro $output_relation_file");
 }
 
 sub remove_singletons($$$$)
 {
-   my $input_relation_file = shift;
+   my $input_relation_files = shift;
    my $output_relation_file = shift;
    my $filtmin = shift;
    my $excess = shift;
-   print "$filter -r $input_relation_file -m 1 -f $filtmin -e $excess -ro $output_relation_file\n";
-   system("$filter -r $input_relation_file -m 1 -f $filtmin -e $excess -ro $output_relation_file");
+   my $r_args = join(" ", map { "-r $_" } @$input_relation_files);
+   print "$filter $r_args -m 1 -f $filtmin -e $excess -ro $output_relation_file\n";
+   system("$filter $r_args -m 1 -f $filtmin -e $excess -ro $output_relation_file");
 }
 
 sub prune($$$$)
 {
-   my $input_relation_file = shift;
+   my $input_relation_files = shift;
    my $output_relation_file = shift;
    my $filtmin = shift;
    my $excess = shift;
-   print "$filter -r $input_relation_file -m 2 -f $filtmin -e $excess -ro $output_relation_file\n";
-   system("$filter -r $input_relation_file -m 2 -f $filtmin -e $excess -ro $output_relation_file");
+   my $r_args = join(" ", map { "-r $_" } @$input_relation_files);
+   print "$filter $r_args -m 2 -f $filtmin -e $excess -ro $output_relation_file\n";
+   system("$filter $r_args -m 2 -f $filtmin -e $excess -ro $output_relation_file");
 }
 
 sub merge($$$$$$$)
 {
-   my $input_relation_file = shift;
+   my $input_relation_files = shift;
    my $output_relation_file = shift;
    my $relation_set_file = shift;
    my $merge_level = shift;
@@ -360,7 +362,8 @@ sub merge($$$$$$$)
    my $excess = shift;
    my $max_passes = shift;
    my $cmd = "$filter";
-   $cmd .= " -r $input_relation_file" if (defined $input_relation_file);
+   my $r_args = join(" ", map { "-r $_" } @$input_relation_files);
+   $cmd .= " $r_args" if (@$input_relation_files);
    $cmd .= " -ro $output_relation_file" if (defined $output_relation_file);
    $cmd .= " -rspo $relation_set_primes_file" if (defined $relation_set_primes_file);
    if ($merge_only)
@@ -428,23 +431,23 @@ sub process_commands()
 {
    if (command_includes($REMOVE_DUPLICATES))
    {
-      print STDERR "Removing duplicates relations from $input_relation_file, output to $output_relation_file\n";
-      remove_duplicates($input_relation_file, $output_relation_file);
+      print STDERR "Removing duplicates relations from " . join(", ", @input_relation_files) . ", output to $output_relation_file\n";
+      remove_duplicates(\@input_relation_files, $output_relation_file);
    }
    elsif (command_includes($REMOVE_SINGLETONS))
    {
-      print STDERR "Removing singleton relation from $input_relation_file, output to $output_relation_file\n";
-      remove_singletons($input_relation_file, $output_relation_file, $filtmin, $excess);
+      print STDERR "Removing singleton relation from " . join(", ", @input_relation_files) . ", output to $output_relation_file\n";
+      remove_singletons(\@input_relation_files, $output_relation_file, $filtmin, $excess);
    }
    elsif (command_includes($PRUNE))
    {
-      print STDERR "Pruning $input_relation_file, output to $output_relation_file\n";
-      prune($input_relation_file, $output_relation_file, $filtmin, $excess);
+      print STDERR "Pruning " . join(", ", @input_relation_files) . ", output to $output_relation_file\n";
+      prune(\@input_relation_files, $output_relation_file, $filtmin, $excess);
    }
    elsif (command_includes($MERGE))
    {
       print STDERR "Merging:\n";
-      print_name_value_pair("Input relation file", $input_relation_file);
+      print_name_value_pair("Input relation file(s)", join(", ", @input_relation_files));
       print_name_value_pair("Output relation file", $output_relation_file);
       print_name_value_pair("Input relation set file", $relation_set_infile);
       print_name_value_pair("Output relation file", $relation_set_file);
@@ -455,14 +458,14 @@ sub process_commands()
       print_name_value_pair("Minimum prime to filter", $filtmin);
       print_name_value_pair("Excess", $excess);
       print_name_value_pair("Maximum passes", $max_passes);
-      merge($input_relation_file, $output_relation_file, $relation_set_file, $merge_level, $filtmin, $excess, $max_passes);
-      $input_relation_file = $output_relation_file;
+      merge(\@input_relation_files, $output_relation_file, $relation_set_file, $merge_level, $filtmin, $excess, $max_passes);
+      @input_relation_files = ($output_relation_file);
    }
 
    if (command_includes($BUILD_MATRIX))
    {
-      print STDERR "Building matrix from relations in $input_relation_file, relation sets in $relation_set_infile, relation set primes in $relation_set_primes_infile and output to $matrix\n";
-      build_matrix($input_relation_file, $relation_set_infile, $relation_set_primes_infile, $matrix, $filtmin);
+      print STDERR "Building matrix from relations in $input_relation_files[0], relation sets in $relation_set_infile, relation set primes in $relation_set_primes_infile and output to $matrix\n";
+      build_matrix($input_relation_files[0], $relation_set_infile, $relation_set_primes_infile, $matrix, $filtmin);
    }
 
    if (command_includes($SOLVE_MATRIX))
@@ -473,8 +476,8 @@ sub process_commands()
 
    if (command_includes($PROCESS_DEPENDENCIES))
    {
-      print STDERR "Processing dependencies from $dependencies, relations in $input_relation_file, relation sets in $relation_set_infile\n";
-      process_dependencies($input_relation_file, $relation_set_infile, $dependencies);
+      print STDERR "Processing dependencies from $dependencies, relations in $input_relation_files[0], relation sets in $relation_set_infile\n";
+      process_dependencies($input_relation_files[0], $relation_set_infile, $dependencies);
    }
 
    if (command_includes($CALC_ROOT))
