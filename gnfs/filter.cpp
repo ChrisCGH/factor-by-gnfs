@@ -56,7 +56,7 @@ long int estimateRequiredExcess(long int filtmin)
     return 100000L;
 }
 
-std::string RelationsFile("");
+std::vector<std::string> RelationsFiles;
 std::ostream* Reloutfile = 0;
 std::string Reloutfilename("");
 std::ostream* Relsetoutfile = 0;
@@ -152,7 +152,7 @@ struct RelationHasher
 
 void usage()
 {
-    std::cerr << "usage: filter [-r[elations] relfile]" << std::endl;
+    std::cerr << "usage: filter [-r[elations] relfile] [-r[elations] relfile2 ...]" << std::endl;
     std::cerr << "              [-m[ergelevel] level]" << std::endl;
     std::cerr << "              [-f[iltmin] filtmin]" << std::endl;
     std::cerr << "              [-e[xcessmin] excessmin]" << std::endl;
@@ -178,7 +178,7 @@ void init(int argc, char* argv[])
                     strcmp(argv[arg], "-r") == 0)
             {
                 arg++;
-                RelationsFile = argv[arg];
+                RelationsFiles.push_back(argv[arg]);
             }
             else if (strcmp(argv[arg], "-mergelevel") == 0 ||
                      strcmp(argv[arg], "-m") == 0)
@@ -565,29 +565,32 @@ void remove_duplicates()
     long int relations = 0;
     long int unique_relations = 0;
     std::cerr << "Reading relations and removing duplicates ..." << std::endl;
-    MemoryMappedFile relmmfile(RelationsFile.c_str());
-    while (getline(relmmfile, str))
+    for (const auto& relfile : RelationsFiles)
     {
-        if (relations % 10000L == 0L)
+        MemoryMappedFile relmmfile(relfile.c_str());
+        while (getline(relmmfile, str))
         {
-            std::cerr << "row <" << relations << ">" << std::endl;
-        }
-        std::string str1(str);
-        // First split line by colons
-        long long int a = 0;
-        long long int b = 0;
-        Convert::parse_FBGNFS_relation(str, a, b);
+            if (relations % 10000L == 0L)
+            {
+                std::cerr << "row <" << relations << ">" << std::endl;
+            }
+            std::string str1(str);
+            // First split line by colons
+            long long int a = 0;
+            long long int b = 0;
+            Convert::parse_FBGNFS_relation(str, a, b);
 
-        std::pair<long long int, long int> h(a,b);
-        hashTable[h]++;
-        if (hashTable[h] == 1 && Reloutfile)
-        {
-            *Reloutfile << str1 << std::endl;
-            unique_relations++;
+            std::pair<long long int, long int> h(a,b);
+            hashTable[h]++;
+            if (hashTable[h] == 1 && Reloutfile)
+            {
+                *Reloutfile << str1 << std::endl;
+                unique_relations++;
+            }
+            relations++;
         }
-        relations++;
+        std::cerr << relations << " relations read from " << relfile.c_str() << std::endl;
     }
-    std::cerr << relations << " relations read from " << RelationsFile.c_str() << std::endl;
     std::cerr << unique_relations << " unique relations written to " << Reloutfilename << std::endl;
 }
 
@@ -680,14 +683,24 @@ void calculate_relation_table_size(MemoryMappedFile& relmmfile,
 void read_relations()
 {
     // This function assumes no duplicates in the relations
-    std::cerr << "Reading relations from " << RelationsFile << " ..." << std::endl;
-    MemoryMappedFile relmmfile(RelationsFile.c_str());
-
-    unsigned long long int relations_file_size = relmmfile.size();
+    if (RelationsFiles.empty())
+    {
+        std::cerr << "No relation files specified" << std::endl;
+        return;
+    }
+    // Calculate total size across all relation files
+    unsigned long long int total_relations_file_size = 0;
+    for (const auto& relfile : RelationsFiles)
+    {
+        MemoryMappedFile relmmfile(relfile.c_str());
+        total_relations_file_size += relmmfile.size();
+    }
+    // Use the first file to estimate bytes per relation/prime
+    MemoryMappedFile first_relmmfile(RelationsFiles[0].c_str());
     long int max_relations;
     long int max_primes;
     long int max_unique_primes;
-    calculate_relation_table_size(relmmfile, relations_file_size, max_relations, max_primes, max_unique_primes);
+    calculate_relation_table_size(first_relmmfile, total_relations_file_size, max_relations, max_primes, max_unique_primes);
     if (MaxUniquePrimes > 0)
     {
         max_unique_primes = MaxUniquePrimes;
@@ -700,30 +713,35 @@ void read_relations()
 
     long int relations = 0;
     std::string str;
-    while (getline(relmmfile, str))
+    for (const auto& relfile : RelationsFiles)
     {
-        if (relations % 10000L == 0L)
+        std::cerr << "Reading relations from " << relfile << " ..." << std::endl;
+        MemoryMappedFile relmmfile(relfile.c_str());
+        while (getline(relmmfile, str))
         {
-            std::cerr << "row <" << relations << ">" << std::endl;
-        }
-        std::string str1(str);
-        // First split line by colons
-        char* alg_str;
-        char* rat_str;
-        parse(str, alg_str, rat_str);
+            if (relations % 10000L == 0L)
+            {
+                std::cerr << "row <" << relations << ">" << std::endl;
+            }
+            std::string str1(str);
+            // First split line by colons
+            char* alg_str;
+            char* rat_str;
+            parse(str, alg_str, rat_str);
 
-        // add relation to relation table
-        // and for each (large) prime in relation
-        // increment count in frequency table
-        // Split the algebraic primes
-        Relation r(relations);
-        r.primes_index_ = relationTable->next_prime_index();
-        extract_primes(alg_str, &r, prime_map);
-        // Split the rational primes
-        extract_primes(rat_str, &r, prime_map);
-        (*relationTable)[relations] = r;
-        relationTable->increment_next_prime(r.prime_count_);
-        relations++;
+            // add relation to relation table
+            // and for each (large) prime in relation
+            // increment count in frequency table
+            // Split the algebraic primes
+            Relation r(relations);
+            r.primes_index_ = relationTable->next_prime_index();
+            extract_primes(alg_str, &r, prime_map);
+            // Split the rational primes
+            extract_primes(rat_str, &r, prime_map);
+            (*relationTable)[relations] = r;
+            relationTable->increment_next_prime(r.prime_count_);
+            relations++;
+        }
     }
     std::cerr << relations << " relations read" << std::endl;
     std::cerr << frequencyTable->next_prime() << " unique primes read" << std::endl;
@@ -741,19 +759,22 @@ void write_relations()
     std::string str;
     Relation* iter = relationTable->begin();
     long int row = 0L;
-    MemoryMappedFile relmmfile(RelationsFile.c_str());
-    while (iter != relationTable->end() && getline(relmmfile, str))
+    for (const auto& relfile : RelationsFiles)
     {
-        if (row % 10000L == 0L)
+        MemoryMappedFile relmmfile(relfile.c_str());
+        while (iter != relationTable->end() && getline(relmmfile, str))
         {
-            std::cerr << "row <" << row << ">" << std::endl;
+            if (row % 10000L == 0L)
+            {
+                std::cerr << "row <" << row << ">" << std::endl;
+            }
+            if (iter->id_ == row)
+            {
+                *Reloutfile << str << std::endl;
+                ++iter;
+            }
+            row++;
         }
-        if (iter->id_ == row)
-        {
-            *Reloutfile << str << std::endl;
-            ++iter;
-        }
-        row++;
     }
 }
 
