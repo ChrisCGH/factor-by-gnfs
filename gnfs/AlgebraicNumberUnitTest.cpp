@@ -668,8 +668,8 @@ public:
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, 2));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, 3));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, 4));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, 5), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, NumberField::MAX_DEGREE), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, 5), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(0, NumberField::MAX_DEGREE), std::runtime_error);
         std::vector<VeryLongModular> c;
         c.push_back(VeryLongModular(1L));
         c.push_back(VeryLongModular(1L));
@@ -678,7 +678,7 @@ public:
         c.push_back(VeryLongModular(1L));
         c.push_back(VeryLongModular(1L));
         c.push_back(VeryLongModular(1L));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", {AlgebraicNumber_in_O_pO a(c);}, std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", {AlgebraicNumber_in_O_pO a(c);}, std::runtime_error);
 
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4"));
         AlgebraicNumber an3 = AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4");
@@ -723,8 +723,8 @@ public:
         AlgebraicNumber_in_O_pO an20 = an19 / an13;
         CPPUNIT_ASSERT(an20 == an15);
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(-1), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(10), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(-1), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(10), std::runtime_error);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(0));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(1));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(2));
@@ -902,7 +902,7 @@ public:
         CPPUNIT_ASSERT(beta3(3,0) == VeryLongModular(4L));
         CPPUNIT_ASSERT(beta3(4,0) == VeryLongModular(1L));
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(1LL, 2L), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(1LL, 2L), std::runtime_error);
         AlgebraicNumber_in_O_pO::set_basis(113L);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO(1LL, 2L));
     }
@@ -934,8 +934,8 @@ public:
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, 2));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, 3));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, 4));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, 5), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, NumberField::MAX_DEGREE), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, 5), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(0, NumberField::MAX_DEGREE), std::runtime_error);
         std::vector<LongModular> c;
         c.push_back(LongModular(1L));
         c.push_back(LongModular(1L));
@@ -944,7 +944,7 @@ public:
         c.push_back(LongModular(1L));
         c.push_back(LongModular(1L));
         c.push_back(LongModular(1L));
-        CPPUNIT_ASSERT_THROW_MESSAGE("", {AlgebraicNumber_in_O_pO_1 a(c);}, std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", {AlgebraicNumber_in_O_pO_1 a(c);}, std::runtime_error);
 
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4"));
         AlgebraicNumber an3 = AlgebraicNumber::read_algebraic_number("1/7 + 32730265/42 alpha + 275165447/105 alpha^2 + 7409138/35 alpha^3 + 12818 alpha^4");
@@ -989,8 +989,8 @@ public:
         AlgebraicNumber_in_O_pO_1 an20 = an19 / an13;
         CPPUNIT_ASSERT(an20 == an15);
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(-1), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(10), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(-1), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an20.coefficient(10), std::runtime_error);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(0));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(1));
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", an20.coefficient(2));
@@ -1168,7 +1168,7 @@ public:
         CPPUNIT_ASSERT(beta3(3,0) == LongModular(4L));
         CPPUNIT_ASSERT(beta3(4,0) == LongModular(1L));
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L), std::runtime_error);
         AlgebraicNumber_in_O_pO_1::set_basis(113L);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L));
     }
