@@ -2,6 +2,7 @@
 #define __NEWMATRIX_H
 #include <vector>
 #include <sstream>
+#include <stdexcept>
 #include "Polynomial.h"
 
 template <class X> void combine(X& x, const X& v, const X& q)
@@ -56,6 +57,12 @@ public:
                 ++q;
             }
         }
+    }
+    Matrix(Matrix&& m) noexcept : rows_(m.rows_), columns_(m.columns_), data_(m.data_)
+    {
+        m.rows_ = 0;
+        m.columns_ = 0;
+        m.data_ = nullptr;
     }
     Matrix(size_t rank, const X& value, size_t dummy) : rows_(rank), columns_(rank)
     {
@@ -146,12 +153,25 @@ public:
         }
         return *this;
     }
+    Matrix& operator=(Matrix&& m) noexcept
+    {
+        if (&m == this)
+            return *this;
+        delete [] data_;
+        rows_ = m.rows_;
+        columns_ = m.columns_;
+        data_ = m.data_;
+        m.rows_ = 0;
+        m.columns_ = 0;
+        m.data_ = nullptr;
+        return *this;
+    }
     friend Matrix operator+(const Matrix& m1, const Matrix& m2)
     {
         if (m1.rows() != m2.rows() ||
                 m1.columns() != m2.columns())
         {
-            throw std::string("operator+(Matrix, Matrix) : inconsistent sizes");
+            throw std::invalid_argument("operator+(Matrix, Matrix) : inconsistent sizes");
         }
         Matrix m = m1;
         X* p = m.data_;
@@ -172,7 +192,7 @@ public:
         if (m1.rows() != m2.rows() ||
                 m1.columns() != m2.columns())
         {
-            throw std::string("operator-(Matrix, Matrix) : inconsistent sizes");
+            throw std::invalid_argument("operator-(Matrix, Matrix) : inconsistent sizes");
         }
         Matrix m = m1;
         X* p = m.data_;
@@ -248,10 +268,10 @@ public:
         const X zero(0L);
         if (m1.columns() != v.size())
         {
-            throw std::string("operator*(Matrix, vector) : inconsistent sizes");
+            throw std::invalid_argument("operator*(Matrix, vector) : inconsistent sizes");
         }
         std::vector<X> m;
-        m.resize(v.size());
+        m.resize(m1.rows());
         X* p = m1.data_;
         for (size_t i = 0; i < m1.rows(); ++i)
         {
@@ -272,7 +292,7 @@ public:
         const X zero(0L);
         if (m1.columns() != m2.rows())
         {
-            throw std::string("operator*(Matrix, Matrix) : inconsistent sizes");
+            throw std::invalid_argument("operator*(Matrix, Matrix) : inconsistent sizes");
         }
         Matrix<X> m(m1.rows(), m2.columns());
         X* p = m.data_;
@@ -325,7 +345,7 @@ public:
         const X zero(0L);
         if (columns() != m.rows())
         {
-            throw std::string("Matrix::operator*=(Matrix) : inconsistent sizes");
+            throw std::invalid_argument("Matrix::operator*=(Matrix) : inconsistent sizes");
         }
         Matrix mm(rows(), m.columns());
         X* p = mm.data_;
@@ -349,7 +369,7 @@ public:
         const X zero(0L);
         if (columns() != m.rows())
         {
-            throw std::string("Matrix::operator*=(Matrix) : inconsistent sizes");
+            throw std::invalid_argument("Matrix::operator*=(Matrix) : inconsistent sizes");
         }
         Matrix mm(rows(), m.columns());
         X* p = mm.data_;
@@ -390,7 +410,7 @@ public:
         }
         return tr;
     }
-    Matrix<X > transpose()
+    Matrix<X > transpose() const
     {
         Matrix trans(columns(), rows());
         X* p = data_;
@@ -437,7 +457,7 @@ public:
     {
         if (i >= rows() || j >= columns())
         {
-            throw std::string("Matrix::at() : out of range");
+            throw std::out_of_range("Matrix::at() : out of range");
         }
         return operator()(i, j);
     }
@@ -445,7 +465,7 @@ public:
     {
         if (i >= rows() || j >= columns())
         {
-            throw std::string("Matrix::at() : out of range");
+            throw std::out_of_range("Matrix::at() : out of range");
         }
         return operator()(i, j);
     }
@@ -509,7 +529,7 @@ public:
             this->operator()(i,c2) = t3;
         }
     }
-    X dot(int r1, int r2)
+    X dot(size_t r1, size_t r2)
     {
         X result = 0L;
         for (size_t i = 0; i < columns(); i++)
@@ -518,7 +538,7 @@ public:
         }
         return result;
     }
-    X dot_on_columns(int c1, int c2)
+    X dot_on_columns(size_t c1, size_t c2)
     {
         X result = 0L;
         for (size_t i = 0; i < rows(); i++)
@@ -621,7 +641,7 @@ template <class X> bool solve(const Matrix<X >& MM, const std::vector<X >& BB, s
         while (i < n && M(i, j) == zero) i++;
         if (i >= n)
         {
-            throw std::string("M is not invertible");
+            throw std::runtime_error("M is not invertible");
         }
         //cout << "First non-zero entry = " << i << endl;
         // step 4. [Swap?]
@@ -709,7 +729,7 @@ template <class X> bool invert(const Matrix<X >& MM, Matrix<X >& XX)
         while (i < n && M(i, j) == zero) i++;
         if (i >= n)
         {
-            throw std::string("M is not invertible");
+            throw std::runtime_error("M is not invertible");
         }
         //cout << "First non-zero entry = " << i << endl;
         // step 4. [Swap?]
@@ -1304,7 +1324,7 @@ template <class X> Matrix<X > inverse_image(const Matrix<X >& MM, const std::vec
     while (j < r && V(n, j) == zero) j++;
     if (j >= r)
     {
-        throw std::string("inverse_image: No solution");
+        throw std::runtime_error("inverse_image: No solution");
     }
 
     X d = minusone / V(n, j);
@@ -1333,7 +1353,7 @@ template <class X> Matrix<X > inverse_image_matrix(const Matrix<X >& MM, const M
         std::ostringstream oss;
         oss << "inverse_image_matrix: M must be m x n with n <= m and V must be m x r, ";
         oss << "but M is " << m << " x " << n << " and V is " << VV.rows() << " x " << r;
-        throw oss.str();
+        throw std::invalid_argument(oss.str());
     }
     if (r == 0) return VV;
     static Matrix<X > M(1,1);
@@ -1351,7 +1371,7 @@ template <class X> Matrix<X > inverse_image_matrix(const Matrix<X >& MM, const M
         while (i < m && M(i, j) == zero) i++;
         if (i >= m)
         {
-            throw std::string("columns of M are not linearly independent");
+            throw std::runtime_error("columns of M are not linearly independent");
         }
         //cout << "First non-zero entry = " << i << endl;
         // step 4. [Swap?]
@@ -1457,7 +1477,7 @@ template <class X> Matrix<X > inverse_image_matrix(const Matrix<X >& MM, const M
     }
     if (not_in_image)
     {
-        throw std::string("inverse_image_matrix: a column of V is not in the image of M");
+        throw std::runtime_error("inverse_image_matrix: a column of V is not in the image of M");
     }
 
     return XX;
@@ -1552,7 +1572,7 @@ template <class X> Matrix<X > supplement_subspace(const Matrix<X >& VV, const Ma
     Matrix<X> XX = inverse_image_matrix(M, V);
     if (XX.rows() == 1 && XX.columns() == 1)
     {
-        throw std::string("F is not a subspace of E");
+        throw std::invalid_argument("F is not a subspace of E");
     }
 
     // Step 2. [Supplement X]
@@ -1836,7 +1856,7 @@ template <class X, class INTEGER> Matrix<X > HNF_mod_D(const Matrix<X >& AA, con
     int n = A.columns();
     if (n < m)  // must have n >= m
     {
-        throw std::string("HNF_mod_D : must have at least as many columns as rows");
+        throw std::invalid_argument("HNF_mod_D : must have at least as many columns as rows");
     }
 
     // Step 1. [Initialize]

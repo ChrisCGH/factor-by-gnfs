@@ -55,7 +55,7 @@ public:
         CPPUNIT_ASSERT(m1.rows() == 4 && m1.columns() == 5);
         CPPUNIT_ASSERT(m1(1,2) == 0 && m1(3,4) == 0);
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", m1.at(3, 5), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", m1.at(3, 5), std::out_of_range);
 
         m1.add_column();
         CPPUNIT_ASSERT(m1.rows() == 4 && m1.columns() == 6);
@@ -116,7 +116,7 @@ public:
 
         std::vector<long int> v;
         v.resize(5L);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", std::vector<long int> v1 = m1 * v, std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", std::vector<long int> v1 = m1 * v, std::invalid_argument);
 
         v.resize(6L);
         std::vector<long int> v2;
@@ -264,7 +264,7 @@ public:
         Polynomial<double> p3 = ::characteristic_polynomial(m14d);
         CPPUNIT_ASSERT(compare_double_poly(p3, p2));
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", ::solve(m13d, b, x), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", ::solve(m13d, b, x), std::runtime_error);
 
         Matrix<double> m17d = ::kernel(m13d);
         Matrix<double> m18d = m13d * m17d;
@@ -457,7 +457,7 @@ int main()
         m1.at(3, 5);
         t.check(false, "m1.at(3, 5) should throw");
     }
-    catch (const char* c)
+    catch (const std::exception&)
     {
         t.check(true, "m1.at(3, 5) should throw");
     }
@@ -470,7 +470,7 @@ int main()
         m1.at(3, 5);
         t.check(true, "m1.at(3, 5) should not throw");
     }
-    catch (const char* c)
+    catch (const std::exception&)
     {
         t.check(false, "m1.at(3, 5) should not throw");
     }
@@ -534,7 +534,7 @@ int main()
         std::vector<long int> v1 = m1 * v;
         t.check(false, "m1 * v should throw");
     }
-    catch (const char* c)
+    catch (const std::exception&)
     {
         t.check(true, "m1 * v should throw");
     }
@@ -549,7 +549,7 @@ int main()
             t.check(v2[i] == 0, "v2[i] should be 0");
         }
     }
-    catch (const char* c)
+    catch (const std::exception&)
     {
         t.check(false, "m1 * v should not throw");
     }
@@ -691,7 +691,15 @@ int main()
     Polynomial<double> p3 = ::characteristic_polynomial(m14d);
     t.check(compare_double_poly(p3, p2), "characteristic polynomial of m14d should be -871 + 2615 X - 2620 X^2 + 880 X^3 - 5 X^4 + 1 X^5");
 
-    t.check(!::solve(m13d, b, x), "m13d should not be invertible");
+    try
+    {
+        ::solve(m13d, b, x);
+        t.check(false, "m13d should not be invertible");
+    }
+    catch (const std::exception&)
+    {
+        t.check(true, "m13d throws when not invertible");
+    }
 
     Matrix<double> m17d = ::kernel(m13d);
     Matrix<double> m18d = m13d * m17d;
