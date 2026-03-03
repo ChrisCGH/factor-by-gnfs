@@ -7,6 +7,7 @@
 #include "Polynomial.h"
 #include "Matrix.h"
 #include <complex>
+#include <memory>
 using std::complex;
 #include "FactorBase.h"
 #include <vector>
@@ -16,12 +17,8 @@ class NumberField
 public:
     NumberField();
     NumberField(const Polynomial<VeryLong>& poly, const char* fbFile = 0);
-#if 0
-private:
-    NumberField(const NumberField& nf);
-    NumberField& operator=(const NumberField& nf);
-public:
-#endif
+    NumberField(const NumberField&) = delete;
+    NumberField& operator=(const NumberField&) = delete;
     ~NumberField();
 
     int conjugates() const;
@@ -47,7 +44,7 @@ public:
         return *factorBase_;
     }
 
-    const VeryLong index() const
+    VeryLong index() const
     {
         return index_;
     }
@@ -100,7 +97,7 @@ private:
     VeryLong discriminant_;
     VeryLong fieldDiscriminant_;
     VeryLong index_;
-    FactorBase* factorBase_;
+    std::unique_ptr<FactorBase> factorBase_;
     Matrix<Quotient<VeryLong > > integralBasisAlpha_;
     Matrix<Quotient<VeryLong > > integralBasisAlphaInv_;
     Matrix<Quotient<VeryLong > > integralBasisTheta_;

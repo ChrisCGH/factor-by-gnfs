@@ -184,7 +184,7 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
     {
         std::ostringstream oss;
         oss << "degree of number field (" << poly.deg() << ") too big, must be < " << MAX_DEGREE;
-        throw std::string(oss.str());
+        throw std::runtime_error(oss.str());
     }
     // Convert poly to Polynomial<complex<double > > to find (complex) roots
     MPFloat::set_precision(100);
@@ -275,20 +275,18 @@ NumberField::NumberField(const Polynomial<VeryLong>& poly, const char* fbFile)
     // calculate factor base
     if (!fbFile)
     {
-        factorBase_ = new FactorBase(min_poly_, 10000L, "fb.dat");
+        factorBase_ = std::make_unique<FactorBase>(min_poly_, 10000L, "fb.dat");
     }
     else
     {
         try
         {
-            factorBase_ = new FactorBase(fbFile);
+            factorBase_ = std::make_unique<FactorBase>(fbFile);
         }
         catch (...)
         {
             std::cerr << "NumberField::NumberField : caught exception" << std::endl;
-            //delete factorBase_;
-            factorBase_ = new FactorBase(min_poly_, 1600L, fbFile);
-            //factorBase_->write(fbFile);
+            factorBase_ = std::make_unique<FactorBase>(min_poly_, 1600L, fbFile);
         }
     }
 
@@ -318,7 +316,7 @@ complex<long double > NumberField::conjugate(int r) const
 {
     if (r < 0 || r >= static_cast<int>(roots_.size()))
     {
-        throw std::string("NumberField::conjugate(): index out of range");
+        throw std::runtime_error("NumberField::conjugate(): index out of range");
     }
     return complex<long double>((long double)(double)roots_[r].real(),
                                 (long double)(double)roots_[r].imag());

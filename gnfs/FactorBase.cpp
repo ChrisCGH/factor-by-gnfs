@@ -443,5 +443,7 @@ void FactorBase::dump(const char* filename) const
 void FactorBase::clear()
 {
     free(root_array_);
+    root_array_ = nullptr;
     free(factor_base_);
+    factor_base_ = nullptr;
 }

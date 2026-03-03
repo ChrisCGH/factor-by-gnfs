@@ -23,3 +23,4 @@ gnfs/*.o
 gnfs/*.d
 *.tim
 ut_skewed.cfg
+gnfs/nf.fb.dat
