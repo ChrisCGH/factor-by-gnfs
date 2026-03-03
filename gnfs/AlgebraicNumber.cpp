@@ -491,61 +491,69 @@ void AlgebraicNumber::defineMatrix() const
 
 AlgebraicNumber& AlgebraicNumber::alpha()
 {
-    static int first_time = 1;
-    static AlgebraicNumber* alpha_ = 0;
-    if (first_time)
+    static const NumberField* last_nf = nullptr;
+    static AlgebraicNumber* alpha_ = nullptr;
+    if (last_nf != numberField_)
     {
-        first_time = 0;
-        std::vector<Quotient<VeryLong > > c;
-        c.resize(AlgebraicNumber::degree());
-        c[0] = Quotient<VeryLong>(0L);
-        c[1] = Quotient<VeryLong>(1L);
-        for (int i = 2; i < AlgebraicNumber::degree(); i++)
+        delete alpha_;
+        alpha_ = nullptr;
+        last_nf = numberField_;
+        if (numberField_)
         {
-            c[i] = Quotient<VeryLong>(0L);
+            std::vector<Quotient<VeryLong > > c;
+            c.resize(AlgebraicNumber::degree());
+            c[0] = Quotient<VeryLong>(0L);
+            c[1] = Quotient<VeryLong>(1L);
+            for (int i = 2; i < AlgebraicNumber::degree(); i++)
+            {
+                c[i] = Quotient<VeryLong>(0L);
+            }
+            alpha_ = new AlgebraicNumber(c);
         }
-        alpha_ = new AlgebraicNumber(c);
+    }
+    if (!alpha_)
+    {
+        throw std::runtime_error("AlgebraicNumber::alpha() : numberField_ not set");
     }
     return *alpha_;
 }
 
 const std::vector<AlgebraicNumber>& AlgebraicNumber::integralBasis()
 {
-    static int first_time = 1;
+    static const NumberField* last_nf = nullptr;
     static std::vector<AlgebraicNumber> ib;
-    if (first_time)
+    if (last_nf != numberField_)
     {
-        first_time = 0;
-        for (int i = 0; i < AlgebraicNumber::degree(); i++)
+        ib.clear();
+        last_nf = numberField_;
+        if (numberField_)
         {
-            ib.push_back(AlgebraicNumber(numberField_->w(), i));
+            for (int i = 0; i < AlgebraicNumber::degree(); i++)
+            {
+                ib.push_back(AlgebraicNumber(numberField_->w(), i));
+            }
         }
     }
 
     return ib;
 }
 
-int AlgebraicNumber::operator==(const AlgebraicNumber& a) const
+bool AlgebraicNumber::operator==(const AlgebraicNumber& a) const
 {
-    if (c_.size() != a.c_.size()) return 0;
-    for (size_t i = 0; i < c_.size(); i++)
-    {
-        if (c_[i] != a.c_[i]) return 0;
-    }
-    return 1;
+    return c_.size() == a.c_.size() && std::equal(c_.begin(), c_.end(), a.c_.begin());
 }
 
-int AlgebraicNumber::operator!=(const AlgebraicNumber& a) const
+bool AlgebraicNumber::operator!=(const AlgebraicNumber& a) const
 {
     return !(*this == a);
 }
 
 void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
-                               long double& ln_im, long int& im_sign)
+                               long double& ln_im, long int& im_sign) const
 {
     if (!numberField_)
     {
-        throw std::string("AlgebraicNumber::ln_sigma() : numberField_ not set");
+        throw std::runtime_error("AlgebraicNumber::ln_sigma() : numberField_ not set");
     }
     const NumberField& nf = *AlgebraicNumber::numberField_;
     complex<long double> alpha_j = nf.conjugate(j);
@@ -622,11 +630,11 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
     }
 }
 
-long double AlgebraicNumber::ln_sigma(int j)
+long double AlgebraicNumber::ln_sigma(int j) const
 {
     if (!numberField_)
     {
-        throw std::string("AlgebraicNumber::ln_sigma() : numberField_ not set");
+        throw std::runtime_error("AlgebraicNumber::ln_sigma() : numberField_ not set");
     }
     const NumberField& nf = *AlgebraicNumber::numberField_;
     complex<long double> alpha_j = nf.conjugate(j);
@@ -697,7 +705,7 @@ long double AlgebraicNumber::mod_sigma_2(int j) const
 {
     if (!numberField_)
     {
-        throw std::string("AlgebraicNumber::mod_sigma_2() : numberField_ not set");
+        throw std::runtime_error("AlgebraicNumber::mod_sigma_2() : numberField_ not set");
     }
     const NumberField& nf = *AlgebraicNumber::numberField_;
     complex<long double> alpha_j = nf.conjugate(j);
@@ -874,7 +882,7 @@ void AlgebraicNumber::createSpecialBasis(const VeryLong& p, std::vector<Algebrai
 {
     if (!numberField_)
     {
-        throw std::string("AlgebraicNumber::createSpecialBasis() : numberField_ not set");
+        throw std::runtime_error("AlgebraicNumber::createSpecialBasis() : numberField_ not set");
     }
     j.push_back(AlgebraicNumber(p));
     AlgebraicNumber tmp(AlgebraicNumber::c_d());

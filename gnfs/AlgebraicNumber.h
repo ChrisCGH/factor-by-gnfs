@@ -1,6 +1,7 @@
 #ifndef ALGEBRAICNUMBER_H
 #define ALGEBRAICNUMBER_H
 
+#include <stdexcept>
 #include "Polynomial.inl"
 class AlgebraicNumber
 {
@@ -18,16 +19,21 @@ public:
     AlgebraicNumber(const Quotient<VeryLong>& f);
     ~AlgebraicNumber();
     AlgebraicNumber& operator=(const AlgebraicNumber& a);
-    int operator==(const AlgebraicNumber& a) const;
-    int operator!=(const AlgebraicNumber& a) const;
-    int operator<(const AlgebraicNumber& a) const
+    bool operator==(const AlgebraicNumber& a) const;
+    bool operator!=(const AlgebraicNumber& a) const;
+    bool operator<(const AlgebraicNumber& a) const
     {
-        return 0;
+        return false;
     }
     AlgebraicNumber operator-() const
     {
-        AlgebraicNumber out(VeryLong(0L));
-        return out - *this;
+        AlgebraicNumber out(*this);
+        for (auto& c : out.c_)
+        {
+            c = -c;
+        }
+        out.ibc_defined_ = false;
+        return out;
     }
 
     friend AlgebraicNumber operator*(const AlgebraicNumber& a1,
@@ -68,29 +74,29 @@ public:
     }
     static void clearNumberField()
     {
-        numberField_ = 0;
+        numberField_ = nullptr;
     }
     static int degree()
     {
         if (!numberField_)
         {
-            throw std::string("AlgebraicNumber::degree() : numberField_ not set");
+            throw std::runtime_error("AlgebraicNumber::degree() : numberField_ not set");
         }
         return numberField_->degree();
     }
-    static const VeryLong index()
+    static VeryLong index()
     {
         if (!numberField_)
         {
-            throw std::string("AlgebraicNumber::index() : numberField_ not set");
+            throw std::runtime_error("AlgebraicNumber::index() : numberField_ not set");
         }
         return numberField_->index();
     }
-    static const VeryLong c_d()
+    static VeryLong c_d()
     {
         if (!numberField_)
         {
-            throw std::string("AlgebraicNumber::c_d() : numberField_ not set");
+            throw std::runtime_error("AlgebraicNumber::c_d() : numberField_ not set");
         }
         return numberField_->c_d();
     }
@@ -153,7 +159,7 @@ public:
     {
         if (!numberField_)
         {
-            throw std::string("AlgebraicNumber::nf() : numberField_ not set");
+            throw std::runtime_error("AlgebraicNumber::nf() : numberField_ not set");
         }
         return *numberField_;
     }
@@ -162,7 +168,7 @@ public:
     {
         if (i < 0 || i >= static_cast<int>(c_.size()))
         {
-            throw std::string("AlgebraicNumber::coefficient(): index out of range");
+            throw std::runtime_error("AlgebraicNumber::coefficient(): index out of range");
         }
         return c_[i];
     }
@@ -179,14 +185,14 @@ public:
     {
         if (j < 0 || j >= static_cast<int>(c_.size()))
         {
-            throw std::string("AlgebraicNumber::set_coefficient(): index out of range");
+            throw std::runtime_error("AlgebraicNumber::set_coefficient(): index out of range");
         }
         c_[j] = c;
     }
 
     void ln_sigma(int j, long double& ln_re, long int& re_sign,
-                  long double& ln_im, long int& im_sign);
-    long double ln_sigma(int j);
+                  long double& ln_im, long int& im_sign) const;
+    long double ln_sigma(int j) const;
     long double mod_sigma_2(int j) const;
 
     Polynomial<VeryLong> minimalPolynomial() const;
@@ -202,7 +208,7 @@ private:
         if (ibc_defined_) return;
         if (!numberField_)
         {
-            throw std::string("AlgebraicNumber::make_ibc() : numberField_ not set");
+            throw std::runtime_error("AlgebraicNumber::make_ibc() : numberField_ not set");
         }
         ibc_ = numberField_->winv() * c_;
         ibc_defined_ = true;

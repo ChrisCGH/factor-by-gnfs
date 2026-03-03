@@ -1,5 +1,6 @@
 #ifndef ALGEBRAICNUMBER_IN_O_PO_H
 #define ALGEBRAICNUMBER_IN_O_PO_H
+#include <stdexcept>
 #include <string>
 #include <sstream>
 template <class INTEGER, class INTEGER2, class MODULAR_INTEGER> class AlgebraicNumber_in_O_pO_
@@ -12,7 +13,7 @@ public:
         {
             std::ostringstream oss;
             oss << "degree of number field (" << d << ") too big, must be < " << MAX_DEGREE;
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         const MODULAR_INTEGER zero(0L);
         for (int i = 0; i < d; i++) Fp_basis_[i] = zero;
@@ -24,7 +25,7 @@ public:
         {
             std::ostringstream oss;
             oss << "degree of number field (" << d << ") too big, must be < " << MAX_DEGREE;
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         const MODULAR_INTEGER zero(0L);
         for (int i = 0; i < d; i++) Fp_basis_[i] = zero;
@@ -37,13 +38,13 @@ public:
         {
             std::ostringstream oss;
             oss << "degree of number field (" << d << ") too big, must be < " << MAX_DEGREE;
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         if (basisElement < 0 || basisElement >= d)
         {
             std::ostringstream oss;
             oss << "basisElement (" << basisElement << ") out of range, must be in [0," << d - 1 << "]";
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         const MODULAR_INTEGER zero(0L);
         const MODULAR_INTEGER one(1L);
@@ -58,13 +59,13 @@ public:
         {
             std::ostringstream oss;
             oss << "degree of number field (" << d << ") too big, must be < " << MAX_DEGREE;
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         if (static_cast<int>(c.size()) > d)
         {
             std::ostringstream oss;
             oss << "too many elements supplied, must be <= " << d;
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         for (size_t i = 0; i < c.size(); ++i)
         {
@@ -86,7 +87,7 @@ public:
     {
         if (!optimisation_ok_)
         {
-            throw std::string("Problem: can't use optimisation to create AlgebraicNumber_in_O_pO_");
+            throw std::runtime_error("Problem: can't use optimisation to create AlgebraicNumber_in_O_pO_");
         }
         // corresponding to a - b alpha
         Fp_basis_[0] = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_;
@@ -120,7 +121,7 @@ public:
 
     ~AlgebraicNumber_in_O_pO_() {}
 
-    AlgebraicNumber_in_O_pO_ operator*(const AlgebraicNumber_in_O_pO_& b)
+    AlgebraicNumber_in_O_pO_ operator*(const AlgebraicNumber_in_O_pO_& b) const
     {
         AlgebraicNumber_in_O_pO_ x;
         int degree = AlgebraicNumber::degree();
@@ -146,13 +147,12 @@ public:
         int degree = AlgebraicNumber::degree();
         MODULAR_INTEGER zero(0L);
         std::vector<MODULAR_INTEGER> tmp(degree);
-        static MODULAR_INTEGER x;
-        static MODULAR_INTEGER y;
+        MODULAR_INTEGER x;
+        MODULAR_INTEGER y;
         for (int k = 0; k < degree; k++)
         {
             int ij = 0;
             tmp[k] = zero;
-#if 1
             for (int i = 0; i < degree; ++i)
             {
                 ij = i * (degree + 1);
@@ -172,23 +172,6 @@ public:
                     tmp[k] += x;
                 }
             }
-#else
-            for (int i = 0; i < degree; i++)
-            {
-                for (int j = 0; j < degree; j++)
-                {
-#if 0
-                    x = Fp_basis_[i];
-                    x *= b.Fp_basis_[j];
-                    x *= M_(k, ij);
-                    tmp[k] += x;
-#else
-                    tmp[k].add_product(Fp_basis_[i], b.Fp_basis_[j], M_(k, ij));
-#endif
-                    ++ij; // ij = i * degree + j
-                }
-            }
-#endif
         }
 
         for (int k = 0; k < degree; k++)
@@ -228,7 +211,7 @@ public:
         }
         return *this;
     }
-    AlgebraicNumber_in_O_pO_ operator/(const AlgebraicNumber_in_O_pO_& b)
+    AlgebraicNumber_in_O_pO_ operator/(const AlgebraicNumber_in_O_pO_& b) const
     {
         int d = AlgebraicNumber::degree();
         AlgebraicNumber_in_O_pO_ x;
@@ -261,16 +244,16 @@ public:
 
         return x;
     }
-    int operator==(const AlgebraicNumber_in_O_pO_& a) const
+    bool operator==(const AlgebraicNumber_in_O_pO_& a) const
     {
-        if (this == &a) return 1;
+        if (this == &a) return true;
         for (int i = 0; i < AlgebraicNumber::degree(); i++)
         {
-            if (Fp_basis_[i] != a.Fp_basis_[i]) return 0;
+            if (Fp_basis_[i] != a.Fp_basis_[i]) return false;
         }
-        return 1;
+        return true;
     }
-    int operator!=(const AlgebraicNumber_in_O_pO_& a) const
+    bool operator!=(const AlgebraicNumber_in_O_pO_& a) const
     {
         return !(*this == a);
     }
@@ -368,13 +351,13 @@ public:
     {
         int d = AlgebraicNumber::degree();
         const MODULAR_INTEGER zero(0L);
-        int first = 1;
+        bool first = true;
         for (int i = 0; i < d; i++)
         {
             MODULAR_INTEGER value = a.Fp_basis_[i];
             if (value != zero)
             {
-                if (first) first = 0;
+                if (first) first = false;
                 else os << " + ";
                 os << value;
                 os << " omega_" << i + 1;
@@ -390,7 +373,7 @@ public:
         {
             std::ostringstream oss;
             oss << "index (" << i << ") out of range, must be in [0," << d - 1 << "]";
-            throw std::string(oss.str());
+            throw std::runtime_error(oss.str());
         }
         return Fp_basis_[i];
     }

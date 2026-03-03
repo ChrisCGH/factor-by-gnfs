@@ -88,7 +88,7 @@ endif
 	set -e; gcc -MM $(CPPFLAGS) $< \
        | sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; [ -s $@ ] || rm -f $@
 
-ALL_TESTS = AlgebraicNumberUnitTest BitOperationsUnitTest LongModularUnitTest VeryLongUnitTest VeryLongModularUnitTest MatrixUnitTest PolynomialUnitTest CombinationsUnitTest HashTableUnitTest QuotientUnitTest PolynomialOptimizerUnitTest LatticeSieverUnitTest MemoryMappedFileUnitTest SparseMatrixUnitTest RelationManagerUnitTest
+ALL_TESTS = AlgebraicNumberUnitTest BitOperationsUnitTest LongModularUnitTest VeryLongUnitTest VeryLongModularUnitTest MatrixUnitTest PolynomialUnitTest CombinationsUnitTest HashTableUnitTest QuotientUnitTest PolynomialOptimizerUnitTest LatticeSieverUnitTest MemoryMappedFileUnitTest SparseMatrixUnitTest RelationManagerUnitTest BlockLanczosUnitTest
 ALL_PROGRAMS : skewed lsieve bl calcroot sieve filter buildMatrix processDependenciespl postProcessing DenseRowTest stest testan gen testhnf inv testmmf convert testfactor processDependencies 
 
 all : $(OUTPUTDIR) $(ALL_PROGRAMS) $(ALL_TESTS)
@@ -109,12 +109,13 @@ test : $(ALL_TESTS)
 	$(OUTPUTDIR)/LatticeSieverUnitTest
 	$(OUTPUTDIR)/MemoryMappedFileUnitTest
 	$(OUTPUTDIR)/RelationManagerUnitTest
+	$(OUTPUTDIR)/BlockLanczosUnitTest
 
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
 
 ALL_HEADERS = Combinations.h Config.h ContinuedFraction.h ExceptionalPrimes.h FactorBase.h Ideal.h LatticeSiever.h LongModular.h MPFloat.h Matrix.h NumberField.h AlgebraicNumber.h AlgebraicNumber_in_O_pO.h Polynomial.h QuadraticCharacters.h Quotient.h RootConfig.h SieveConfig.h VeryLong.h VeryLongModular.h SparseMatrix.h crt.h dickman.h blockLanczos.h lip.h lippar.h lll.h mod.h mt19937int.h pow.h pselect.h root.h timings.h Siever.h squfof.h PointerHashTable.h graph.h RelationManager.h discriminant.h gcd.h convert.h qs.h PolynomialOptimizer.h SieveUtils.h pollard_rho.h
-ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp RelationManagerUnitTest.cpp Logger.cpp pollard_rho.cpp
+ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp RelationManagerUnitTest.cpp BlockLanczosUnitTest.cpp Logger.cpp pollard_rho.cpp
 
 ALL_CS = lip.c mt19937int.c 
 ALL_SRCS = $(ALL_CPPS) $(ALL_CS) $(ALL_HEADERS)
@@ -498,6 +499,21 @@ $(OUTPUTDIR)/bl : $(BL_OBJS)
 
 cleanbl:
 	rm -rf $(OUTPUTDIR)/bl $(BL_OBJS)
+
+BL_UT_CPP_SRCS = BlockLanczosUnitTest.cpp SparseMatrix.cpp blockLanczos.cpp timings.cpp Logger.cpp
+
+BL_UT_OBJS = $(BL_UT_CPP_SRCS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
+
+include $(BL_UT_CPP_SRCS:.cpp=.d)
+
+BlockLanczosUnitTest : $(OUTPUTDIR) $(OUTPUTDIR)/BlockLanczosUnitTest
+	
+
+$(OUTPUTDIR)/BlockLanczosUnitTest : $(BL_UT_OBJS)
+	$(CC) $(CCFLAGS) $(OUTPUTOPTION)$(OUTPUTDIR)/BlockLanczosUnitTest $(BL_UT_OBJS) $(TEST_LIBS)
+
+cleanblut:
+	rm -rf $(OUTPUTDIR)/BlockLanczosUnitTest $(BL_UT_OBJS)
 
 CALCROOT_CPP_SRCS = calcroot.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp NumberField.cpp Ideal.cpp FactorBase.cpp LongModular.cpp VeryLong.cpp VeryLongModular.cpp Polynomial.cpp discriminant.cpp lll.cpp root.cpp timings.cpp squfof.cpp qs.cpp SparseMatrix.cpp pollard_rho.cpp Logger.cpp
 
