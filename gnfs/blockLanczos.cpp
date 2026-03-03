@@ -1,18 +1,28 @@
 #include "blockLanczos.h"
 #include <iostream>
+#include <ctime>
+#include <stdexcept>
 #include "MemoryMappedFile.h"
-#include <time.h>
 namespace
 {
-char* time_str()
+std::string time_str()
 {
-    time_t the_time = time(0);
-    static char the_time_str[132];
-    strftime(the_time_str, 132, "%Y%m%d%H%M%S", localtime(&the_time));
-    return the_time_str;
+    time_t the_time = time(nullptr);
+    char buf[132];
+    struct tm tm_buf;
+    struct tm* tm_info = localtime_r(&the_time, &tm_buf);
+    if (tm_info)
+    {
+        strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", tm_info);
+    }
+    else
+    {
+        std::snprintf(buf, sizeof(buf), "unknown_time");
+    }
+    return buf;
 }
 
-void die(const std::string& msg)
+[[noreturn]] void die(const std::string& msg)
 {
     std::cerr << msg << std::endl;
     std::exit(1);
@@ -24,21 +34,21 @@ BlockLanczos::BlockLanczos(const std::string& matrix_file, const std::string& ch
     std::cerr << "Starting ..." << std::endl;
     readMatrix(matrix_file);
 
-    if (checkpoint_file == "")
+    if (checkpoint_file.empty())
     {
-        V0_ = new BITMATRIX(n_, N_);
-        X_ = new BITMATRIX(n_, N_);
-        Vim2_ = new BITMATRIX(n_, N_);
-        Vim1_ = new BITMATRIX(n_, N_);
-        Vi_ = new BITMATRIX(n_, N_);
-        Sim1_ = new BITMATRIX(N_);
-        Winvim2_ = new BITMATRIX(N_, N_);
-        Winvim1_ = new BITMATRIX(N_, N_);
-        VAVim1_ = new BITMATRIX(N_, N_);
-        VA2Vim1_ = new BITMATRIX(N_, N_);
+        V0_ = std::make_unique<BITMATRIX>(n_, N_);
+        X_ = std::make_unique<BITMATRIX>(n_, N_);
+        Vim2_ = std::make_unique<BITMATRIX>(n_, N_);
+        Vim1_ = std::make_unique<BITMATRIX>(n_, N_);
+        Vi_ = std::make_unique<BITMATRIX>(n_, N_);
+        Sim1_ = std::make_unique<BITMATRIX>(N_);
+        Winvim2_ = std::make_unique<BITMATRIX>(N_, N_);
+        Winvim1_ = std::make_unique<BITMATRIX>(N_, N_);
+        VAVim1_ = std::make_unique<BITMATRIX>(N_, N_);
+        VA2Vim1_ = std::make_unique<BITMATRIX>(N_, N_);
 
         // choose a random n x N matrix
-        Y_ = new BITMATRIX(n_, N_);
+        Y_ = std::make_unique<BITMATRIX>(n_, N_);
         randomise(*Y_);
         sym_multiply(*B_, *Y_, *Vi_);
         *V0_ = *Vi_;
@@ -58,24 +68,12 @@ BlockLanczos::BlockLanczos(const std::string& matrix_file, const std::string& ch
 
 BlockLanczos::~BlockLanczos()
 {
-    delete B_;
-    delete V0_;
-    delete X_;
-    delete Vim2_;
-    delete Vim1_;
-    delete Vi_;
-    delete Sim1_;
-    delete Winvim2_;
-    delete Winvim1_;
-    delete VAVim1_;
-    delete VA2Vim1_;
-    delete Y_;
 }
 
 void BlockLanczos::readMatrix(const std::string& matrix_file)
 {
     std::cerr << "reading sparse matrix ..." << std::endl;
-    B_ = new SPARSEMATRIX(matrix_file, split_);
+    B_ = std::make_unique<SPARSEMATRIX>(matrix_file, split_);
     std::cerr << "rows = " << static_cast<unsigned int>(B_->rows()) << std::endl;
     std::cerr << "cols = " << static_cast<unsigned int>(B_->cols()) << std::endl;
     n_ = B_->cols();
@@ -112,14 +110,14 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
     BITMATRIX& Y = *Y_;
     BITMATRIX& X = *X_;
 
-    int done = 0;
+    bool done = false;
     while (!done)
     {
         std::cerr << "blockLanczos: iteration <" << iteration_ << ">" << std::endl;
         BITMATRIX AV;
         sym_multiply(B, Vi, AV); // B^t B Vi
         innerProduct(Vi, AV, VAVi);   // Vi^t B^t B Vi
-        if (VAVi.isZero()) done = 1;
+        if (VAVi.isZero()) done = true;
         else
         {
             BITMATRIX tmp;
@@ -374,27 +372,10 @@ void BlockLanczos::checkpoint()
 {
     if (iteration_ % checkpoint_interval_ != 0L) return;
     std::string checkpoint_file("blcp_");
-    char* t = time_str();
+    std::string t = time_str();
     checkpoint_file += t;
     checkpoint_file += ".dat";
     std::cerr << "writing checkpoint " << checkpoint_file << " ..." << std::endl;
-    /*
-    // Static data that remains unchanged in loop :
-       BITMATRIX* V0_;
-       BITMATRIX* Y_;
-    // Data that is updated inside loop :
-       BITMATRIX* X_;
-    // Data that is updated at end of loop :
-       BITMATRIX* Vim2_;
-       BITMATRIX* Vim1_;
-       BITMATRIX* Vi_;
-       BITMATRIX* Sim1_;
-       BITMATRIX* Winvim2_;
-       BITMATRIX* Winvim1_;
-       BITMATRIX* VAVim1_;
-       BITMATRIX* VA2Vim1_;
-       int iteration_;
-    */
     std::fstream cp(checkpoint_file.c_str(), std::ios::out);
     cp << t << " : Block Lanczos checkpoint file" << std::endl;
     cp << "iteration " << iteration_ << std::endl;
@@ -426,7 +407,6 @@ void BlockLanczos::checkpoint()
 void BlockLanczos::readCheckpoint(const std::string& checkpoint_file)
 {
     std::cerr << "reading checkpoint " << checkpoint_file << " ..." << std::endl;
-    //std::fstream cp(checkpoint_file.c_str(), std::ios::in);
     MemoryMappedFile cp(checkpoint_file.c_str());
     std::string str;
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
@@ -439,67 +419,70 @@ void BlockLanczos::readCheckpoint(const std::string& checkpoint_file)
     // should be
     // 01234567890
     // iteration nnnnnn
-    if (strncmp(str.c_str(), "iteration ", 10) != 0) die("corrupted checkpoint file - iteration");
-    if (!isdigit(*(str.c_str() + 10))) die("corrupted checkpoint file - iteration count");
-    iteration_ = std::atol(str.c_str() + 10);
+    const std::string iteration_prefix = "iteration ";
+    if (str.compare(0, iteration_prefix.size(), iteration_prefix) != 0) die("corrupted checkpoint file - iteration");
+    const bool has_digit = str.size() > iteration_prefix.size() &&
+                           std::isdigit(static_cast<unsigned char>(str[iteration_prefix.size()]));
+    if (!has_digit) die("corrupted checkpoint file - iteration count");
+    iteration_ = std::stol(str.substr(iteration_prefix.size()));
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "V0") != 0) die("corrupted checkpoint file - V0");
-    V0_ = new BITMATRIX;
+    if (str != "V0") die("corrupted checkpoint file - V0");
+    V0_ = std::make_unique<BITMATRIX>();
     V0_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Y") != 0) die("corrupted checkpoint file - Y");
-    Y_ = new BITMATRIX;
+    if (str != "Y") die("corrupted checkpoint file - Y");
+    Y_ = std::make_unique<BITMATRIX>();
     Y_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "X") != 0) die("corrupted checkpoint file - X");
-    X_ = new BITMATRIX;
+    if (str != "X") die("corrupted checkpoint file - X");
+    X_ = std::make_unique<BITMATRIX>();
     X_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Vim2") != 0) die("corrupted checkpoint file - Vim2");
-    Vim2_ = new BITMATRIX;
+    if (str != "Vim2") die("corrupted checkpoint file - Vim2");
+    Vim2_ = std::make_unique<BITMATRIX>();
     Vim2_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Vim1") != 0) die("corrupted checkpoint file - Vim1");
-    Vim1_ = new BITMATRIX;
+    if (str != "Vim1") die("corrupted checkpoint file - Vim1");
+    Vim1_ = std::make_unique<BITMATRIX>();
     Vim1_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Vi") != 0) die("corrupted checkpoint file - Vi");
-    Vi_ = new BITMATRIX;
+    if (str != "Vi") die("corrupted checkpoint file - Vi");
+    Vi_ = std::make_unique<BITMATRIX>();
     Vi_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Sim1") != 0) die("corrupted checkpoint file - Sim1");
-    Sim1_ = new BITMATRIX;
+    if (str != "Sim1") die("corrupted checkpoint file - Sim1");
+    Sim1_ = std::make_unique<BITMATRIX>();
     Sim1_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Winvim2") != 0) die("corrupted checkpoint file - Winvim2");
-    Winvim2_ = new BITMATRIX;
+    if (str != "Winvim2") die("corrupted checkpoint file - Winvim2");
+    Winvim2_ = std::make_unique<BITMATRIX>();
     Winvim2_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "Winvim1") != 0) die("corrupted checkpoint file - Winvim1");
-    Winvim1_ = new BITMATRIX;
+    if (str != "Winvim1") die("corrupted checkpoint file - Winvim1");
+    Winvim1_ = std::make_unique<BITMATRIX>();
     Winvim1_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "VAVim1") != 0) die("corrupted checkpoint file - VAVim1");
-    VAVim1_ = new BITMATRIX;
+    if (str != "VAVim1") die("corrupted checkpoint file - VAVim1");
+    VAVim1_ = std::make_unique<BITMATRIX>();
     VAVim1_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "VA2Vim1") != 0) die("corrupted checkpoint file - VA2Vim1");
-    VA2Vim1_ = new BITMATRIX;
+    if (str != "VA2Vim1") die("corrupted checkpoint file - VA2Vim1");
+    VA2Vim1_ = std::make_unique<BITMATRIX>();
     VA2Vim1_->read(cp);
 
     if (!getline(cp, str)) die("unexpected end of checkpoint file");
-    if (strcmp(str.c_str(), "End of Block Lanczos checkpoint file") != 0) die("corrupted checkpoint file trailer");
+    if (str != "End of Block Lanczos checkpoint file") die("corrupted checkpoint file trailer");
 }
 
 bool BlockLanczos::check_A_invertible(const BITMATRIX& Si, const BITMATRIX& VAVi) const

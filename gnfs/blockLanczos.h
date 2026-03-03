@@ -1,11 +1,10 @@
 #ifndef BLOCK_LANCZOS_H
 #define BLOCK_LANCZOS_H
+#include <memory>
 #include "SparseMatrix.h"
 
 typedef BitMatrix64 BITMATRIX;
 typedef BitOperations64 BITOPERATIONS;
-//typedef BitMatrix BITMATRIX;
-//typedef BitOperations BITOPERATIONS;
 typedef SparseMatrix3 SPARSEMATRIX;
 // class to encapsulate the block Lanczos algorithm,
 // and add extra features like checkpointing
@@ -30,20 +29,20 @@ private:
     bool split_;
     size_t n_;
     int N_;
-    SPARSEMATRIX* B_;
-    BITMATRIX* V0_;
-    BITMATRIX* Y_;
+    std::unique_ptr<SPARSEMATRIX> B_;
+    std::unique_ptr<BITMATRIX> V0_;
+    std::unique_ptr<BITMATRIX> Y_;
 // Data that is updated inside loop :
-    BITMATRIX* X_;
+    std::unique_ptr<BITMATRIX> X_;
 // Data that is updated at end of loop :
-    BITMATRIX* Vim2_;
-    BITMATRIX* Vim1_;
-    BITMATRIX* Vi_;
-    BITMATRIX* Sim1_;
-    BITMATRIX* Winvim2_;
-    BITMATRIX* Winvim1_;
-    BITMATRIX* VAVim1_;
-    BITMATRIX* VA2Vim1_;
+    std::unique_ptr<BITMATRIX> Vim2_;
+    std::unique_ptr<BITMATRIX> Vim1_;
+    std::unique_ptr<BITMATRIX> Vi_;
+    std::unique_ptr<BITMATRIX> Sim1_;
+    std::unique_ptr<BITMATRIX> Winvim2_;
+    std::unique_ptr<BITMATRIX> Winvim1_;
+    std::unique_ptr<BITMATRIX> VAVim1_;
+    std::unique_ptr<BITMATRIX> VA2Vim1_;
     int iteration_;
 };
 #endif
