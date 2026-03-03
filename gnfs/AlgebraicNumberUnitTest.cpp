@@ -75,7 +75,7 @@ public:
     void testNumberFieldThrow()
     {
         Polynomial<VeryLong> f11 = Polynomial<VeryLong>::read_polynomial("X^11 - 1");
-        CPPUNIT_ASSERT_THROW_MESSAGE("", NumberField nf11(f11, "nf11.fb.dat"), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", NumberField nf11(f11, "nf11.fb.dat"), std::runtime_error);
     }
 
     void testNumberField()
@@ -98,8 +98,8 @@ public:
         CPPUNIT_ASSERT_DOUBLES_EQUAL(nf.conjugate(3).imag(), 0.0, std::numeric_limits<float>::epsilon());
         CPPUNIT_ASSERT_DOUBLES_EQUAL(nf.conjugate(4).imag(), 0.0, std::numeric_limits<float>::epsilon());
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", nf.conjugate(-1), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", nf.conjugate(6), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", nf.conjugate(-1), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", nf.conjugate(6), std::runtime_error);
 
         CPPUNIT_ASSERT(nf.degree() == 5);
         CPPUNIT_ASSERT(nf.c_d() == VeryLong("2691780"));
@@ -621,10 +621,10 @@ public:
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.ln_sigma(4), 58.0247348162748, std::numeric_limits<float>::epsilon());
         CPPUNIT_ASSERT(re_sign == 1);
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(-1, ln_re, re_sign, ln_im, im_sign), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(-1), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(5, ln_re, re_sign, ln_im, im_sign), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(6), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(-1, ln_re, re_sign, ln_im, im_sign), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(-1), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(5, ln_re, re_sign, ln_im, im_sign), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(6), std::runtime_error);
 
         // 4.84888083570085e+53
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.mod_sigma_2(0), 4.84888083570085e+53, 1e39);
@@ -636,8 +636,8 @@ public:
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.mod_sigma_2(3), 2.63289735301011e+52, 1e38);
         // 2.50982990232009e+50
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.mod_sigma_2(4), 2.50982990232009e+50, 1e36);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.mod_sigma_2(-1), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.mod_sigma_2(7), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.mod_sigma_2(-1), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.mod_sigma_2(7), std::runtime_error);
 
     }
 
