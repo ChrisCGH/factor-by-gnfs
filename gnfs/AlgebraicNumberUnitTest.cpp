@@ -64,12 +64,12 @@ public:
 
     void testExceptions()
     {
-        CPPUNIT_ASSERT_THROW_MESSAGE("", const VeryLong c_d = AlgebraicNumber::c_d(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", const VeryLong index = AlgebraicNumber::index(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber::degree(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber::nf(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber().make_ibc(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber(), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", const VeryLong c_d = AlgebraicNumber::c_d(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", const VeryLong index = AlgebraicNumber::index(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber::degree(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber::nf(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber().make_ibc(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber(), std::runtime_error);
     }
 
     void testNumberFieldThrow()
@@ -580,8 +580,8 @@ public:
         CPPUNIT_ASSERT(an41.coefficient(3) == Quotient<VeryLong>("1249913278668"));
         CPPUNIT_ASSERT(an41.coefficient(4) == Quotient<VeryLong>("2691780"));
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.coefficient(6), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.coefficient(-1), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.coefficient(6), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.coefficient(-1), std::runtime_error);
 
         an41.set_coefficient(0, Quotient<VeryLong>("623872110646578368801362411"));
         std::string s41("623872110646578368801362411 - 8591401659640532521423 alpha - 222405543007291322 alpha^2 + 1249913278668 alpha^3 + 2691780 alpha^4");
@@ -589,7 +589,7 @@ public:
         oss2 << an41;
         CPPUNIT_ASSERT(s41 == oss2.str());
 
-        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.set_coefficient(6, Quotient<VeryLong>("1")), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", an41.set_coefficient(6, Quotient<VeryLong>("1")), std::runtime_error);
 
         long double ln_re;
         long int re_sign;
@@ -1178,13 +1178,13 @@ public:
         AlgebraicNumber::clearNumberField();
         Matrix<VeryLong> mvl;
         std::vector<AlgebraicNumber> van;
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), VeryLong(2L)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), AlgebraicNumber(2L)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(AlgebraicNumber(2L)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(mvl)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(van)), std::string);
-        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(mvl, VeryLong(1L)), std::string);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), VeryLong(2L)), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(VeryLong(1L), AlgebraicNumber(2L)), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(AlgebraicNumber(2L)), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(mvl)), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", (Ideal(van)), std::runtime_error);
+        CPPUNIT_ASSERT_THROW_MESSAGE("", Ideal(mvl, VeryLong(1L)), std::runtime_error);
 
         NumberField nf(f, "nf.fb.dat");
         AlgebraicNumber::setNumberField(nf);
