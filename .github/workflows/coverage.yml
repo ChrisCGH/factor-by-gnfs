@@ -37,3 +37,4 @@ jobs:
           gnfs/coverage.*.html
           gnfs/coverage.xml
           gnfs/coverage.css
+          gnfs/coverage.txt

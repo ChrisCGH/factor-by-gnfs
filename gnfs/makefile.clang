@@ -120,8 +120,9 @@ coverage :
 		--filter '.*\.h$$' \
 		--print-summary \
 		--html-details coverage.html \
-		--xml coverage.xml
-	@echo "Coverage report written to coverage.html and coverage.xml"
+		--xml coverage.xml \
+		--txt coverage.txt
+	@echo "Coverage report written to coverage.html, coverage.xml and coverage.txt"
 
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
@@ -709,5 +710,5 @@ cleanstest:
 	rm -rf $(OUTPUTDIR)/stest $(STEST_OBJS)
 
 clean:
-	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css
+	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt
 
