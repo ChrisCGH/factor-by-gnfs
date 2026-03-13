@@ -24,3 +24,9 @@ gnfs/*.d
 *.tim
 ut_skewed.cfg
 gnfs/nf.fb.dat
+gnfs/*.gcno
+gnfs/*.gcda
+gnfs/coverage.html
+gnfs/coverage.*.html
+gnfs/coverage.xml
+gnfs/coverage.css

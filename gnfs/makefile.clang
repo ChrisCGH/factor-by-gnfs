@@ -111,6 +111,12 @@ test : $(ALL_TESTS)
 	$(OUTPUTDIR)/RelationManagerUnitTest
 	$(OUTPUTDIR)/BlockLanczosUnitTest
 
+coverage :
+	$(MAKE) -f makefile.clang clean
+	$(MAKE) -f makefile.clang RUN_GCOV=yes test
+	gcovr --gcov-executable "llvm-cov gcov" --root . --filter '.*\.cpp$$' --filter '.*\.h$$' --print-summary --html-details coverage.html --xml coverage.xml
+	@echo "Coverage report written to coverage.html and coverage.xml"
+
 $(OUTPUTDIR) :
 	mkdir $(OUTPUTDIR)
 
@@ -697,5 +703,5 @@ cleanstest:
 	rm -rf $(OUTPUTDIR)/stest $(STEST_OBJS)
 
 clean:
-	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d
+	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css
 
