@@ -114,7 +114,13 @@ test : $(ALL_TESTS)
 coverage :
 	$(MAKE) -f makefile.clang clean
 	$(MAKE) -f makefile.clang RUN_GCOV=yes test
-	gcovr --gcov-executable "llvm-cov gcov" --root . --filter '.*\.cpp$$' --filter '.*\.h$$' --print-summary --html-details coverage.html --xml coverage.xml
+	gcovr --gcov-executable "llvm-cov gcov" \
+		--root . \
+		--filter '.*\.cpp$$' \
+		--filter '.*\.h$$' \
+		--print-summary \
+		--html-details coverage.html \
+		--xml coverage.xml
 	@echo "Coverage report written to coverage.html and coverage.xml"
 
 $(OUTPUTDIR) :
