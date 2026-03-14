@@ -1,0 +1,40 @@
+name: "Code Coverage"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang libcppunit-dev libgmp-dev uuid-dev gcovr
+
+    - name: Build with coverage and run tests
+      working-directory: gnfs
+      run: make -f makefile.clang coverage
+
+    - name: Upload coverage report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          gnfs/coverage.html
+          gnfs/coverage.*.html
+          gnfs/coverage.xml
+          gnfs/coverage.css
+          gnfs/coverage.txt
