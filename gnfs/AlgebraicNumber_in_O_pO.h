@@ -229,14 +229,15 @@ public:
         const MODULAR_INTEGER b1 = MODULAR_INTEGER(-b) * w11_;
         // Compute tmp[k] = sum_i Fp_basis_[i] * (b0 * M_(k, i*d+0) + b1 * M_(k, i*d+1))
         int degree = AlgebraicNumber::degree();
-        MODULAR_INTEGER tmp[MAX_DEGREE];
+        const MODULAR_INTEGER zero(0L);
+        std::vector<MODULAR_INTEGER> tmp(degree, zero);
         for (int k = 0; k < degree; k++)
         {
-            tmp[k] = MODULAR_INTEGER(0L);
             for (int i = 0; i < degree; i++)
             {
-                tmp[k].add_product(Fp_basis_[i], b0, M_(k, i * degree));
-                tmp[k].add_product(Fp_basis_[i], b1, M_(k, i * degree + 1));
+                const int base_idx = i * degree;
+                tmp[k].add_product(Fp_basis_[i], b0, M_(k, base_idx));
+                tmp[k].add_product(Fp_basis_[i], b1, M_(k, base_idx + 1));
             }
         }
         for (int k = 0; k < degree; k++)
