@@ -232,6 +232,7 @@ public:
         MODULAR_INTEGER tmp[MAX_DEGREE];
         for (int k = 0; k < degree; k++)
         {
+            tmp[k] = MODULAR_INTEGER(0L);
             for (int i = 0; i < degree; i++)
             {
                 tmp[k].add_product(Fp_basis_[i], b0, M_(k, i * degree));

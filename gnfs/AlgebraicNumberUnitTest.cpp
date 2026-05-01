@@ -1192,10 +1192,7 @@ public:
             AlgebraicNumber_in_O_pO_1 original(an_a);
             AlgebraicNumber_in_O_pO_1 result(an_a);
             result.multiply_by_ab(1LL, 0L);
-            AlgebraicNumber_in_O_pO_1 factor(1LL, 0L);
-            AlgebraicNumber_in_O_pO_1 expected(an_a);
-            expected *= factor;
-            CPPUNIT_ASSERT(result == expected);
+            CPPUNIT_ASSERT(result == original);
         }
         {
             // accumulate several multiply_by_ab calls and compare to *= chain
