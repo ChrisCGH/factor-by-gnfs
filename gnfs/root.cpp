@@ -1006,7 +1006,7 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
             if (sigma_val.real() < 0) re_sign = -1L;
             long double ln_im = log(fabs(sigma_val.imag()));
             long int im_sign = 1L;
-            if (sigma_val.real() < 0) im_sign = -1L;
+            if (sigma_val.imag() < 0) im_sign = -1L;
 
             if (alpha_j.imag() != (long double)0.0)
             {
