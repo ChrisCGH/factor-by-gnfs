@@ -971,28 +971,44 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
 
     // remaining rows are of form lambda[row + degree] * v(alpha[row])
     // but if some alpha are complex (not pure real) then we must replace v() by sqrt(2)Re(v) or sqrt(2)Im(v)
+
+    // Precompute V as long double: V_ld[col][i] = float(V(i,col)), converting each
+    // Quotient<VeryLong> coefficient once per column rather than once per (col, row) pair.
+    std::vector<std::vector<long double>> V_ld(degree, std::vector<long double>(degree));
+    for (int col = 0; col < degree; col++)
+    {
+        for (int i = 0; i < degree; i++)
+        {
+            VeryLong n = V(i, col).numerator();
+            VeryLong d = V(i, col).denominator();
+            long double s = 1.0L;
+            if (n < 0L) { s = -1.0L; n = -n; }
+            V_ld[col][i] = s * (n / d).get_long_double();
+        }
+    }
+
     for (int col = 0; col < degree; col++)
     {
         int row = 0;
         while (row < degree)
         {
-
-            // calculate v[col](alpha(row))
-            std::vector<Quotient<VeryLong> > co;
-            co.resize(degree);
+            // evaluate v[col] at the row-th conjugate using preconverted long double coefficients
+            complex<long double> alpha_j = nf->conjugate(row);
+            complex<long double> sigma_val = (long double)0.0;
+            complex<long double> alpha_power = (long double)1.0;
             for (int i = 0; i < degree; i++)
             {
-                co[i] = V(i,col);
+                sigma_val += V_ld[col][i] * alpha_power;
+                alpha_power *= alpha_j;
             }
-            AlgebraicNumber an(co);
-            long double ln_re;
-            long int re_sign;
-            long double ln_im;
-            long int im_sign;
-            an.ln_sigma(row, ln_re, re_sign, ln_im, im_sign);
-            complex<long double> alp = nf->conjugate(row);
-// cout << row << "th conjugate is " << alp << endl;
-            if (alp.imag() != (long double)0.0)
+            long double ln_re = log(fabs(sigma_val.real()));
+            long int re_sign = 1L;
+            if (sigma_val.real() < 0) re_sign = -1L;
+            long double ln_im = log(fabs(sigma_val.imag()));
+            long int im_sign = 1L;
+            if (sigma_val.real() < 0) im_sign = -1L;
+
+            if (alpha_j.imag() != (long double)0.0)
             {
                 const long double ln_sqrt2 = log((long double)sqrt(2.0));
                 long double tmp = ln_sqrt2 + ln_re + ln_lambda[row];
@@ -1500,20 +1516,24 @@ void approximateSquareRoot(const RelationList& relationNumer,
     }
     for (auto& rel: relationNumer)
     {
-        VeryLong a = rel->a;
-        VeryLong b = rel->b;
+        const VeryLong a(rel->a);
+        const VeryLong b(rel->b);
+        std::vector<long double> sigma_rel;
+        nf->ln_sigma_all(a, b, sigma_rel);
         for (int j = 0; j < degree; j++)
         {
-            sigma[j] += nf->ln_sigma(j, a, b);
+            sigma[j] += sigma_rel[j];
         }
     }
     for (auto& rel: relationDenom)
     {
-        VeryLong a = rel->a;
-        VeryLong b = rel->b;
+        const VeryLong a(rel->a);
+        const VeryLong b(rel->b);
+        std::vector<long double> sigma_rel;
+        nf->ln_sigma_all(a, b, sigma_rel);
         for (int j = 0; j < degree; j++)
         {
-            sigma[j] -= nf->ln_sigma(j, a, b);
+            sigma[j] -= sigma_rel[j];
         }
     }
     long double ln_norm = 0.0;
@@ -1618,9 +1638,13 @@ void approximateSquareRoot(const RelationList& relationNumer,
         }
 
         // update sigma
-        for (int j = 0; j < degree; j++)
         {
-            sigma[j] -= 2.0 * s_l * delta_l.ln_sigma(j);
+            std::vector<long double> delta_ln_sigma;
+            delta_l.ln_sigma_all(delta_ln_sigma);
+            for (int j = 0; j < degree; j++)
+            {
+                sigma[j] -= 2.0 * s_l * delta_ln_sigma[j];
+            }
         }
 
         ln_norm = 0.0;

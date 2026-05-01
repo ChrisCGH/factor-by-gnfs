@@ -626,6 +626,27 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(5, ln_re, re_sign, ln_im, im_sign), std::runtime_error);
         CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(6), std::runtime_error);
 
+        // ln_sigma_all should return the same values as calling ln_sigma(j) for each j
+        std::vector<long double> all_sigma;
+        an41.ln_sigma_all(all_sigma);
+        CPPUNIT_ASSERT(all_sigma.size() == 5);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[0], an41.ln_sigma(0), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[1], an41.ln_sigma(1), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[2], an41.ln_sigma(2), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[3], an41.ln_sigma(3), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[4], an41.ln_sigma(4), std::numeric_limits<float>::epsilon());
+
+        // NumberField::ln_sigma_all should return the same values as calling ln_sigma(j, a, b)
+        VeryLong a_test(123456LL);
+        VeryLong b_test(789LL);
+        std::vector<long double> nf_sigma;
+        nf.ln_sigma_all(a_test, b_test, nf_sigma);
+        CPPUNIT_ASSERT(nf_sigma.size() == 5);
+        for (int j = 0; j < 5; j++)
+        {
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(nf_sigma[j], nf.ln_sigma(j, a_test, b_test), std::numeric_limits<float>::epsilon());
+        }
+
         // 4.84888083570085e+53
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.mod_sigma_2(0), 4.84888083570085e+53, 1e39);
         // 3.53913525374421e+52

@@ -193,6 +193,7 @@ public:
     void ln_sigma(int j, long double& ln_re, long int& re_sign,
                   long double& ln_im, long int& im_sign) const;
     long double ln_sigma(int j) const;
+    void ln_sigma_all(std::vector<long double>& out) const;
     long double mod_sigma_2(int j) const;
 
     Polynomial<VeryLong> minimalPolynomial() const;

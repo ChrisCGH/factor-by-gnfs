@@ -701,6 +701,108 @@ long double AlgebraicNumber::ln_sigma(int j) const
     }
 }
 
+void AlgebraicNumber::ln_sigma_all(std::vector<long double>& out) const
+{
+    if (!numberField_)
+    {
+        throw std::runtime_error("AlgebraicNumber::ln_sigma_all() : numberField_ not set");
+    }
+    const NumberField& nf = *AlgebraicNumber::numberField_;
+    const int deg = nf.degree();
+
+    // Convert all coefficients to long double once
+    std::vector<long double> coeffs_ld;
+    coeffs_ld.reserve(c_.size());
+    VeryLong max_coeff(0L);
+    for (auto& cc: c_)
+    {
+        VeryLong n = cc.numerator();
+        VeryLong d = cc.denominator();
+        long double sign = 1.0;
+        if (n < 0L)
+        {
+            sign = -1.0;
+            n = -n;
+        }
+        VeryLong coeff = n / d;
+        if (coeff > max_coeff) max_coeff = coeff;
+        coeffs_ld.push_back(sign * coeff.get_long_double());
+    }
+
+    out.resize(deg);
+    bool need_scaling = false;
+
+    // Evaluate polynomial at all conjugates using the preconverted coefficients
+    for (int j = 0; j < deg && !need_scaling; j++)
+    {
+        complex<long double> alpha_j = nf.conjugate(j);
+        complex<long double> sigma_val = (long double)0.0;
+        complex<long double> alpha_power = (long double)1.0;
+        for (auto c_ld : coeffs_ld)
+        {
+            sigma_val += c_ld * alpha_power;
+            if (isnan(sigma_val.real()) || isnan(sigma_val.imag()) ||
+                isinf(sigma_val.real()) || isinf(sigma_val.imag()))
+            {
+                need_scaling = true;
+                break;
+            }
+            alpha_power *= alpha_j;
+        }
+        if (!need_scaling)
+        {
+            long double mod2 = std::norm(sigma_val);
+            if (isinf(mod2) || isnan(mod2))
+            {
+                need_scaling = true;
+            }
+            else
+            {
+                out[j] = (long double)log((double)mod2) / 2.0;
+            }
+        }
+    }
+
+    if (need_scaling)
+    {
+        double lg_coeff = log10(max_coeff);
+        int power = (int)lg_coeff - 50;
+        const VeryLong ten(10L);
+        VeryLong scale = pow<VeryLong, int>(ten, power);
+        long double log_scale_ld = ln(scale);
+
+        coeffs_ld.clear();
+        for (auto& cc: c_)
+        {
+            VeryLong n = cc.numerator();
+            VeryLong d = cc.denominator();
+            long double sign = 1.0;
+            if (n < 0L)
+            {
+                sign = -1.0;
+                n = -n;
+            }
+            VeryLong coeff = n / d;
+            coeff /= scale;
+            coeffs_ld.push_back(sign * coeff.get_long_double());
+        }
+
+        for (int j = 0; j < deg; j++)
+        {
+            complex<long double> alpha_j = nf.conjugate(j);
+            complex<long double> sigma_val = (long double)0.0;
+            complex<long double> alpha_power = (long double)1.0;
+            for (auto c_ld : coeffs_ld)
+            {
+                sigma_val += c_ld * alpha_power;
+                alpha_power *= alpha_j;
+            }
+            long double mod2 = std::norm(sigma_val);
+            out[j] = (long double)log((double)mod2) / 2.0 + log_scale_ld;
+        }
+    }
+}
+
 long double AlgebraicNumber::mod_sigma_2(int j) const
 {
     if (!numberField_)

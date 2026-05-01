@@ -361,6 +361,43 @@ long double NumberField::ln_sigma(int j, const VeryLong& a, const VeryLong& b) c
     return answer;
 }
 
+void NumberField::ln_sigma_all(const VeryLong& a, const VeryLong& b, std::vector<long double>& sigma_out) const
+{
+    // Convert a and b to long double once, then evaluate at all conjugates
+    const long double OVERFLOW_LIMIT = 1e100;
+    long double aa = a.get_long_double();
+    long double bb = b.get_long_double();
+    long double delta = 1.0;
+    if (fabs(aa) > OVERFLOW_LIMIT || fabs(bb) > OVERFLOW_LIMIT)
+    {
+        delta = OVERFLOW_LIMIT;
+        aa /= OVERFLOW_LIMIT;
+        bb /= OVERFLOW_LIMIT;
+    }
+    const long double log_delta = (delta != 1.0L) ? (long double)log(delta) : 0.0L;
+    const int n = static_cast<int>(roots_.size());
+    sigma_out.resize(n);
+    for (int j = 0; j < n; j++)
+    {
+        complex<long double> alpha_j = conjugate(j);
+        complex<long double> x = complex<long double>(aa) - alpha_j * bb;
+        long double mod2 = std::norm(x);
+        if (mod2 > 0.0)
+        {
+            sigma_out[j] = (long double)log((double)mod2) / 2.0 + log_delta;
+        }
+        else
+        {
+            sigma_out[j] = 0.0;
+            complex<long double> r = complex<long double>(aa) - alpha_j * complex<long double>(bb);
+            std::cerr << "Warning! : a - b alpha_" << j << "  very close to zero :" << std::endl;
+            std::cerr << "(a,b) = (" << a << "," << b << ")" << std::endl;
+            std::cerr << "alpha_" << j << " = " << alpha_j << std::endl;
+            std::cerr << "a - b alpha_" << j << " = " << r << std::endl;
+        }
+    }
+}
+
 // Algorithm 6.1.8 (Zassenhaus's Round 2)
 void NumberField::Round2()
 {
