@@ -1087,7 +1087,6 @@ void processApproximation(const RelationList& relationNumer,
 
         for (auto& rel: relationNumer)
         {
-            AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
             if (i == 0)
             {
                 if (dumpfile) *dumpfile << rel->a << " " << rel->b << std::endl;
@@ -1103,7 +1102,7 @@ void processApproximation(const RelationList& relationNumer,
 #endif
             }
 
-            numerProduct *= a;
+            numerProduct.multiply_by_ab(rel->a, rel->b);
 #ifdef CHECKCALC
             if (i == 0)
             {
@@ -1127,7 +1126,6 @@ void processApproximation(const RelationList& relationNumer,
 
         for (auto& rel: relationDenom)
         {
-            AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
             if (i == 0)
             {
                 if (dumpfile) *dumpfile << rel->a << " " << rel->b << std::endl;
@@ -1143,7 +1141,7 @@ void processApproximation(const RelationList& relationNumer,
 #endif
             }
 
-            denomProduct *= a;
+            denomProduct.multiply_by_ab(rel->a, rel->b);
 #ifdef CHECKCALC
             if (i == 0)
             {

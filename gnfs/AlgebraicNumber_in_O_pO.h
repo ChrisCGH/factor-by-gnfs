@@ -211,6 +211,39 @@ public:
         }
         return *this;
     }
+
+    // Specialised in-place multiply by the element (a - b*alpha) in O/pO.
+    // The element has only two non-zero integral-basis coefficients:
+    //   basis[0] = a - b * w01_,  basis[1] = -b * w11_
+    // Exploiting this reduces the work from O(degree^3) to O(degree^2).
+    // Requires optimisation_ok_ to be true (i.e. p does not divide the
+    // denominators of winv()(0,1) or winv()(1,1)), which is always the case
+    // for the inert primes used as good primes.
+    AlgebraicNumber_in_O_pO_& multiply_by_ab(long long int a, long int b)
+    {
+        if (!optimisation_ok_)
+        {
+            throw std::runtime_error("Problem: can't use optimisation in multiply_by_ab");
+        }
+        const MODULAR_INTEGER b0 = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_;
+        const MODULAR_INTEGER b1 = MODULAR_INTEGER(-b) * w11_;
+        // Compute tmp[k] = sum_i Fp_basis_[i] * (b0 * M_(k, i*d+0) + b1 * M_(k, i*d+1))
+        int degree = AlgebraicNumber::degree();
+        MODULAR_INTEGER tmp[MAX_DEGREE];
+        for (int k = 0; k < degree; k++)
+        {
+            for (int i = 0; i < degree; i++)
+            {
+                tmp[k].add_product(Fp_basis_[i], b0, M_(k, i * degree));
+                tmp[k].add_product(Fp_basis_[i], b1, M_(k, i * degree + 1));
+            }
+        }
+        for (int k = 0; k < degree; k++)
+        {
+            Fp_basis_[k] = tmp[k];
+        }
+        return *this;
+    }
     AlgebraicNumber_in_O_pO_ operator/(const AlgebraicNumber_in_O_pO_& b) const
     {
         int d = AlgebraicNumber::degree();

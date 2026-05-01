@@ -1171,6 +1171,46 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L), std::runtime_error);
         AlgebraicNumber_in_O_pO_1::set_basis(113L);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L));
+
+        // Test multiply_by_ab: result must equal multiplying by the element
+        // constructed via AlgebraicNumber_in_O_pO_1(a, b)
+        AlgebraicNumber_in_O_pO_1::set_basis(23L);
+        {
+            long long int a = 6924553LL;
+            long int b = 49395L;
+            AlgebraicNumber an_a(AlgebraicNumber::read_algebraic_number("1241 + 323 alpha - 230923029 alpha^2 + 2342 alpha^3 + 989225208 alpha^4 "));
+            AlgebraicNumber_in_O_pO_1 lhs(an_a);
+            AlgebraicNumber_in_O_pO_1 rhs(an_a);
+            AlgebraicNumber_in_O_pO_1 factor(a, b);
+            lhs *= factor;
+            rhs.multiply_by_ab(a, b);
+            CPPUNIT_ASSERT(lhs == rhs);
+        }
+        {
+            // test with identity (a=1, b=0) - result should be unchanged
+            AlgebraicNumber an_a(AlgebraicNumber::read_algebraic_number("1 + alpha + alpha^2 + alpha^3 + alpha^4"));
+            AlgebraicNumber_in_O_pO_1 original(an_a);
+            AlgebraicNumber_in_O_pO_1 result(an_a);
+            result.multiply_by_ab(1LL, 0L);
+            AlgebraicNumber_in_O_pO_1 factor(1LL, 0L);
+            AlgebraicNumber_in_O_pO_1 expected(an_a);
+            expected *= factor;
+            CPPUNIT_ASSERT(result == expected);
+        }
+        {
+            // accumulate several multiply_by_ab calls and compare to *= chain
+            AlgebraicNumber an_start(AlgebraicNumber::read_algebraic_number("1241 + 323 alpha - 230923029 alpha^2 + 2342 alpha^3 + 989225208 alpha^4 "));
+            AlgebraicNumber_in_O_pO_1 by_ab(an_start);
+            AlgebraicNumber_in_O_pO_1 by_star(an_start);
+            long long int as[] = {10LL, 6924553LL, -999LL};
+            long int     bs[] = {7L,   49395L,      123L};
+            for (int idx = 0; idx < 3; ++idx)
+            {
+                by_ab.multiply_by_ab(as[idx], bs[idx]);
+                by_star *= AlgebraicNumber_in_O_pO_1(as[idx], bs[idx]);
+            }
+            CPPUNIT_ASSERT(by_ab == by_star);
+        }
     }
 
     void testIdeal()
