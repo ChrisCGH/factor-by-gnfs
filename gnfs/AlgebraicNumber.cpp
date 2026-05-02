@@ -738,7 +738,7 @@ void AlgebraicNumber::ln_sigma_all(std::vector<long double>& out) const
         complex<long double> alpha_j = nf.conjugate(j);
         complex<long double> sigma_val = (long double)0.0;
         complex<long double> alpha_power = (long double)1.0;
-        for (auto c_ld : coeffs_ld)
+        for (const auto& c_ld : coeffs_ld)
         {
             sigma_val += c_ld * alpha_power;
             if (isnan(sigma_val.real()) || isnan(sigma_val.imag()) ||
@@ -792,7 +792,7 @@ void AlgebraicNumber::ln_sigma_all(std::vector<long double>& out) const
             complex<long double> alpha_j = nf.conjugate(j);
             complex<long double> sigma_val = (long double)0.0;
             complex<long double> alpha_power = (long double)1.0;
-            for (auto c_ld : coeffs_ld)
+            for (const auto& c_ld : coeffs_ld)
             {
                 sigma_val += c_ld * alpha_power;
                 alpha_power *= alpha_j;
