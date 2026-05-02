@@ -996,17 +996,42 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
             complex<long double> alpha_j = nf->conjugate(row);
             complex<long double> sigma_val = (long double)0.0;
             complex<long double> alpha_power = (long double)1.0;
+            bool overflow = false;
             for (int i = 0; i < degree; i++)
             {
                 sigma_val += V_ld[col][i] * alpha_power;
+                if (isnan(sigma_val.real()) || isnan(sigma_val.imag()) ||
+                    isinf(sigma_val.real()) || isinf(sigma_val.imag()))
+                {
+                    overflow = true;
+                    break;
+                }
                 alpha_power *= alpha_j;
             }
-            long double ln_re = log(fabs(sigma_val.real()));
-            long int re_sign = 1L;
-            if (sigma_val.real() < 0) re_sign = -1L;
-            long double ln_im = log(fabs(sigma_val.imag()));
-            long int im_sign = 1L;
-            if (sigma_val.imag() < 0) im_sign = -1L;
+            long double log_scale_ld = 0.0L;
+            if (overflow)
+            {
+                // Scale coefficients by a power of 2 to avoid overflow, then correct log values
+                long double max_coeff = 0.0L;
+                for (int i = 0; i < degree; i++)
+                    max_coeff = std::max(max_coeff, fabsl(V_ld[col][i]));
+                int exp2 = 0;
+                frexpl(max_coeff, &exp2);
+                int shift = exp2 - 50;
+                long double scale = ldexpl(1.0L, shift);
+                log_scale_ld = (long double)shift * logl(2.0L);
+                sigma_val = (long double)0.0;
+                alpha_power = (long double)1.0;
+                for (int i = 0; i < degree; i++)
+                {
+                    sigma_val += (V_ld[col][i] / scale) * alpha_power;
+                    alpha_power *= alpha_j;
+                }
+            }
+            long double ln_re = logl(fabsl(sigma_val.real())) + log_scale_ld;
+            long int re_sign = (sigma_val.real() < 0) ? -1L : 1L;
+            long double ln_im = logl(fabsl(sigma_val.imag())) + log_scale_ld;
+            long int im_sign = (sigma_val.imag() < 0) ? -1L : 1L;
 
             if (alpha_j.imag() != (long double)0.0)
             {

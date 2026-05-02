@@ -586,7 +586,7 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
         if (sigma.real() < 0) re_sign = -1L;
         ln_re = log(fabs(sigma.real()));
         im_sign = 1L;
-        if (sigma.real() < 0) im_sign = -1L;
+        if (sigma.imag() < 0) im_sign = -1L;
         ln_im = log(fabs(sigma.imag()));
         if (isnan(ln_im)) throw std::overflow_error("NaN in ln_im");
 
@@ -624,7 +624,7 @@ void AlgebraicNumber::ln_sigma(int j, long double& ln_re, long int& re_sign,
         if (sigma.real() < 0) re_sign = -1L;
         ln_re = log(fabs(sigma.real())) + log_scale_ld;
         im_sign = 1L;
-        if (sigma.real() < 0) im_sign = -1L;
+        if (sigma.imag() < 0) im_sign = -1L;
         ln_im = log(fabs(sigma.imag())) + log_scale_ld;
         return;
     }
