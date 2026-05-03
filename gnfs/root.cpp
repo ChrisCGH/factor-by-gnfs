@@ -1839,8 +1839,12 @@ void approximateSquareRoot(const RelationList& relationNumer,
     long int inert_p = 0L;
     std::cout << "Choosing good primes ..." << std::endl;
 
-    while ((int)good_primes.size() < GOOD_PRIMES_NEEDED &&
-            ip_iter != fb.rend_inert())
+    // Require at least GOOD_PRIMES_NEEDED primes AND a product large enough for
+    // the CRT to uniquely determine every coefficient of gamma_L in the integral
+    // basis.  LLL_max upper-bounds those coefficients (it is the bound used when
+    // constructing the LLL lattice), so we need product > 2 * LLL_max.
+    while (ip_iter != fb.rend_inert() &&
+           ((int)good_primes.size() < GOOD_PRIMES_NEEDED || product < 2L * LLL_max))
     {
         inert_p = *ip_iter;
         bool good = true;
