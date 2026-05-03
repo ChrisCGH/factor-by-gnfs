@@ -897,6 +897,12 @@ Ideal selectIdeal(int s_l, PrimeIdealDecomposition& G, std::deque<PrimeIdealRep*
 
 VeryLong careful_exp(long double x)
 {
+    // Guard against NaN and ±Inf: GMP's mpz_set_d signals SIGFPE for non-finite doubles.
+    // exp(-inf) = 0; NaN and +inf are treated as 0 (safe fallback for LLL matrix entries).
+    if (!isfinite(x))
+    {
+        return VeryLong(0L);
+    }
     const long double OVERFLOW_LIMIT = 400.0;
     if (x < OVERFLOW_LIMIT)
     {
@@ -1011,22 +1017,39 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
             long double log_scale_ld = 0.0L;
             if (overflow)
             {
-                // Scale coefficients by a power of 2 to avoid overflow, then correct log values
-                long double max_coeff = 0.0L;
-                for (int i = 0; i < degree; i++)
-                    max_coeff = std::max(max_coeff, fabsl(V_ld[col][i]));
-                int exp2 = 0;
-                frexpl(max_coeff, &exp2);
-                int shift = exp2 - 50;
-                long double scale = ldexpl(1.0L, shift);
-                log_scale_ld = (long double)shift * logl(2.0L);
-                sigma_val = (long double)0.0;
-                alpha_power = (long double)1.0;
+                // V_ld[col][i] may itself be Inf (VeryLong too large for double).
+                // Fall back to VeryLong-based scaling, mirroring AlgebraicNumber::ln_sigma.
+                VeryLong max_vc(0L);
                 for (int i = 0; i < degree; i++)
                 {
-                    sigma_val += (V_ld[col][i] / scale) * alpha_power;
-                    alpha_power *= alpha_j;
+                    VeryLong n = V(i, col).numerator();
+                    VeryLong d = V(i, col).denominator();
+                    if (n < 0L) n = -n;
+                    VeryLong c = n / d;
+                    if (c > max_vc) max_vc = c;
                 }
+                if (max_vc > VeryLong(0L))
+                {
+                    double lg_coeff = log10(max_vc);
+                    int power = (int)lg_coeff - 50;
+                    const VeryLong ten(10L);
+                    VeryLong vc_scale = pow<VeryLong, int>(ten, power);
+                    log_scale_ld = (long double)ln(vc_scale);
+                    sigma_val = (long double)0.0;
+                    alpha_power = (long double)1.0;
+                    for (int i = 0; i < degree; i++)
+                    {
+                        VeryLong n = V(i, col).numerator();
+                        VeryLong d = V(i, col).denominator();
+                        long double s = 1.0L;
+                        if (n < 0L) { s = -1.0L; n = -n; }
+                        VeryLong c = n / d;
+                        c /= vc_scale;
+                        sigma_val += s * c.get_long_double() * alpha_power;
+                        alpha_power *= alpha_j;
+                    }
+                }
+                // else: all coefficients are zero, sigma_val remains (long double)0.0
             }
             long double ln_re = logl(fabsl(sigma_val.real())) + log_scale_ld;
             long int re_sign = (sigma_val.real() < 0) ? -1L : 1L;
