@@ -1125,7 +1125,6 @@ void processApproximation(const RelationList& relationNumer,
     {
         //VeryLong p(good_primes[i]);
         long int p(good_primes[i]);
-        std::cout << "good_primes[" << i << "] = " << p << std::endl;
         AlgebraicNumber_in_O_pO_1::set_basis(p);
         // find product of algebraic numbers in relationNumer, modulo p
         AlgebraicNumber_in_O_pO_1 numerProduct(1L);
@@ -1363,8 +1362,9 @@ void processApproximation(const RelationList& relationNumer,
         // expressed modulo p
         // we need to find the quotient of these
         AlgebraicNumber_in_O_pO_1 gamma_mod_p = numerProduct / denomProduct;
-        std::cout << "gamma mod " << p << " = " << gamma_mod_p << std::endl;
         reducedGamma[i] = gamma_mod_p;
+#pragma omp critical(cout)
+        std::cout << "good_primes[" << i << "] = " << p << " => gamma mod " << p << " = " << gamma_mod_p << std::endl;
     }
 
     if (dumpfile) *dumpfile << "FINAL_H" << std::endl;
