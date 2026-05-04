@@ -1118,6 +1118,13 @@ void processApproximation(const RelationList& relationNumer,
     std::cout << good_primes.size() << " good primes chosen" << std::endl;
 
     std::cout << "Processing good primes ..." << std::endl;
+    // Pre-warm the lazy ib_coefficients() cache on all delta elements in the main
+    // thread.  AlgebraicNumber::ib_coefficients() writes to mutable members on first
+    // call; doing it here (single-threaded) avoids a data race when multiple OpenMP
+    // threads later call operator*=(const AlgebraicNumber&) on the same delta[l].
+    for (auto* d : delta)
+        d->ib_coefficients();
+
     std::vector<AlgebraicNumber_in_O_pO_1> reducedGamma(good_primes.size());
 
 #pragma omp parallel for schedule(dynamic)
