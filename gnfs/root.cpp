@@ -15,6 +15,7 @@
 #include "root.h"
 #include "ExceptionalPrimes.h"
 #include <iomanip>
+#include <omp.h>
 //#define CHECKNORM 1
 #ifdef CHECKNORM
 #include "RootConfig.h"
@@ -22,16 +23,6 @@
 
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
-template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
-template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
-template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
-template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
-template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
-template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
 
 namespace std
 {
@@ -1127,15 +1118,15 @@ void processApproximation(const RelationList& relationNumer,
     std::cout << good_primes.size() << " good primes chosen" << std::endl;
 
     std::cout << "Processing good primes ..." << std::endl;
-    std::vector<AlgebraicNumber_in_O_pO_1> reducedGamma;
+    std::vector<AlgebraicNumber_in_O_pO_1> reducedGamma(good_primes.size());
 
+#pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < good_primes.size(); i++)
     {
         //VeryLong p(good_primes[i]);
         long int p(good_primes[i]);
         std::cout << "good_primes[" << i << "] = " << p << std::endl;
         AlgebraicNumber_in_O_pO_1::set_basis(p);
-        AlgebraicNumber_in_O_pO::set_basis(p);
         // find product of algebraic numbers in relationNumer, modulo p
         AlgebraicNumber_in_O_pO_1 numerProduct(1L);
         AlgebraicNumber_in_O_pO_1 numerDeltaProduct(1L);
@@ -1373,7 +1364,7 @@ void processApproximation(const RelationList& relationNumer,
         // we need to find the quotient of these
         AlgebraicNumber_in_O_pO_1 gamma_mod_p = numerProduct / denomProduct;
         std::cout << "gamma mod " << p << " = " << gamma_mod_p << std::endl;
-        reducedGamma.push_back(gamma_mod_p);
+        reducedGamma[i] = gamma_mod_p;
     }
 
     if (dumpfile) *dumpfile << "FINAL_H" << std::endl;
