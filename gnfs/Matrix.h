@@ -715,8 +715,7 @@ template <class X> bool invert(const Matrix<X >& MM, Matrix<X >& XX)
         return false;
     }
     int n = MM.rows();
-    static Matrix<X > M(1,1);
-    M = MM;
+    Matrix<X > M = MM;
     int j = 0;
     Matrix<X > B(n, one, 0); // B is n x n identity matrix
     //cout << "B:" << endl;
@@ -750,8 +749,7 @@ template <class X> bool invert(const Matrix<X >& MM, Matrix<X >& XX)
         }
 
         // step 5 [Eliminate]
-        static std::vector<X > C;
-        C.resize(n, zero);
+        std::vector<X > C(n, zero);
         X d = one / M(j,j);
         //cout << "d = " << d << endl;
         int k = j + 1;
@@ -1356,11 +1354,9 @@ template <class X> Matrix<X > inverse_image_matrix(const Matrix<X >& MM, const M
         throw std::invalid_argument(oss.str());
     }
     if (r == 0) return VV;
-    static Matrix<X > M(1,1);
-    M = MM;
+    Matrix<X > M = MM;
     int j = 0;
-    static Matrix<X > B(1,1);
-    B = VV;
+    Matrix<X > B = VV;
     Matrix<X > XX(n, r);
 
     while (j < n)
@@ -1394,8 +1390,7 @@ template <class X> Matrix<X > inverse_image_matrix(const Matrix<X >& MM, const M
 
         // step 5 [Eliminate]
         //cout << "step 5" << endl;
-        static std::vector<X > C;
-        C.resize(m, zero);
+        std::vector<X > C(m, zero);
         X d = one / M(j,j);
         //cout << "d = " << d << endl;
         int k = j + 1;
