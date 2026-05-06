@@ -74,7 +74,7 @@ public:
     }
     LongModular square_root() const;
 private:
-    static unsigned long int modulus_;
+    inline static thread_local unsigned long int modulus_ = 0;
     static void staticInit()
     {
         if (!staticInitDone)
@@ -83,7 +83,7 @@ private:
             staticInitDone = true;
         }
     }
-    static bool staticInitDone;
+    inline static thread_local bool staticInitDone = false;
     unsigned long int _li;
 };
 #endif

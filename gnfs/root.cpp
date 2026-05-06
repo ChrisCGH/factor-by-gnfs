@@ -15,6 +15,7 @@
 #include "root.h"
 #include "ExceptionalPrimes.h"
 #include <iomanip>
+#include <omp.h>
 //#define CHECKNORM 1
 #ifdef CHECKNORM
 #include "RootConfig.h"
@@ -22,16 +23,6 @@
 
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
-template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
-template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
-template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
-template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
-template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
-template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
 
 namespace std
 {
@@ -897,6 +888,12 @@ Ideal selectIdeal(int s_l, PrimeIdealDecomposition& G, std::deque<PrimeIdealRep*
 
 VeryLong careful_exp(long double x)
 {
+    // Guard against NaN and ±Inf: GMP's mpz_set_d signals SIGFPE for non-finite doubles.
+    // exp(-inf) = 0; NaN and +inf are treated as 0 (safe fallback for LLL matrix entries).
+    if (!isfinite(x))
+    {
+        return VeryLong(0L);
+    }
     const long double OVERFLOW_LIMIT = 400.0;
     if (x < OVERFLOW_LIMIT)
     {
@@ -971,28 +968,86 @@ AlgebraicNumber* selectDelta(const Ideal& I, long double ln_norm,
 
     // remaining rows are of form lambda[row + degree] * v(alpha[row])
     // but if some alpha are complex (not pure real) then we must replace v() by sqrt(2)Re(v) or sqrt(2)Im(v)
+
+    // Precompute V as long double: V_ld[col][i] = float(V(i,col)), converting each
+    // Quotient<VeryLong> coefficient once per column rather than once per (col, row) pair.
+    std::vector<std::vector<long double>> V_ld(degree, std::vector<long double>(degree));
+    for (int col = 0; col < degree; col++)
+    {
+        for (int i = 0; i < degree; i++)
+        {
+            VeryLong n = V(i, col).numerator();
+            VeryLong d = V(i, col).denominator();
+            long double s = 1.0L;
+            if (n < 0L) { s = -1.0L; n = -n; }
+            V_ld[col][i] = s * (n / d).get_long_double();
+        }
+    }
+
     for (int col = 0; col < degree; col++)
     {
         int row = 0;
         while (row < degree)
         {
-
-            // calculate v[col](alpha(row))
-            std::vector<Quotient<VeryLong> > co;
-            co.resize(degree);
+            // evaluate v[col] at the row-th conjugate using preconverted long double coefficients
+            complex<long double> alpha_j = nf->conjugate(row);
+            complex<long double> sigma_val = (long double)0.0;
+            complex<long double> alpha_power = (long double)1.0;
+            bool overflow = false;
             for (int i = 0; i < degree; i++)
             {
-                co[i] = V(i,col);
+                sigma_val += V_ld[col][i] * alpha_power;
+                if (isnan(sigma_val.real()) || isnan(sigma_val.imag()) ||
+                    isinf(sigma_val.real()) || isinf(sigma_val.imag()))
+                {
+                    overflow = true;
+                    break;
+                }
+                alpha_power *= alpha_j;
             }
-            AlgebraicNumber an(co);
-            long double ln_re;
-            long int re_sign;
-            long double ln_im;
-            long int im_sign;
-            an.ln_sigma(row, ln_re, re_sign, ln_im, im_sign);
-            complex<long double> alp = nf->conjugate(row);
-// cout << row << "th conjugate is " << alp << endl;
-            if (alp.imag() != (long double)0.0)
+            long double log_scale_ld = 0.0L;
+            if (overflow)
+            {
+                // V_ld[col][i] may itself be Inf (VeryLong too large for double).
+                // Fall back to VeryLong-based scaling, mirroring AlgebraicNumber::ln_sigma.
+                VeryLong max_vc(0L);
+                for (int i = 0; i < degree; i++)
+                {
+                    VeryLong n = V(i, col).numerator();
+                    VeryLong d = V(i, col).denominator();
+                    if (n < 0L) n = -n;
+                    VeryLong c = n / d;
+                    if (c > max_vc) max_vc = c;
+                }
+                if (max_vc > VeryLong(0L))
+                {
+                    double lg_coeff = log10(max_vc);
+                    int power = (int)lg_coeff - 50;
+                    const VeryLong ten(10L);
+                    VeryLong vc_scale = pow<VeryLong, int>(ten, power);
+                    log_scale_ld = (long double)ln(vc_scale);
+                    sigma_val = (long double)0.0;
+                    alpha_power = (long double)1.0;
+                    for (int i = 0; i < degree; i++)
+                    {
+                        VeryLong n = V(i, col).numerator();
+                        VeryLong d = V(i, col).denominator();
+                        long double s = 1.0L;
+                        if (n < 0L) { s = -1.0L; n = -n; }
+                        VeryLong c = n / d;
+                        c /= vc_scale;
+                        sigma_val += s * c.get_long_double() * alpha_power;
+                        alpha_power *= alpha_j;
+                    }
+                }
+                // else: all coefficients are zero, sigma_val remains (long double)0.0
+            }
+            long double ln_re = logl(fabsl(sigma_val.real())) + log_scale_ld;
+            long int re_sign = (sigma_val.real() < 0) ? -1L : 1L;
+            long double ln_im = logl(fabsl(sigma_val.imag())) + log_scale_ld;
+            long int im_sign = (sigma_val.imag() < 0) ? -1L : 1L;
+
+            if (alpha_j.imag() != (long double)0.0)
             {
                 const long double ln_sqrt2 = log((long double)sqrt(2.0));
                 long double tmp = ln_sqrt2 + ln_re + ln_lambda[row];
@@ -1063,15 +1118,21 @@ void processApproximation(const RelationList& relationNumer,
     std::cout << good_primes.size() << " good primes chosen" << std::endl;
 
     std::cout << "Processing good primes ..." << std::endl;
-    std::vector<AlgebraicNumber_in_O_pO_1> reducedGamma;
+    // Pre-warm the lazy ib_coefficients() cache on all delta elements in the main
+    // thread.  AlgebraicNumber::ib_coefficients() writes to mutable members on first
+    // call; doing it here (single-threaded) avoids a data race when multiple OpenMP
+    // threads later call operator*=(const AlgebraicNumber&) on the same delta[l].
+    for (auto* d : delta)
+        d->ib_coefficients();
 
+    std::vector<AlgebraicNumber_in_O_pO_1> reducedGamma(good_primes.size());
+
+#pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < good_primes.size(); i++)
     {
         //VeryLong p(good_primes[i]);
         long int p(good_primes[i]);
-        std::cout << "good_primes[" << i << "] = " << p << std::endl;
         AlgebraicNumber_in_O_pO_1::set_basis(p);
-        AlgebraicNumber_in_O_pO::set_basis(p);
         // find product of algebraic numbers in relationNumer, modulo p
         AlgebraicNumber_in_O_pO_1 numerProduct(1L);
         AlgebraicNumber_in_O_pO_1 numerDeltaProduct(1L);
@@ -1087,7 +1148,6 @@ void processApproximation(const RelationList& relationNumer,
 
         for (auto& rel: relationNumer)
         {
-            AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
             if (i == 0)
             {
                 if (dumpfile) *dumpfile << rel->a << " " << rel->b << std::endl;
@@ -1103,7 +1163,7 @@ void processApproximation(const RelationList& relationNumer,
 #endif
             }
 
-            numerProduct *= a;
+            numerProduct.multiply_by_ab(rel->a, rel->b);
 #ifdef CHECKCALC
             if (i == 0)
             {
@@ -1127,7 +1187,6 @@ void processApproximation(const RelationList& relationNumer,
 
         for (auto& rel: relationDenom)
         {
-            AlgebraicNumber_in_O_pO_1 a(rel->a, rel->b);
             if (i == 0)
             {
                 if (dumpfile) *dumpfile << rel->a << " " << rel->b << std::endl;
@@ -1143,7 +1202,7 @@ void processApproximation(const RelationList& relationNumer,
 #endif
             }
 
-            denomProduct *= a;
+            denomProduct.multiply_by_ab(rel->a, rel->b);
 #ifdef CHECKCALC
             if (i == 0)
             {
@@ -1310,8 +1369,9 @@ void processApproximation(const RelationList& relationNumer,
         // expressed modulo p
         // we need to find the quotient of these
         AlgebraicNumber_in_O_pO_1 gamma_mod_p = numerProduct / denomProduct;
-        std::cout << "gamma mod " << p << " = " << gamma_mod_p << std::endl;
-        reducedGamma.push_back(gamma_mod_p);
+        reducedGamma[i] = gamma_mod_p;
+#pragma omp critical(cout)
+        std::cout << "good_primes[" << i << "] = " << p << " => gamma mod " << p << " = " << gamma_mod_p << std::endl;
     }
 
     if (dumpfile) *dumpfile << "FINAL_H" << std::endl;
@@ -1502,20 +1562,24 @@ void approximateSquareRoot(const RelationList& relationNumer,
     }
     for (auto& rel: relationNumer)
     {
-        VeryLong a = rel->a;
-        VeryLong b = rel->b;
+        const VeryLong a(rel->a);
+        const VeryLong b(rel->b);
+        std::vector<long double> sigma_rel;
+        nf->ln_sigma_all(a, b, sigma_rel);
         for (int j = 0; j < degree; j++)
         {
-            sigma[j] += nf->ln_sigma(j, a, b);
+            sigma[j] += sigma_rel[j];
         }
     }
     for (auto& rel: relationDenom)
     {
-        VeryLong a = rel->a;
-        VeryLong b = rel->b;
+        const VeryLong a(rel->a);
+        const VeryLong b(rel->b);
+        std::vector<long double> sigma_rel;
+        nf->ln_sigma_all(a, b, sigma_rel);
         for (int j = 0; j < degree; j++)
         {
-            sigma[j] -= nf->ln_sigma(j, a, b);
+            sigma[j] -= sigma_rel[j];
         }
     }
     long double ln_norm = 0.0;
@@ -1620,9 +1684,13 @@ void approximateSquareRoot(const RelationList& relationNumer,
         }
 
         // update sigma
-        for (int j = 0; j < degree; j++)
         {
-            sigma[j] -= 2.0 * s_l * delta_l.ln_sigma(j);
+            std::vector<long double> delta_ln_sigma;
+            delta_l.ln_sigma_all(delta_ln_sigma);
+            for (int j = 0; j < degree; j++)
+            {
+                sigma[j] -= 2.0 * s_l * delta_ln_sigma[j];
+            }
         }
 
         ln_norm = 0.0;
@@ -1769,8 +1837,12 @@ void approximateSquareRoot(const RelationList& relationNumer,
     long int inert_p = 0L;
     std::cout << "Choosing good primes ..." << std::endl;
 
-    while ((int)good_primes.size() < GOOD_PRIMES_NEEDED &&
-            ip_iter != fb.rend_inert())
+    // Require at least GOOD_PRIMES_NEEDED primes AND a product large enough for
+    // the CRT to uniquely determine every coefficient of gamma_L in the integral
+    // basis.  LLL_max upper-bounds those coefficients (it is the bound used when
+    // constructing the LLL lattice), so we need product > 2 * LLL_max.
+    while (ip_iter != fb.rend_inert() &&
+           ((int)good_primes.size() < GOOD_PRIMES_NEEDED || product < 2L * LLL_max))
     {
         inert_p = *ip_iter;
         bool good = true;

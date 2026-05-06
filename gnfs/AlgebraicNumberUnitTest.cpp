@@ -13,16 +13,6 @@
 
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
-template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
-template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
-template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
-template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
-template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
-template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
 class AlgebraicNumberTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE( AlgebraicNumberTest );
@@ -626,6 +616,27 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(5, ln_re, re_sign, ln_im, im_sign), std::runtime_error);
         CPPUNIT_ASSERT_THROW_MESSAGE("", an41.ln_sigma(6), std::runtime_error);
 
+        // ln_sigma_all should return the same values as calling ln_sigma(j) for each j
+        std::vector<long double> all_sigma;
+        an41.ln_sigma_all(all_sigma);
+        CPPUNIT_ASSERT(all_sigma.size() == 5);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[0], an41.ln_sigma(0), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[1], an41.ln_sigma(1), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[2], an41.ln_sigma(2), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[3], an41.ln_sigma(3), std::numeric_limits<float>::epsilon());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(all_sigma[4], an41.ln_sigma(4), std::numeric_limits<float>::epsilon());
+
+        // NumberField::ln_sigma_all should return the same values as calling ln_sigma(j, a, b)
+        VeryLong a_test(123456LL);
+        VeryLong b_test(789LL);
+        std::vector<long double> nf_sigma;
+        nf.ln_sigma_all(a_test, b_test, nf_sigma);
+        CPPUNIT_ASSERT(nf_sigma.size() == 5);
+        for (int j = 0; j < 5; j++)
+        {
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(nf_sigma[j], nf.ln_sigma(j, a_test, b_test), std::numeric_limits<float>::epsilon());
+        }
+
         // 4.84888083570085e+53
         CPPUNIT_ASSERT_DOUBLES_EQUAL(an41.mod_sigma_2(0), 4.84888083570085e+53, 1e39);
         // 3.53913525374421e+52
@@ -1171,6 +1182,43 @@ public:
         CPPUNIT_ASSERT_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L), std::runtime_error);
         AlgebraicNumber_in_O_pO_1::set_basis(113L);
         CPPUNIT_ASSERT_NO_THROW_MESSAGE("", AlgebraicNumber_in_O_pO_1(1LL, 2L));
+
+        // Test multiply_by_ab: result must equal multiplying by the element
+        // constructed via AlgebraicNumber_in_O_pO_1(a, b)
+        AlgebraicNumber_in_O_pO_1::set_basis(23L);
+        {
+            long long int a = 6924553LL;
+            long int b = 49395L;
+            AlgebraicNumber an_a(AlgebraicNumber::read_algebraic_number("1241 + 323 alpha - 230923029 alpha^2 + 2342 alpha^3 + 989225208 alpha^4 "));
+            AlgebraicNumber_in_O_pO_1 lhs(an_a);
+            AlgebraicNumber_in_O_pO_1 rhs(an_a);
+            AlgebraicNumber_in_O_pO_1 factor(a, b);
+            lhs *= factor;
+            rhs.multiply_by_ab(a, b);
+            CPPUNIT_ASSERT(lhs == rhs);
+        }
+        {
+            // test with identity (a=1, b=0) - result should be unchanged
+            AlgebraicNumber an_a(AlgebraicNumber::read_algebraic_number("1 + alpha + alpha^2 + alpha^3 + alpha^4"));
+            AlgebraicNumber_in_O_pO_1 original(an_a);
+            AlgebraicNumber_in_O_pO_1 result(an_a);
+            result.multiply_by_ab(1LL, 0L);
+            CPPUNIT_ASSERT(result == original);
+        }
+        {
+            // accumulate several multiply_by_ab calls and compare to *= chain
+            AlgebraicNumber an_start(AlgebraicNumber::read_algebraic_number("1241 + 323 alpha - 230923029 alpha^2 + 2342 alpha^3 + 989225208 alpha^4 "));
+            AlgebraicNumber_in_O_pO_1 by_ab(an_start);
+            AlgebraicNumber_in_O_pO_1 by_star(an_start);
+            long long int as[] = {10LL, 6924553LL, -999LL};
+            long int     bs[] = {7L,   49395L,      123L};
+            for (int idx = 0; idx < 3; ++idx)
+            {
+                by_ab.multiply_by_ab(as[idx], bs[idx]);
+                by_star *= AlgebraicNumber_in_O_pO_1(as[idx], bs[idx]);
+            }
+            CPPUNIT_ASSERT(by_ab == by_star);
+        }
     }
 
     void testIdeal()

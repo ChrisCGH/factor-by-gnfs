@@ -40,16 +40,6 @@ void complex<MPFloat>::_div(const MPFloat& __z1_r, const MPFloat& __z1_i,
 #define DEBUG_OUTPUT 1
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::W_mult_;
 template<> Matrix<Quotient<VeryLong> > AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::W_mult_;
-template<> Matrix<VeryLongModular> AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::M_;
-template<> Matrix<LongModular> AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::M_;
-template<> VeryLong AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::p_;
-template<> long AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::p_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w01_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w01_;
-template<> VeryLongModular AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::w11_;
-template<> LongModular AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::w11_;
-template<> bool AlgebraicNumber_in_O_pO_<VeryLong, VeryLong, VeryLongModular>::optimisation_ok_;
-template<> bool AlgebraicNumber_in_O_pO_<long, VeryLong, LongModular>::optimisation_ok_;
 namespace
 {
 bool verbose()
@@ -359,6 +349,43 @@ long double NumberField::ln_sigma(int j, const VeryLong& a, const VeryLong& b) c
     }
     //std::cerr << "NumberField::ln_sigma(), answer = " << answer << std::endl;
     return answer;
+}
+
+void NumberField::ln_sigma_all(const VeryLong& a, const VeryLong& b, std::vector<long double>& sigma_out) const
+{
+    // Convert a and b to long double once, then evaluate at all conjugates
+    const long double OVERFLOW_LIMIT = 1e100;
+    long double aa = a.get_long_double();
+    long double bb = b.get_long_double();
+    long double delta = 1.0;
+    if (fabs(aa) > OVERFLOW_LIMIT || fabs(bb) > OVERFLOW_LIMIT)
+    {
+        delta = OVERFLOW_LIMIT;
+        aa /= OVERFLOW_LIMIT;
+        bb /= OVERFLOW_LIMIT;
+    }
+    const long double log_delta = (delta != 1.0L) ? (long double)log(delta) : 0.0L;
+    const int n = static_cast<int>(roots_.size());
+    sigma_out.resize(n);
+    for (int j = 0; j < n; j++)
+    {
+        complex<long double> alpha_j = conjugate(j);
+        complex<long double> x = complex<long double>(aa) - alpha_j * bb;
+        long double mod2 = std::norm(x);
+        if (mod2 > 0.0)
+        {
+            sigma_out[j] = (long double)log((double)mod2) / 2.0 + log_delta;
+        }
+        else
+        {
+            sigma_out[j] = 0.0;
+            complex<long double> r = complex<long double>(aa) - alpha_j * complex<long double>(bb);
+            std::cerr << "Warning! : a - b alpha_" << j << "  very close to zero :" << std::endl;
+            std::cerr << "(a,b) = (" << a << "," << b << ")" << std::endl;
+            std::cerr << "alpha_" << j << " = " << alpha_j << std::endl;
+            std::cerr << "a - b alpha_" << j << " = " << r << std::endl;
+        }
+    }
 }
 
 // Algorithm 6.1.8 (Zassenhaus's Round 2)

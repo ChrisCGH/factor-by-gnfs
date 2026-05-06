@@ -79,19 +79,19 @@ public:
         for (size_t i = 0; i < c1.size(); i++)
         {
             // c1 gives coefficients of a in terms of omega
-            Fp_basis_[i] = MODULAR_INTEGER(c1[i].numerator() % p_) / MODULAR_INTEGER(c1[i].denominator() % p_);
+            Fp_basis_[i] = MODULAR_INTEGER(c1[i].numerator() % p_ref()) / MODULAR_INTEGER(c1[i].denominator() % p_ref());
         }
     }
 
     AlgebraicNumber_in_O_pO_(long long int a, long int b)
     {
-        if (!optimisation_ok_)
+        if (!optimisation_ok_ref())
         {
             throw std::runtime_error("Problem: can't use optimisation to create AlgebraicNumber_in_O_pO_");
         }
         // corresponding to a - b alpha
-        Fp_basis_[0] = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_;
-        Fp_basis_[1] = MODULAR_INTEGER(-b) * w11_;
+        Fp_basis_[0] = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_ref();
+        Fp_basis_[1] = MODULAR_INTEGER(-b) * w11_ref();
 
         for (size_t i = 2; i < static_cast<size_t>(AlgebraicNumber::degree()); ++i)
         {
@@ -135,7 +135,7 @@ public:
             {
                 for (int j = 0; j < degree; j++)
                 {
-                    x.Fp_basis_[k] += Fp_basis_[i] * b.Fp_basis_[j] * M_(k, ij);
+                    x.Fp_basis_[k] += Fp_basis_[i] * b.Fp_basis_[j] * M_ref()(k, ij);
                     ++ij;
                 }
             }
@@ -156,7 +156,7 @@ public:
             for (int i = 0; i < degree; ++i)
             {
                 ij = i * (degree + 1);
-                tmp[k].add_product(Fp_basis_[i], b.Fp_basis_[i], M_(k, ij));
+                tmp[k].add_product(Fp_basis_[i], b.Fp_basis_[i], M_ref()(k, ij));
             }
             for (int i = 0; i < degree; ++i)
             {
@@ -168,7 +168,7 @@ public:
                     y = Fp_basis_[j];
                     y *= b.Fp_basis_[i];
                     x += y;
-                    x *= M_(k, ij);
+                    x *= M_ref()(k, ij);
                     tmp[k] += x;
                 }
             }
@@ -196,15 +196,50 @@ public:
                 for (int j = 0; j < degree; j++)
                 {
                     x = Fp_basis_[i];
-                    x *= c[j].numerator() % p_;
-                    x /= c[j].denominator() % p_;
-                    x *= M_(k, ij);
+                    x *= c[j].numerator() % p_ref();
+                    x /= c[j].denominator() % p_ref();
+                    x *= M_ref()(k, ij);
                     tmp[k] += x;
                     ++ij;
                 }
             }
         }
 
+        for (int k = 0; k < degree; k++)
+        {
+            Fp_basis_[k] = tmp[k];
+        }
+        return *this;
+    }
+
+    // Specialised in-place multiply by the element (a - b*alpha) in O/pO.
+    // The element has only two non-zero integral-basis coefficients:
+    //   basis[0] = a - b * w01_,  basis[1] = -b * w11_
+    // Exploiting this reduces the work from O(degree^3) to O(degree^2).
+    // Requires optimisation_ok_ to be true (i.e. p does not divide the
+    // denominators of winv()(0,1) or winv()(1,1)), which is always the case
+    // for the inert primes used as good primes.
+    AlgebraicNumber_in_O_pO_& multiply_by_ab(long long int a, long int b)
+    {
+        if (!optimisation_ok_ref())
+        {
+            throw std::runtime_error("Problem: can't use optimisation in multiply_by_ab");
+        }
+        const MODULAR_INTEGER b0 = MODULAR_INTEGER(a) - MODULAR_INTEGER(b) * w01_ref();
+        const MODULAR_INTEGER b1 = MODULAR_INTEGER(-b) * w11_ref();
+        // Compute tmp[k] = sum_i Fp_basis_[i] * (b0 * M_ref()(k, i*d+0) + b1 * M_ref()(k, i*d+1))
+        int degree = AlgebraicNumber::degree();
+        const MODULAR_INTEGER zero(0L);
+        std::vector<MODULAR_INTEGER> tmp(degree, zero);
+        for (int k = 0; k < degree; k++)
+        {
+            for (int i = 0; i < degree; i++)
+            {
+                const int base_idx = i * degree;
+                tmp[k].add_product(Fp_basis_[i], b0, M_ref()(k, base_idx));
+                tmp[k].add_product(Fp_basis_[i], b1, M_ref()(k, base_idx + 1));
+            }
+        }
         for (int k = 0; k < degree; k++)
         {
             Fp_basis_[k] = tmp[k];
@@ -226,7 +261,7 @@ public:
                 V(k,j) = zero;
                 for (int i = 0; i < d; i++)
                 {
-                    V(k,j) += b.Fp_basis_[i] * M_(k,ij);
+                    V(k,j) += b.Fp_basis_[i] * M_ref()(k,ij);
                     ij++; // ij = j*d + i
                 }
             }
@@ -262,7 +297,7 @@ public:
                           const std::vector<AlgebraicNumber>& omega)
     {
         size_t d = AlgebraicNumber::degree();
-        if (M_.rows() != d || M_.columns() != d*d) M_.set_size(d, d * d);
+        if (M_ref().rows() != d || M_ref().columns() != d*d) M_ref().set_size(d, d * d);
         // Calculate multiplication table for W
         // W gives coefficients for integral basis omega, in
         // terms of alpha (root of non-monic polynomial)
@@ -291,31 +326,33 @@ public:
 
     static void set_basis(const INTEGER& p)
     {
-        p_ = p;
-        MODULAR_INTEGER::set_default_modulus(p_);
+        p_ref() = p;
+        MODULAR_INTEGER::set_default_modulus(p_ref());
         long int d = AlgebraicNumber::degree();
+        if (M_ref().rows() != (size_t)d || M_ref().columns() != (size_t)(d * d))
+            M_ref().set_size(d, d * d);
         for (int i = 0; i < d; i++)
         {
             for (int j = 0; j < d*d; j++)
             {
-                M_(i, j) = W_mult()(i, j).numerator() % p_;
+                M_ref()(i, j) = W_mult()(i, j).numerator() % p_ref();
             }
         }
-        MODULAR_INTEGER w01n = AlgebraicNumber::nf().winv()(0,1).numerator() % p_;
-        MODULAR_INTEGER w01d = AlgebraicNumber::nf().winv()(0,1).denominator() % p_;
-        MODULAR_INTEGER w11n = AlgebraicNumber::nf().winv()(1,1).numerator() % p_;
-        MODULAR_INTEGER w11d = AlgebraicNumber::nf().winv()(1,1).denominator() % p_;
+        MODULAR_INTEGER w01n = AlgebraicNumber::nf().winv()(0,1).numerator() % p_ref();
+        MODULAR_INTEGER w01d = AlgebraicNumber::nf().winv()(0,1).denominator() % p_ref();
+        MODULAR_INTEGER w11n = AlgebraicNumber::nf().winv()(1,1).numerator() % p_ref();
+        MODULAR_INTEGER w11d = AlgebraicNumber::nf().winv()(1,1).denominator() % p_ref();
         // If p_ doesn't divide the denominator if winv()(0,1) or winv()(1,1) then
         // we can pre-calculate some numbers (mod p_) which are used when constructing
         // a - b alpha (mod p_) in O/pO
         // In practice, this is only needed when p_ is an inert prime, which will
         // always satisfy this condition
-        optimisation_ok_ = false;
+        optimisation_ok_ref() = false;
         if (w01d != MODULAR_INTEGER(0L) && w11d != MODULAR_INTEGER(0L))
         {
-            w01_ = w01n / w01d;
-            w11_ = w11n / w11d;
-            optimisation_ok_ = true;
+            w01_ref() = w01n / w01d;
+            w11_ref() = w11n / w11d;
+            optimisation_ok_ref() = true;
         }
     }
 
@@ -392,12 +429,33 @@ private:
     // ??? I'm not sure why this isn't in AlgebraicNumber ???
     // Note that this should really be a Matrix<INTEGER2>
     static Matrix<Quotient<INTEGER2> > W_mult_;
-    // M_ is W_mult_ reduced modulo p_
-    static Matrix<MODULAR_INTEGER> M_;
-    static INTEGER p_;
-    static MODULAR_INTEGER w01_;
-    static MODULAR_INTEGER w11_;
-    static bool optimisation_ok_;
+    // Per-prime state is thread-local so that multiple threads can work on different
+    // good primes simultaneously.
+    static Matrix<MODULAR_INTEGER>& M_ref()
+    {
+        thread_local Matrix<MODULAR_INTEGER> v(1, 1);
+        return v;
+    }
+    static INTEGER& p_ref()
+    {
+        thread_local INTEGER v(0L);
+        return v;
+    }
+    static MODULAR_INTEGER& w01_ref()
+    {
+        thread_local MODULAR_INTEGER v(0L);
+        return v;
+    }
+    static MODULAR_INTEGER& w11_ref()
+    {
+        thread_local MODULAR_INTEGER v(0L);
+        return v;
+    }
+    static bool& optimisation_ok_ref()
+    {
+        thread_local bool v = false;
+        return v;
+    }
 
     enum { MAX_DEGREE = NumberField::MAX_DEGREE };
     MODULAR_INTEGER Fp_basis_[MAX_DEGREE];

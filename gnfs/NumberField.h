@@ -24,6 +24,7 @@ public:
     int conjugates() const;
     complex<long double > conjugate(int r) const;
     long double ln_sigma(int j, const VeryLong& a, const VeryLong& b) const;
+    void ln_sigma_all(const VeryLong& a, const VeryLong& b, std::vector<long double>& sigma_out) const;
 
     int degree() const
     {
