@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd /var/tmp/factor-by-gnfs/gnfs/examples/C144_104_45
+../../gbin/postProcessing.pl -r C144_104_45.relations -r ../C144_104_45.1/C144_104_45.relations -r ../C144_104_45.2/C144_104_45.relations -r ../C144_104_45.3/C144_104_45.relations -r ../C144_104_45.4/C144_104_45.relations -ro rels1 -c REMOVE_DUPLICATES
+../../gbin/postProcessing.pl -r rels1 -ro rels2 -f 10000 -e 5000 -c REMOVE_SINGLETONS
+../../gbin/postProcessing.pl -r rels2 -ro rels3a -f 10000 -e 5000 -c PRUNE
+../../gbin/postProcessing.pl -r rels3a -ro rels3b -f 10000 -e 5000 -c PRUNE
+../../gbin/postProcessing.pl -r rels3b -ro rels4b -rsp -ml 10 -mp 20 -c MERGE -f 10000 -e 5000
+../../gbin/postProcessing.pl -rsi rels4b.sets -rspi -rs rels4c.sets -rsp -merge_only -ml 15 -mm 10 -mp 20 -c MERGE -f 10000 -e 5000
+../../gbin/postProcessing.pl -rsi rels4c.sets -rspi -rs rels4d.sets -rsp -merge_only -ml 15 -mm 10 -mp 5 -c MERGE -f 10000 -e 5000
+../../gbin/postProcessing.pl -rsi rels4d.sets -rspi -rs rels4e.sets -rsp -merge_only -ml 15 -mm 10 -mp 5 -c MERGE -f 10000 -e 5000
+../../gbin/postProcessing.pl -f 10000 -r rels4b -rsi rels4e.sets -rspi rels4e.sets.primes -m mat4e -c BUILD_MATRIX
+../../gbin/postProcessing.pl -m mat4e -d dep4e -c SOLVE_MATRIX
+../../gbin/postProcessing.pl -r rels4b -rsi rels4e.sets -d dep4e -c PROCESS_DEPENDENCIES
+
