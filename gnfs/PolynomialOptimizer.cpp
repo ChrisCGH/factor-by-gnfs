@@ -278,8 +278,8 @@ VeryLong b4_vl (const Polynomial<VeryLong>& f, const VeryLong& t)
     for (int i = 5; i <= f.deg(); i++)
     {
         neg_t_power *= -1L * t;
-        binom *= i;
-        binom /= (i - 4); // C(i,4)
+        binom *= (long)i;
+        binom /= (long)(i - 4); // C(i,4)
         res += binom * f.coefficient(i) * neg_t_power;
     }
     return res;
@@ -304,8 +304,8 @@ VeryLong b_k_vl (const Polynomial<VeryLong>& f, int k, const VeryLong& t)
     for (int i = k + 1; i <= d; i++)
     {
         neg_t_power *= -1L * t;
-        binom *= i;
-        binom /= (i - k);
+        binom *= (long)i;
+        binom /= (long)(i - k);
         res += binom * f.coefficient(i) * neg_t_power;
     }
     return res;
