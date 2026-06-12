@@ -270,8 +270,18 @@ VeryLong b3_vl (const Polynomial<VeryLong>& f, const VeryLong& t)
 VeryLong b4_vl (const Polynomial<VeryLong>& f, const VeryLong& t)
 {
     if (f.deg() < 4) return 0L;
-    if (f.deg() < 5) return f.coefficient(4);
-    VeryLong res = f.coefficient(4) - 5L * f.coefficient(5) * t;
+    if (f.deg() == 4) return f.coefficient(4);
+    // Use general formula for degree > 4
+    VeryLong res = f.coefficient(4);
+    VeryLong neg_t_power(1L);
+    VeryLong binom(1L); // C(4,4) = 1
+    for (int i = 5; i <= f.deg(); i++)
+    {
+        neg_t_power *= -1L * t;
+        binom *= (long)i;
+        binom /= (long)(i - 4); // C(i,4)
+        res += binom * f.coefficient(i) * neg_t_power;
+    }
     return res;
 }
 
@@ -281,18 +291,40 @@ VeryLong b5_vl (const Polynomial<VeryLong>& f)
     return f.coefficient(5);
 }
 
+// General b_k for VeryLong: k-th Taylor coefficient of f(x-t)
+// b_k = sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
+VeryLong b_k_vl (const Polynomial<VeryLong>& f, int k, const VeryLong& t)
+{
+    int d = f.deg();
+    if (d < k) return VeryLong(0L);
+    if (d == k) return f.coefficient(k);
+    VeryLong res = f.coefficient(k);
+    VeryLong neg_t_power(1L);
+    VeryLong binom(1L); // C(k,k) = 1
+    for (int i = k + 1; i <= d; i++)
+    {
+        neg_t_power *= -1L * t;
+        binom *= (long)i;
+        binom /= (long)(i - k);
+        res += binom * f.coefficient(i) * neg_t_power;
+    }
+    return res;
+}
+
 Polynomial<VeryLong> translate(const Polynomial<VeryLong>& p, const VeryLong& a, const VeryLong& b, const VeryLong& s, VeryLong& better_b, VeryLong& better_s)
 {
     // find a better poly just by translation
     VeryLong better_t = minimize_I_over_t(Polynomial<VeryLong>::convert_to_double<double>(p), a.get_double(), b.get_double(), s.get_double());
+    int deg = p.deg();
     std::vector<VeryLong> bb;
-    bb.resize(6);
+    bb.resize(deg + 1);
     bb[0] = ::b0_vl(p,a,b,better_t);
     bb[1] = ::b1_vl(p,a,b,better_t);
     bb[2] = ::b2_vl(p,a,better_t);
-    bb[3] = b3_vl(p,better_t);
-    bb[4] = b4_vl(p,better_t);
-    bb[5] = b5_vl(p);
+    for (int i = 3; i <= deg; i++)
+    {
+        bb[i] = b_k_vl(p, i, better_t);
+    }
     Polynomial<VeryLong> translated_poly(bb);
     better_b = b + better_t * a;
     better_s = minimize_I_over_s(Polynomial<VeryLong>::convert_to_double<double>(translated_poly), a.get_double(), better_b.get_double(), 0.0, 0.0, 0.0, 100000.0);
@@ -447,31 +479,36 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
             double initial_evaluation = logp / (p - 1.0);
             short initial_evaluation_s = (short)floor(initial_evaluation * 1000.0 + 0.5);
 
+            // Precompute forward difference table for f once (invariant across j1 iterations)
+            std::vector<LongModular> initial_diffs(degree + 1, LongModular(0L));
+            {
+                std::vector<LongModular> fvals(degree + 1);
+                for (int i = 0; i <= degree; i++)
+                {
+                    LongModular xi(static_cast<long int>(i));
+                    fvals[i] = f.evaluate(xi);
+                }
+                for (int k = 0; k <= degree; k++)
+                {
+                    initial_diffs[k] = fvals[k];
+                }
+                for (int k = 1; k <= degree; k++)
+                {
+                    for (int i = degree; i >= k; i--)
+                    {
+                        initial_diffs[i] = initial_diffs[i] - initial_diffs[i - 1];
+                    }
+                }
+            }
+
             for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
             {
                 memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
                 for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
                 // use finite differences to calculate f(l) for consecutive values of l
-                // assume at least a cubic f
-                LongModular f_value = f.coefficient(0);
-                LongModular d1 = f.coefficient(1) + f.coefficient(2) + f.coefficient(3);
-                LongModular d2 = 2L*f.coefficient(2) + 6L*f.coefficient(3);
-                LongModular d3 = 6L*f.coefficient(3);
-                LongModular d4 = 0L;
-                if (degree > 3)
-                {
-                    d1 += f.coefficient(4);
-                    d2 += 14L*f.coefficient(4);
-                    d3 += 36L*f.coefficient(4);
-                    d4 += 24L*f.coefficient(4);
-                }
-                if (degree > 4)
-                {
-                    d1 += f.coefficient(5);
-                    d2 += 30L*f.coefficient(5);
-                    d3 += 150L*f.coefficient(5);
-                    d4 += 240L*f.coefficient(5);
-                }
+                // Reset difference table for this j1 iteration by copying precomputed initial_diffs
+                std::vector<LongModular> diffs = initial_diffs;
+                LongModular f_value = diffs[0];
 
                 for (unsigned long int l = 0; l < max_l; l++)
                 {
@@ -486,12 +523,12 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                         con0 = (f_value.get_long() + (p_k + j1) * l * al_minus_b) % p_k;
                         //con1 = l_minus_m;
                         con1 = al_minus_b;
-                        // next value of f
-                        if (l >= 4 && degree > 4) d4 += 120L*f.coefficient(5);
-                        if (l >= 3) d3 += d4;
-                        if (l >= 2) d2 += d3;
-                        if (l >= 1) d1 += d2;
-                        f_value += d1;
+                        // next value of f using forward differences (advance to l+1)
+                        for (int k = degree - 1; k >= 0; k--)
+                        {
+                            diffs[k] = diffs[k] + diffs[k + 1];
+                        }
+                        f_value = diffs[0];
                     }
                     else
                     {
