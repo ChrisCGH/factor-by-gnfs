@@ -516,12 +516,12 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                         con0 = (f_value.get_long() + (p_k + j1) * l * al_minus_b) % p_k;
                         //con1 = l_minus_m;
                         con1 = al_minus_b;
-                        // next value of f using forward differences
-                        for (int k = degree - 1; k >= 1; k--)
+                        // next value of f using forward differences (advance to l+1)
+                        for (int k = degree - 1; k >= 0; k--)
                         {
-                            if ((long int)l >= k) diffs[k] = diffs[k] + diffs[k + 1];
+                            diffs[k] = diffs[k] + diffs[k + 1];
                         }
-                        if (l >= 1) f_value += diffs[1];
+                        f_value = diffs[0];
                     }
                     else
                     {
