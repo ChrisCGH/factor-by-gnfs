@@ -161,36 +161,37 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
         double initial_evaluation = logp / (p - 1.0);
         short initial_evaluation_s = (short)floor(initial_evaluation * 1000.0 + 0.5);
 
-        for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
+        // Precompute the forward-difference table once per (p_k, f) since f and
+        // degree are invariant across j1 iterations.
+        // d_k = Delta^k f(0) = sum_{j=0}^{k} (-1)^(k-j) C(k,j) f(j)
+        std::vector<LongModular> initial_diffs(degree + 1, LongModular(0L));
         {
-            memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
-            for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
-            // use finite differences to calculate f(l) for consecutive values of l
-            // General forward difference initialization for any degree
-            // d_k = Delta^k f(0) = sum_{j=0}^{k} (-1)^(k-j) C(k,j) f(j)
-            // We compute these by evaluating f at 0,1,...,degree and forming differences
-            std::vector<LongModular> diffs(degree + 1, LongModular(0L));
-            // Compute f(0), f(1), ..., f(degree)
             std::vector<LongModular> fvals(degree + 1);
             for (int i = 0; i <= degree; i++)
             {
                 LongModular xi(static_cast<long int>(i));
                 fvals[i] = f.evaluate(xi);
             }
-            // Compute forward differences: Delta^k f(0) using the standard table
-            // diffs[k] = Delta^k f(0)
             for (int k = 0; k <= degree; k++)
             {
-                diffs[k] = fvals[k];
+                initial_diffs[k] = fvals[k];
             }
-            // Apply differencing in-place
             for (int k = 1; k <= degree; k++)
             {
                 for (int i = degree; i >= k; i--)
                 {
-                    diffs[i] = diffs[i] - diffs[i - 1];
+                    initial_diffs[i] = initial_diffs[i] - initial_diffs[i - 1];
                 }
             }
+        }
+
+        for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
+        {
+            memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
+            for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
+            // use finite differences to calculate f(l) for consecutive values of l
+            // Reset the working difference table from the precomputed initial table
+            std::vector<LongModular> diffs(initial_diffs);
             LongModular f_value = diffs[0];
             // diffs[1] = d1, diffs[2] = d2, ..., diffs[degree] = d_degree
 
