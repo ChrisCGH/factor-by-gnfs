@@ -299,12 +299,13 @@ VeryLong b_k_vl (const Polynomial<VeryLong>& f, int k, const VeryLong& t)
     if (d == k) return f.coefficient(k);
     VeryLong res = f.coefficient(k);
     VeryLong neg_t_power(1L);
-    long int binom = 1; // C(k,k) = 1
+    VeryLong binom(1L); // C(k,k) = 1
     for (int i = k + 1; i <= d; i++)
     {
         neg_t_power *= -1L * t;
-        binom = binom * i / (i - k); // C(i,k)
-        res += VeryLong(binom) * f.coefficient(i) * neg_t_power;
+        binom *= i;
+        binom /= (i - k);
+        res += binom * f.coefficient(i) * neg_t_power;
     }
     return res;
 }
