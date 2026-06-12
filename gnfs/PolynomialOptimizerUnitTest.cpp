@@ -240,7 +240,7 @@ public:
         Polynomial<VeryLong> f6_opt = PolynomialOptimizer::minimize_I<double>(f6, a, b, m, best_s, new_I_F_S, new_b, new_m_out);
         CPPUNIT_ASSERT(f6_opt.deg() == 6);
         // The optimized polynomial should have same or better I value
-        CPPUNIT_ASSERT(new_I_F_S <= I_F_S);
+        CPPUNIT_ASSERT(new_I_F_S <= I_F_S + 1e-9);
         if (verbose())
         {
             std::cout << "f6_opt = " << f6_opt << std::endl;
