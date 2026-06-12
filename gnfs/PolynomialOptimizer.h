@@ -825,7 +825,8 @@ void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t,
         grad0 += w[k] * g0_k;
         grad1 += w[k] * g1_k;
     }
-
+    grad0 *= 2.0;
+    grad1 *= 2.0;
     // Hessian: H[a][b] = 2 * sum_{even k} w[k] * sum_{i+j=k, i<=2, j<=2} (p_i if a=0, q_i if a=1) * (p_j if b=0, q_j if b=1)
     DOUBLE H00 = 0.0, H01 = 0.0, H11 = 0.0;
     for (int k = 0; k <= 2 * d; k += 2)
