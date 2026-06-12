@@ -813,15 +813,7 @@ void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t,
                 g1_k += q[i] * b_base[j];
             }
         }
-        for (int j = 0; j <= 2 && j <= k; j++)
-        {
-            int i = k - j;
-            if (i >= 0 && i <= d && i != j)
-            {
-                g0_k += p[j] * b_base[i];
-                g1_k += q[j] * b_base[i];
-            }
-        }
+        // No second symmetric sum needed here; grad*2 below already accounts for i/j symmetry.
         grad0 += w[k] * g0_k;
         grad1 += w[k] * g1_k;
     }
