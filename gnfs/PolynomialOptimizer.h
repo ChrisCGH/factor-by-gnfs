@@ -729,7 +729,7 @@ DOUBLE ff(const Polynomial<DOUBLE>&f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s)
 }
 
 template <typename DOUBLE>
-void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s, DOUBLE& c0, DOUBLE& c1, long int sample_size = 1)
+void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s, DOUBLE& c0, DOUBLE& c1)
 {
     // Compute optimal c0, c1 by solving the 2x2 system arising from
     // dJ/dc0 = 0, dJ/dc1 = 0.
