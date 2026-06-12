@@ -562,11 +562,11 @@ DOUBLE b_k (const Polynomial<DOUBLE>& f, int k, DOUBLE t)
     // Compute sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
     DOUBLE res = f.coefficient(k);
     DOUBLE neg_t_power = 1.0;
-    long int binom = 1; // C(k,k) = 1, will build up C(i,k)
+    DOUBLE binom = 1.0; // C(k,k) = 1, will build up C(i,k)
     for (int i = k + 1; i <= d; i++)
     {
         neg_t_power *= -t;
-        binom = binom * i / (i - k); // C(i,k) = C(i-1,k) * i / (i-k)
+        binom *= (DOUBLE)i / (DOUBLE)(i - k);
         res += (DOUBLE)binom * f.coefficient(i) * neg_t_power;
     }
     return res;
