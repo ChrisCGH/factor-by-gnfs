@@ -550,9 +550,9 @@ DOUBLE b5 (const Polynomial<DOUBLE>& f)
     return f.coefficient(5);
 }
 
-// General b_k: k-th Taylor coefficient of f(x+t) expanded around 0
-// i.e. coefficient of x^k in f(x+t) = sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
-// (since we're computing coefficients of f(x-t) shifted by -t)
+// General b_k: k-th coefficient of f(x-t) when expanded in powers of x.
+// i.e. b_k = sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
+// where f(x) = sum_{i=0}^{d} f_i * x^i and f(x-t) = sum_{k=0}^{d} b_k * x^k
 template <typename DOUBLE>
 DOUBLE b_k (const Polynomial<DOUBLE>& f, int k, DOUBLE t)
 {
