@@ -22,6 +22,8 @@ VeryLong b4_vl (const Polynomial<VeryLong>& f, const VeryLong& t);
 
 VeryLong b5_vl (const Polynomial<VeryLong>& f);
 
+VeryLong b_k_vl (const Polynomial<VeryLong>& f, int k, const VeryLong& t);
+
 template <typename DOUBLE> DOUBLE b0 (const Polynomial<DOUBLE>& f, DOUBLE t);
 
 template <typename DOUBLE> DOUBLE b0 (const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE c0, DOUBLE c1, DOUBLE t);
@@ -42,6 +44,8 @@ template <typename DOUBLE> DOUBLE b4 (const Polynomial<DOUBLE>& f, DOUBLE t);
 
 template <typename DOUBLE> DOUBLE b5 (const Polynomial<DOUBLE>& f);
 
+template <typename DOUBLE> DOUBLE b_k (const Polynomial<DOUBLE>& f, int k, DOUBLE t);
+
 template <typename DOUBLE> DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE s);
 
 template <typename DOUBLE> DOUBLE minimize_I_over_t(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE& c0, DOUBLE& c1, DOUBLE s);
@@ -51,58 +55,70 @@ template <typename DOUBLE> DOUBLE J(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBL
 
 template <typename DOUBLE> DOUBLE minimize_I_over_t_and_s(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, DOUBLE& c0, DOUBLE& c1, DOUBLE& t, DOUBLE& s);
 
+// General J integral for arbitrary degree d polynomial.
+// For degree d, J = sum_{k=0,2,...,2d} W(k) * s^(k-d) * S_k
+// where W(k) = 4/((k+1)*(2d-k+1)) and S_k = sum_{i+j=k} b[i]*b[j]
+template <typename DOUBLE>
+DOUBLE J_general(const DOUBLE* b, int d, DOUBLE s)
+{
+    DOUBLE result = 0.0;
+    // Precompute s powers: s_pow[k] = s^(k-d) for k = 0, 2, 4, ..., 2d
+    // We build them incrementally: s^(k-d) = s^((k-2)-d) * s^2
+    DOUBLE s2 = s * s;
+    DOUBLE s_pow = 1.0;
+    // Start with s^(-d)
+    for (int i = 0; i < d; i++) s_pow /= s;
+    // s_pow is now s^(-d) = s^(0 - d)
+
+    for (int k = 0; k <= 2 * d; k += 2)
+    {
+        // Compute S_k = sum_{i+j=k, 0<=i<=d, 0<=j<=d} b[i]*b[j]
+        int i_min = (k > d) ? k - d : 0;
+        int i_max = (k < d) ? k : d;
+        DOUBLE S_k = 0.0;
+        for (int i = i_min; i <= i_max; i++)
+        {
+            int j = k - i;
+            if (i == j)
+                S_k += b[i] * b[j];
+            else if (i < j)
+                S_k += 2.0 * b[i] * b[j];
+        }
+        // W(k) = 4.0 / ((k+1) * (2*d - k + 1))
+        DOUBLE W_k = 4.0 / ((DOUBLE)(k + 1) * (DOUBLE)(2 * d - k + 1));
+        result += W_k * s_pow * S_k;
+        s_pow *= s2;
+    }
+    return result;
+}
+
 template <typename DOUBLE>
 DOUBLE J(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE bb, DOUBLE c0, DOUBLE c1, DOUBLE t, DOUBLE s)
 {
-    DOUBLE b[6];
+    int d = f.deg();
+    std::vector<DOUBLE> b(d + 1);
     b[0] = b0(f,a,bb,c0,c1,t);
     b[1] = b1(f,a,bb,c0,c1,t);
     b[2] = b2(f,a,c1,t);
-    b[3] = b3(f,t);
-    b[4] = b4(f,t);
-    b[5] = b5(f);
+    for (int i = 3; i <= d; i++)
+    {
+        b[i] = b_k(f, i, t);
+    }
 
-    DOUBLE s3 = s * s * s;
-    DOUBLE s5 = s3 * s * s;
-    DOUBLE rs = 1.0 / s;
-    DOUBLE rs3 = 1.0 / s3;
-    DOUBLE rs5 = 1.0 / s5;
-
-    DOUBLE result = 0.0;
-
-    result = (b[0] * b[0] * rs5 + b[5] * b[5] * s5) * 4.0 / 11.0;
-    result += ((2.0 * b[0] * b[2] + b[1] * b[1]) * rs3 +
-               (2.0 * b[3] * b[5] + b[4] * b[4]) * s3) * 4.0 / 27.0;
-    result += ((2.0 * b[0] * b[4] + 2.0 * b[1] * b[3] + b[2] * b[2]) * rs +
-               (2.0 * b[1] * b[5] + 2.0 * b[2] * b[4] + b[3] * b[3]) * s) * 4.0 / 35.0;
-    return result;
+    return J_general(b.data(), d, s);
 }
 
 template <typename DOUBLE>
 DOUBLE J(const Polynomial<DOUBLE>& f, DOUBLE s)
 {
-    DOUBLE b[6];
-    b[0] = f.coefficient(0);
-    b[1] = f.coefficient(1);
-    b[2] = f.coefficient(2);
-    b[3] = f.coefficient(3);
-    b[4] = b4(f);
-    b[5] = b5(f);
+    int d = f.deg();
+    std::vector<DOUBLE> b(d + 1);
+    for (int i = 0; i <= d; i++)
+    {
+        b[i] = f.coefficient(i);
+    }
 
-    DOUBLE s3 = s * s * s;
-    DOUBLE s5 = s3 * s * s;
-    DOUBLE rs = 1.0 / s;
-    DOUBLE rs3 = 1.0 / s3;
-    DOUBLE rs5 = 1.0 / s5;
-
-    DOUBLE result = 0.0;
-
-    result = (b[0] * b[0] * rs5 + b[5] * b[5] * s5) * 4.0 / 11.0;
-    result += ((2.0 * b[0] * b[2] + b[1] * b[1]) * rs3 +
-               (2.0 * b[3] * b[5] + b[4] * b[4]) * s3) * 4.0 / 27.0;
-    result += ((2.0 * b[0] * b[4] + 2.0 * b[1] * b[3] + b[2] * b[2]) * rs +
-               (2.0 * b[1] * b[5] + 2.0 * b[2] * b[4] + b[3] * b[3]) * s) * 4.0 / 35.0;
-    return result;
+    return J_general(b.data(), d, s);
 }
 
 template <typename DOUBLE>
@@ -363,13 +379,15 @@ Polynomial<VeryLong> minimize_I(const Polynomial<VeryLong>& fm,
         std::cout << "(c0,c1,t,s) = (" << c0_int << "," << c1_int << "," << t_vl << "," << s_vl << "), min_value = " << min_value << std::endl;
 
     std::vector<VeryLong> bb;
-    bb.resize(6);
+    int deg = fm.deg();
+    bb.resize(deg + 1);
     bb[0] = b0_vl(fm,a1,b1,c0_int,c1_int,t_vl);
     bb[1] = b1_vl(fm,a1,b1,c0_int,c1_int,t_vl);
     bb[2] = b2_vl(fm,a1,c1_int,t_vl);
-    bb[3] = b3_vl(fm,t_vl);
-    bb[4] = b4_vl(fm,t_vl);
-    bb[5] = b5_vl(fm);
+    for (int i = 3; i <= deg; i++)
+    {
+        bb[i] = b_k_vl(fm, i, t_vl);
+    }
 
     Polynomial<VeryLong> min_poly(bb);
 
@@ -520,21 +538,40 @@ template <typename DOUBLE>
 DOUBLE b4 (const Polynomial<DOUBLE>& f, DOUBLE t)
 {
     if (f.deg() < 4) return 0.0;
-    if (f.deg() < 5) return f.coefficient(4);
-    DOUBLE res = f.coefficient(4) - 5.0 * f.coefficient(5) * t;
-    return res;
+    return b_k(f, 4, t);
 }
 
 template <typename DOUBLE>
 DOUBLE b5 (const Polynomial<DOUBLE>& f)
 {
     if (f.deg() < 5) return 0.0;
+    if (f.deg() == 5) return f.coefficient(5);
+    // For degree > 5, b5 with t=0 is just the coefficient
     return f.coefficient(5);
 }
 
-//------------------------------------------
-// Functions for evaluating integral
-//------------------------------------------
+// General b_k: k-th Taylor coefficient of f(x+t) expanded around 0
+// i.e. coefficient of x^k in f(x+t) = sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
+// (since we're computing coefficients of f(x-t) shifted by -t)
+template <typename DOUBLE>
+DOUBLE b_k (const Polynomial<DOUBLE>& f, int k, DOUBLE t)
+{
+    int d = f.deg();
+    if (d < k) return 0.0;
+    if (d == k) return f.coefficient(k);
+    // Compute sum_{i=k}^{d} C(i,k) * f_i * (-t)^(i-k)
+    DOUBLE res = f.coefficient(k);
+    DOUBLE neg_t_power = 1.0;
+    long int binom = 1; // C(k,k) = 1, will build up C(i,k)
+    for (int i = k + 1; i <= d; i++)
+    {
+        neg_t_power *= -t;
+        binom = binom * i / (i - k); // C(i,k) = C(i-1,k) * i / (i-k)
+        res += (DOUBLE)binom * f.coefficient(i) * neg_t_power;
+    }
+    return res;
+}
+
 
 // if partial derivatives of I wrt c0 and c1 are zero, then we get
 // two simultaneous equations for c0 and c1 of the form
@@ -694,46 +731,126 @@ DOUBLE ff(const Polynomial<DOUBLE>&f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s)
 template <typename DOUBLE>
 void best_c0_and_c1(const Polynomial<DOUBLE>& f, DOUBLE aa, DOUBLE bb, DOUBLE t, DOUBLE s, DOUBLE& c0, DOUBLE& c1, long int sample_size = 1)
 {
-    // Cache repeated sub-expressions to avoid redundant function calls.
-    // a(), b(), c(), d() each appear multiple times with identical arguments.
-    const DOUBLE a_v = a(aa, bb, t, s);
-    const DOUBLE b_v = b(aa, bb, t, s);
-    const DOUBLE c_v = c(aa, bb, t, s);
-    const DOUBLE d_v = d(aa, bb, t, s);
+    // Compute optimal c0, c1 by solving the 2x2 system arising from
+    // dJ/dc0 = 0, dJ/dc1 = 0.
+    //
+    // The linear polynomial adjustment (c1*(x-t) + c0)(a*(x-t) - b) modifies:
+    //   b0 -> b0 - (b+at)*c0 + (b+at)*c1*t
+    //   b1 -> b1 + a*c0 - (b+2at)*c1
+    //   b2 -> b2 + a*c1
+    //
+    // J is quadratic in (c0,c1) so we solve the linear system.
+    // Let p0 = -(b+at), q0 = (b+at)*t   [db0/dc0, db0/dc1]
+    // Let p1 = a,        q1 = -(b+2at)   [db1/dc0, db1/dc1]
+    // Let p2 = 0,        q2 = a           [db2/dc0, db2/dc1]
 
-    DOUBLE det = a_v * d_v - b_v * b_v;
+    int d = f.deg();
+    DOUBLE bat = bb + aa * t;
+    DOUBLE bat2 = bb + 2.0 * aa * t;
+    DOUBLE p0 = -bat, q0 = bat * t;
+    DOUBLE p1 = aa,   q1 = -bat2;
+    DOUBLE p2 = 0.0,  q2 = aa;
+
+    // Compute base coefficients (without c0, c1 contribution)
+    std::vector<DOUBLE> b_base(d + 1);
+    b_base[0] = b0(f, t);
+    b_base[1] = b1(f, t);
+    b_base[2] = b2(f, t);
+    for (int i = 3; i <= d; i++)
+    {
+        b_base[i] = b_k(f, i, t);
+    }
+
+    // J = sum_{k=0,2,...,2d} W(k) * s^(k-d) * S_k
+    // where S_k = sum_{i+j=k} b[i]*b[j]
+    // b[0] = b_base[0] + p0*c0 + q0*c1
+    // b[1] = b_base[1] + p1*c0 + q1*c1
+    // b[2] = b_base[2] + p2*c0 + q2*c1
+    // b[i] = b_base[i] for i >= 3
+    //
+    // dJ/dc0 = sum_k W(k)*s^(k-d) * sum_{i+j=k} 2*(db[i]/dc0)*b[j]
+    //        = 2 * sum_k W(k)*s^(k-d) * sum_{i+j=k, i<=2} p_i * b[j]
+    // At optimum with c0=c1=0, we get a linear system:
+    //   A00*c0 + A01*c1 = -E0
+    //   A10*c0 + A11*c1 = -E1
+    // where:
+    //   A00 = 2*sum_k W(k)*s^(k-d) * sum_{i+j=k,i<=2} p_i*p_j (with p_j=0 for j>2)
+    //         + terms involving p_i*b_base[j] cross-contributions...
+    //
+    // Actually, since J is quadratic in c0,c1, we can write:
+    //   J = J0 + (gradient)^T * [c0,c1] + 0.5 * [c0,c1]^T * H * [c0,c1]
+    // and the minimum is at H*[c0,c1] = -gradient (at c0=c1=0)
+    //
+    // Compute the Hessian and gradient numerically for correctness:
+    // H[i][j] = d²J/dc_i dc_j, gradient[i] = dJ/dc_i at c0=c1=0
+
+    // Precompute s-power weights: w[k] = W(k) * s^(k-d) for even k from 0 to 2d
+    std::vector<DOUBLE> w(2 * d + 1, 0.0);
+    DOUBLE s_pow = 1.0;
+    for (int i = 0; i < d; i++) s_pow /= s;
+    DOUBLE s2 = s * s;
+    for (int k = 0; k <= 2 * d; k += 2)
+    {
+        w[k] = 4.0 / ((DOUBLE)(k + 1) * (DOUBLE)(2 * d - k + 1)) * s_pow;
+        s_pow *= s2;
+    }
+
+    // Gradient: dJ/dc0 and dJ/dc1 evaluated at c0=c1=0
+    // dJ/dc0 = 2 * sum_{even k} w[k] * sum_{i+j=k, 0<=i<=2, 0<=j<=d} p_i * b_base[j]
+    // dJ/dc1 = 2 * sum_{even k} w[k] * sum_{i+j=k, 0<=i<=2, 0<=j<=d} q_i * b_base[j]
+    DOUBLE grad0 = 0.0, grad1 = 0.0;
+    DOUBLE p[3] = {p0, p1, p2};
+    DOUBLE q[3] = {q0, q1, q2};
+    for (int k = 0; k <= 2 * d; k += 2)
+    {
+        DOUBLE g0_k = 0.0, g1_k = 0.0;
+        for (int i = 0; i <= 2 && i <= k; i++)
+        {
+            int j = k - i;
+            if (j >= 0 && j <= d)
+            {
+                g0_k += p[i] * b_base[j];
+                g1_k += q[i] * b_base[j];
+            }
+        }
+        for (int j = 0; j <= 2 && j <= k; j++)
+        {
+            int i = k - j;
+            if (i >= 0 && i <= d && i != j)
+            {
+                g0_k += p[j] * b_base[i];
+                g1_k += q[j] * b_base[i];
+            }
+        }
+        grad0 += w[k] * g0_k;
+        grad1 += w[k] * g1_k;
+    }
+
+    // Hessian: H[a][b] = 2 * sum_{even k} w[k] * sum_{i+j=k, i<=2, j<=2} (p_i if a=0, q_i if a=1) * (p_j if b=0, q_j if b=1)
+    DOUBLE H00 = 0.0, H01 = 0.0, H11 = 0.0;
+    for (int k = 0; k <= 2 * d; k += 2)
+    {
+        DOUBLE h00_k = 0.0, h01_k = 0.0, h11_k = 0.0;
+        for (int i = 0; i <= 2 && i <= k; i++)
+        {
+            int j = k - i;
+            if (j >= 0 && j <= 2)
+            {
+                h00_k += p[i] * p[j];
+                h01_k += p[i] * q[j];
+                h11_k += q[i] * q[j];
+            }
+        }
+        H00 += w[k] * h00_k * 2.0;
+        H01 += w[k] * h01_k * 2.0;
+        H11 += w[k] * h11_k * 2.0;
+    }
+
+    DOUBLE det = H00 * H11 - H01 * H01;
     if (fabs(det) < (DOUBLE)1e-10) return;
 
-    // Precompute polynomial evaluations used by e() and ff().
-    // Both call A, B, C, b3, b4, b5 independently; sharing them avoids
-    // ~24 redundant polynomial-traversal iterations for each I() call.
-    const DOUBLE A_v  = A(f, t);
-    const DOUBLE B_v  = B(f, t);
-    const DOUBLE C_v  = C(f, t);
-    const DOUBLE b3_v = b3(f, t);
-    const DOUBLE b4_v = b4(f, t);
-    const DOUBLE b5_v = b5(f);
-
-    // Inline e(f, aa, bb, t, s) and ff(f, aa, bb, t, s) using cached values.
-    const DOUBLE bat  = bb + aa * t;
-    const DOUBLE bat2 = bb + 2.0 * aa * t;
-    const DOUBLE s3   = s * s * s;
-    const DOUBLE s5   = s3 * s * s;
-
-    const DOUBLE e_v =
-        bat * A_v * 8.0 / (11.0 * s5)
-        + (-8.0 * aa * B_v + 8.0 * bat * C_v) / (27.0 * s3)
-        + (8.0 * bat * b4_v - 8.0 * aa * b3_v) / (35.0 * s)
-        - 8.0 * aa * b5_v * s / 35.0;
-
-    const DOUBLE ff_v =
-        -8.0 * t * bat * A_v / (11.0 * s5)
-        + (-8.0 * t * bat * C_v - 8.0 * aa * A_v + 8.0 * bat2 * B_v) / (27.0 * s3)
-        + (-8.0 * aa * C_v - 8.0 * t * bat * b4_v + 8.0 * bat2 * b3_v) / (35.0 * s)
-        + (-8.0 * aa * b4_v + 8.0 * bat2 * b5_v) * s / 35.0;
-
-    DOUBLE c0_d = (d_v * e_v - b_v * ff_v) / det;
-    DOUBLE c1_d = (a_v * ff_v - c_v * e_v) / det;
+    DOUBLE c0_d = -(H11 * grad0 - H01 * grad1) / det;
+    DOUBLE c1_d = -(H00 * grad1 - H01 * grad0) / det;
     VeryLong c0_vl(c0_d);
     VeryLong c1_vl(c1_d);
     c0 = c0_vl;

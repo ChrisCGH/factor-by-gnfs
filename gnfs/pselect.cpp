@@ -166,26 +166,33 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
             memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
             for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
             // use finite differences to calculate f(l) for consecutive values of l
-            // assume at least a cubic f
-            LongModular f_value = f.coefficient(0);
-            LongModular d1 = f.coefficient(1) + f.coefficient(2) + f.coefficient(3);
-            LongModular d2 = 2L*f.coefficient(2) + 6L*f.coefficient(3);
-            LongModular d3 = 6L*f.coefficient(3);
-            LongModular d4 = 0L;
-            if (degree > 3)
+            // General forward difference initialization for any degree
+            // d_k = Delta^k f(0) = sum_{j=0}^{k} (-1)^(k-j) C(k,j) f(j)
+            // We compute these by evaluating f at 0,1,...,degree and forming differences
+            std::vector<LongModular> diffs(degree + 1, LongModular(0L));
+            // Compute f(0), f(1), ..., f(degree)
+            std::vector<LongModular> fvals(degree + 1);
+            for (int i = 0; i <= degree; i++)
             {
-                d1 += f.coefficient(4);
-                d2 += 14L*f.coefficient(4);
-                d3 += 36L*f.coefficient(4);
-                d4 += 24L*f.coefficient(4);
+                LongModular xi(static_cast<long int>(i));
+                fvals[i] = f.evaluate(xi);
             }
-            if (degree > 4)
+            // Compute forward differences: Delta^k f(0) using the standard table
+            // diffs[k] = Delta^k f(0)
+            for (int k = 0; k <= degree; k++)
             {
-                d1 += f.coefficient(5);
-                d2 += 30L*f.coefficient(5);
-                d3 += 150L*f.coefficient(5);
-                d4 += 240L*f.coefficient(5);
+                diffs[k] = fvals[k];
             }
+            // Apply differencing in-place
+            for (int k = 1; k <= degree; k++)
+            {
+                for (int i = degree; i >= k; i--)
+                {
+                    diffs[i] = diffs[i] - diffs[i - 1];
+                }
+            }
+            LongModular f_value = diffs[0];
+            // diffs[1] = d1, diffs[2] = d2, ..., diffs[degree] = d_degree
 
             for (unsigned long int l = 0; l < max_l; l++)
             {
@@ -197,12 +204,12 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
                     // possible non-projective
                     con0 = (f_value.get_long() + (p_k + j1) * l * l_minus_m) % p_k;
                     con1 = l_minus_m;
-                    // next value of f
-                    if (l >= 4 && degree > 4) d4 += 120L*f.coefficient(5);
-                    if (l >= 3) d3 += d4;
-                    if (l >= 2) d2 += d3;
-                    if (l >= 1) d1 += d2;
-                    f_value += d1;
+                    // next value of f using forward differences
+                    for (int k = degree - 1; k >= 1; k--)
+                    {
+                        if ((long int)l >= k) diffs[k] = diffs[k] + diffs[k + 1];
+                    }
+                    if (l >= 1) f_value += diffs[1];
                 }
                 else
                 {
@@ -2109,8 +2116,8 @@ void skewed_polynomial_selection()
                 // calculate an approximation to m accurate to about 16 dec. places
                 double md = pow((N.get_double() / ad.get_double()), 1.0 / (double)degree);
                 // set up array of powers
-                VeryLong m_powers[6];
-                double md_powers[6];
+                std::vector<VeryLong> m_powers(degree + 1);
+                std::vector<double> md_powers(degree + 1);
                 md_powers[0] = 1.0;
                 md_powers[1] = md;
                 for (int ii = 2; ii < degree + 1; ii++)
