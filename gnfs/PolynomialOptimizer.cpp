@@ -479,13 +479,9 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
             double initial_evaluation = logp / (p - 1.0);
             short initial_evaluation_s = (short)floor(initial_evaluation * 1000.0 + 0.5);
 
-            for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
+            // Precompute forward difference table for f once (invariant across j1 iterations)
+            std::vector<LongModular> initial_diffs(degree + 1, LongModular(0L));
             {
-                memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
-                for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
-                // use finite differences to calculate f(l) for consecutive values of l
-                // General forward difference initialization for any degree
-                std::vector<LongModular> diffs(degree + 1, LongModular(0L));
                 std::vector<LongModular> fvals(degree + 1);
                 for (int i = 0; i <= degree; i++)
                 {
@@ -494,15 +490,24 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                 }
                 for (int k = 0; k <= degree; k++)
                 {
-                    diffs[k] = fvals[k];
+                    initial_diffs[k] = fvals[k];
                 }
                 for (int k = 1; k <= degree; k++)
                 {
                     for (int i = degree; i >= k; i--)
                     {
-                        diffs[i] = diffs[i] - diffs[i - 1];
+                        initial_diffs[i] = initial_diffs[i] - initial_diffs[i - 1];
                     }
                 }
+            }
+
+            for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
+            {
+                memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
+                for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
+                // use finite differences to calculate f(l) for consecutive values of l
+                // Reset difference table for this j1 iteration by copying precomputed initial_diffs
+                std::vector<LongModular> diffs = initial_diffs;
                 LongModular f_value = diffs[0];
 
                 for (unsigned long int l = 0; l < max_l; l++)
