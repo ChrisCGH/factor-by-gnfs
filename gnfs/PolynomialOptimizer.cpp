@@ -274,12 +274,13 @@ VeryLong b4_vl (const Polynomial<VeryLong>& f, const VeryLong& t)
     // Use general formula for degree > 4
     VeryLong res = f.coefficient(4);
     VeryLong neg_t_power(1L);
-    long int binom = 1;
+    VeryLong binom(1L); // C(4,4) = 1
     for (int i = 5; i <= f.deg(); i++)
     {
         neg_t_power *= -1L * t;
-        binom = binom * i / (i - 4); // C(i,4)
-        res += VeryLong(binom) * f.coefficient(i) * neg_t_power;
+        binom *= i;
+        binom /= (i - 4); // C(i,4)
+        res += binom * f.coefficient(i) * neg_t_power;
     }
     return res;
 }
