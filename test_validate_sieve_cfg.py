@@ -42,8 +42,13 @@ class ValidateSieveCfgTests(unittest.TestCase):
         os.close(fd)
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(content)
-        self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
+        self.addCleanup(self._cleanup_path, path)
         return path
+
+    @staticmethod
+    def _cleanup_path(path: str) -> None:
+        if os.path.exists(path):
+            os.unlink(path)
 
     def test_valid_multiline_polynomials(self):
         path = self._write_cfg(self.VALID_MULTILINE)
