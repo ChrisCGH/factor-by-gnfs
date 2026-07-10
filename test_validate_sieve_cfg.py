@@ -83,10 +83,10 @@ class ValidateSieveCfgTests(unittest.TestCase):
     def test_detects_non_primitive(self):
         bad = textwrap.dedent(
             """\
-            N = 101
-            m = 2
-            f1 = 2 + 4 X + 6 X^2
-            f2 = 4 + 6 X
+            N = 9
+            m = 1
+            f1 = 18 - 9 X + 9 X^2
+            f2 = 6 + 3 X
             """
         )
         path = self._write_cfg(bad)
