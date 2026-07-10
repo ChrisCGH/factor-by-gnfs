@@ -744,11 +744,8 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
             std::cout << "F = " << F << std::endl;
         }
         double alpha = PolynomialOptimizer::alpha_F(F, 2000, 200);
-        if (alpha < best_alpha)
-        {
-            best_alpha = alpha;
-            best_F = F;
-        }
+        best_alpha = alpha;
+        best_F = F;
         if (verbose())
         {
             std::cout << "alpha = " << alpha << std::endl;

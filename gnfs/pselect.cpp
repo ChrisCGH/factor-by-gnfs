@@ -379,11 +379,8 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
         std::cout << F.evaluate(m) << std::endl;
         std::cout << "F = " << F << std::endl;
         double alpha = PolynomialOptimizer::alpha_F(F, 2000, 200);
-        if (alpha < best_alpha)
-        {
-            best_alpha = alpha;
-            best_F = F;
-        }
+        best_alpha = alpha;
+        best_F = F;
         std::cout << "alpha = " << alpha << std::endl;
     }
 
