@@ -97,6 +97,44 @@ class ValidateSieveCfgTests(unittest.TestCase):
         coeffs = validate_sieve_cfg._parse_inline_polynomial("1 - X + X^2")
         self.assertEqual(coeffs, [1, -1, 1])
 
+    def test_debug_output_contains_key_steps(self):
+        """--debug mode should print per-step calculations to stdout."""
+        import io
+        from unittest.mock import patch
+
+        path = self._write_cfg(self.VALID_MULTILINE)
+        captured = io.StringIO()
+        with patch("sys.stdout", captured):
+            validate_sieve_cfg.validate_config(path, debug=True)
+        output = captured.getvalue()
+        self.assertIn("[debug]", output)
+        self.assertIn("f1", output)
+        self.assertIn("f2", output)
+        self.assertIn("mod N", output)
+
+    def test_debug_shows_congruence_result(self):
+        """With debug, a passing congruence check should show ✓ confirmation."""
+        import io
+        from unittest.mock import patch
+
+        path = self._write_cfg(self.VALID_MULTILINE)
+        captured = io.StringIO()
+        with patch("sys.stdout", captured):
+            validate_sieve_cfg.validate_config(path, debug=True)
+        output = captured.getvalue()
+        self.assertIn("≡ 0 (mod N)", output)
+
+    def test_debug_cli_flag_accepted(self):
+        """main() should accept --debug without error."""
+        path = self._write_cfg(self.VALID_MULTILINE)
+        import io
+        from unittest.mock import patch
+
+        captured = io.StringIO()
+        with patch("sys.stdout", captured):
+            rc = validate_sieve_cfg.main([path, "--debug"])
+        self.assertEqual(rc, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

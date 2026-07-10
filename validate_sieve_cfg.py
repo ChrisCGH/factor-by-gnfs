@@ -143,27 +143,55 @@ def _parse_inline_polynomial(expr: str) -> List[int]:
     return coeffs
 
 
-def eval_poly_mod(coeffs: List[int], m: int, modulus: int) -> int:
+def eval_poly_mod(coeffs: List[int], m: int, modulus: int,
+                  debug: bool = False, name: str = "") -> int:
+    """Evaluate polynomial at *m* modulo *modulus* using Horner's method."""
     acc = 0
-    for coeff in reversed(coeffs):
+    degree = len(coeffs) - 1
+    if debug:
+        terms = " + ".join(
+            (f"{c}" if p == 0 else f"{c}*m^{p}")
+            for p, c in enumerate(coeffs)
+        )
+        print(f"  [debug] Evaluating {name}(m) mod N using Horner's method")
+        print(f"  [debug] Polynomial: {terms}")
+        print(f"  [debug] m mod N = {m}")
+        print(f"  [debug] Coefficients (constant-first): {coeffs}")
+    for step, coeff in enumerate(reversed(coeffs)):
+        prev = acc
         acc = (acc * m + coeff) % modulus
+        if debug:
+            power = degree - step
+            print(f"  [debug]   step {step+1}: acc = ({prev} * m + {coeff}) mod N"
+                  f"  [coeff for X^{power}] = {acc}")
+    if debug:
+        print(f"  [debug] Result: {name}(m) mod N = {acc}")
     return acc
 
 
-def _content(coeffs: List[int]) -> int:
+def _content(coeffs: List[int], debug: bool = False, name: str = "") -> int:
+    """Return the GCD of the absolute values of *coeffs* (the polynomial content)."""
     g = 0
     for c in coeffs:
+        prev = g
         g = math.gcd(g, abs(c))
+        if debug:
+            print(f"  [debug] gcd({prev}, {abs(c)}) = {g}")
+    if debug:
+        print(f"  [debug] Content gcd of {name}: {g}")
     return g
 
 
-def validate_config(path: str) -> List[str]:
+def validate_config(path: str, debug: bool = False) -> List[str]:
     errors: List[str] = []
 
     try:
         params, polys = parse_sieve_cfg(path)
     except ValueError as exc:
         return [f"Parse error: {exc}"]
+
+    if debug:
+        print(f"[debug] Parsed parameters: N, m, and {len(polys)} polynomial(s)")
 
     for required in ("N", "m", "f1", "f2"):
         if required not in params:
@@ -184,6 +212,10 @@ def validate_config(path: str) -> List[str]:
         errors.append("m must be an integer")
         return errors
 
+    if debug:
+        print(f"[debug] N = {n}")
+        print(f"[debug] m = {m}")
+
     if n <= 1:
         errors.append("N must be greater than 1")
     if n % 2 == 0:
@@ -193,34 +225,53 @@ def validate_config(path: str) -> List[str]:
     if m >= n:
         errors.append("m should be smaller than N")
 
-    for name in ("f1", "f2"):
-        if name not in polys:
-            errors.append(f"Unable to parse {name} polynomial")
+    for fname in ("f1", "f2"):
+        if fname not in polys:
+            errors.append(f"Unable to parse {fname} polynomial")
             continue
 
-        poly = polys[name]
+        poly = polys[fname]
+        if debug:
+            print(f"\n[debug] Checking {fname} (degree {poly.degree}, source: {poly.source})")
+            print(f"[debug] Coefficients (constant-first): {poly.coeffs}")
+
         if not poly.coeffs:
-            errors.append(f"{name} has no coefficients")
+            errors.append(f"{fname} has no coefficients")
             continue
 
         if poly.coeffs[-1] == 0:
-            errors.append(f"{name} has zero leading coefficient")
+            if debug:
+                print(f"  [debug] Leading coefficient is 0")
+            errors.append(f"{fname} has zero leading coefficient")
 
-        content = _content(poly.coeffs)
+        content = _content(poly.coeffs, debug=debug, name=fname)
         if content != 1:
-            errors.append(f"{name} is not primitive (content gcd = {content})")
+            errors.append(f"{fname} is not primitive (content gcd = {content})")
 
         if n > 1:
             m_mod_n = m % n
-            residue = eval_poly_mod(poly.coeffs, m_mod_n, n)
+            if debug:
+                print(f"  [debug] m mod N = {m_mod_n}")
+            residue = eval_poly_mod(poly.coeffs, m_mod_n, n,
+                                    debug=debug, name=fname)
             if residue != 0:
-                errors.append(f"{name}(m) mod N = {residue}, expected 0")
+                errors.append(f"{fname}(m) mod N = {residue}, expected 0")
+            elif debug:
+                print(f"  [debug] ✓ {fname}(m) ≡ 0 (mod N)")
 
-    if "f1" in polys and polys["f1"].degree < 2:
-        errors.append("f1 must have degree >= 2 for GNFS")
+    if "f1" in polys:
+        deg = polys["f1"].degree
+        if debug:
+            print(f"\n[debug] f1 degree check: degree = {deg} (need >= 2)")
+        if deg < 2:
+            errors.append("f1 must have degree >= 2 for GNFS")
 
-    if "f2" in polys and polys["f2"].degree != 1:
-        errors.append("f2 must be linear (degree 1) for GNFS lattice sieving")
+    if "f2" in polys:
+        deg = polys["f2"].degree
+        if debug:
+            print(f"[debug] f2 degree check: degree = {deg} (need == 1)")
+        if deg != 1:
+            errors.append("f2 must be linear (degree 1) for GNFS lattice sieving")
 
     return errors
 
@@ -228,16 +279,18 @@ def validate_config(path: str) -> List[str]:
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("config", nargs="?", default="sieve.cfg", help="Path to sieve.cfg")
+    parser.add_argument("--debug", action="store_true",
+                        help="Print step-by-step calculations as they are performed")
     args = parser.parse_args(argv)
 
-    errors = validate_config(args.config)
+    errors = validate_config(args.config, debug=args.debug)
     if errors:
-        print(f"{args.config}: INVALID")
+        print(f"\n{args.config}: INVALID")
         for err in errors:
             print(f"  - {err}")
         return 1
 
-    print(f"{args.config}: OK")
+    print(f"\n{args.config}: OK")
     print("  f1/f2 satisfy f(m) ≡ 0 (mod N) and pass GNFS suitability checks.")
     return 0
 
