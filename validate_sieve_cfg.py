@@ -213,10 +213,8 @@ def validate_config(path: str) -> List[str]:
         if n > 1:
             m_mod_n = m % n
             residue = eval_poly_mod(poly.coeffs, m_mod_n, n)
-        else:
-            residue = 1
-        if residue != 0:
-            errors.append(f"{name}(m) mod N = {residue}, expected 0")
+            if residue != 0:
+                errors.append(f"{name}(m) mod N = {residue}, expected 0")
 
     if "f1" in polys and polys["f1"].degree < 2:
         errors.append("f1 must have degree >= 2 for GNFS")

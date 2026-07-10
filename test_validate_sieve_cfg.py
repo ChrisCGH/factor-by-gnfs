@@ -42,32 +42,24 @@ class ValidateSieveCfgTests(unittest.TestCase):
         os.close(fd)
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(content)
+        self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
         return path
 
     def test_valid_multiline_polynomials(self):
         path = self._write_cfg(self.VALID_MULTILINE)
-        try:
-            errors = validate_sieve_cfg.validate_config(path)
-            self.assertEqual(errors, [])
-        finally:
-            os.unlink(path)
+        errors = validate_sieve_cfg.validate_config(path)
+        self.assertEqual(errors, [])
 
     def test_valid_inline_polynomials(self):
         path = self._write_cfg(self.VALID_INLINE)
-        try:
-            errors = validate_sieve_cfg.validate_config(path)
-            self.assertEqual(errors, [])
-        finally:
-            os.unlink(path)
+        errors = validate_sieve_cfg.validate_config(path)
+        self.assertEqual(errors, [])
 
     def test_detects_bad_mod_condition(self):
         bad = self.VALID_MULTILINE.replace("541880117", "541880118")
         path = self._write_cfg(bad)
-        try:
-            errors = validate_sieve_cfg.validate_config(path)
-            self.assertTrue(any("f2(m) mod N" in e for e in errors))
-        finally:
-            os.unlink(path)
+        errors = validate_sieve_cfg.validate_config(path)
+        self.assertTrue(any("f2(m) mod N" in e for e in errors))
 
     def test_detects_unsuitable_degrees(self):
         bad = textwrap.dedent(
@@ -79,12 +71,9 @@ class ValidateSieveCfgTests(unittest.TestCase):
             """
         )
         path = self._write_cfg(bad)
-        try:
-            errors = validate_sieve_cfg.validate_config(path)
-            self.assertIn("f1 must have degree >= 2 for GNFS", errors)
-            self.assertIn("f2 must be linear (degree 1) for GNFS lattice sieving", errors)
-        finally:
-            os.unlink(path)
+        errors = validate_sieve_cfg.validate_config(path)
+        self.assertIn("f1 must have degree >= 2 for GNFS", errors)
+        self.assertIn("f2 must be linear (degree 1) for GNFS lattice sieving", errors)
 
     def test_detects_non_primitive(self):
         bad = textwrap.dedent(
@@ -96,11 +85,8 @@ class ValidateSieveCfgTests(unittest.TestCase):
             """
         )
         path = self._write_cfg(bad)
-        try:
-            errors = validate_sieve_cfg.validate_config(path)
-            self.assertTrue(any("not primitive" in e for e in errors))
-        finally:
-            os.unlink(path)
+        errors = validate_sieve_cfg.validate_config(path)
+        self.assertTrue(any("not primitive" in e for e in errors))
 
     def test_inline_parser_supports_implicit_x_coefficients(self):
         coeffs = validate_sieve_cfg._parse_inline_polynomial("1 - X + X^2")
