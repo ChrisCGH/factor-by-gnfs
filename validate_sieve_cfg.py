@@ -104,7 +104,7 @@ def _parse_inline_polynomial(expr: str) -> List[int]:
     if not compact:
         raise ValueError("Polynomial expression is empty")
 
-    term_re = re.compile(r"[+-]?\d+(?:X(?:\^\d+)?)?")
+    term_re = re.compile(r"[+-]?(?:\d+X(?:\^\d+)?|X(?:\^\d+)?|\d+)")
     matches = list(term_re.finditer(compact))
     if not matches:
         raise ValueError(f"Unable to parse polynomial: {expr}")
@@ -121,7 +121,12 @@ def _parse_inline_polynomial(expr: str) -> List[int]:
             power = 0
         else:
             coeff_part, power_part = term.split("X", 1)
-            coeff = int(coeff_part)
+            if coeff_part in ("", "+"):
+                coeff = 1
+            elif coeff_part == "-":
+                coeff = -1
+            else:
+                coeff = int(coeff_part)
             power = 1
             if power_part:
                 if not power_part.startswith("^"):
@@ -205,7 +210,11 @@ def validate_config(path: str) -> List[str]:
         if content != 1:
             errors.append(f"{name} is not primitive (content gcd = {content})")
 
-        residue = eval_poly_mod(poly.coeffs, m % n if n else m, n) if n > 1 else 1
+        if n > 1:
+            m_mod_n = m % n
+            residue = eval_poly_mod(poly.coeffs, m_mod_n, n)
+        else:
+            residue = 1
         if residue != 0:
             errors.append(f"{name}(m) mod N = {residue}, expected 0")
 

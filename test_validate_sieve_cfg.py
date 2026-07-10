@@ -102,6 +102,10 @@ class ValidateSieveCfgTests(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_inline_parser_supports_implicit_x_coefficients(self):
+        coeffs = validate_sieve_cfg._parse_inline_polynomial("1 - X + X^2")
+        self.assertEqual(coeffs, [1, -1, 1])
+
 
 if __name__ == "__main__":
     unittest.main()
