@@ -2080,6 +2080,18 @@ void skewed_polynomial_selection()
     {
         VeryLong c = Skewed_config.C_START();
 
+        if (Skewed_config.C_START_IS_RANDOM())
+        {
+            c = VeryLong(1L);
+            while (ln(c) < min_log_ad / 2.0)
+            {
+                long int p = primes[genrand() % NUMBER_OF_PRIMES];
+                if (ln(c * VeryLong(p)) < max_log_ad) c = c * VeryLong(p);
+                else break;
+            }
+            std::cout << "Random C_START generated: " << c << std::endl;
+        }
+
         if (Skewed_config.C_FACTOR() != 0L)
         {
             while (ln(c) < min_log_ad - ln(Skewed_config.C_FACTOR()))
