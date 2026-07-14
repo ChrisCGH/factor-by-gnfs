@@ -1771,7 +1771,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                 {
                     q *= extra_primes_[combination_1(i)];
                 }
-                if (q * pcs.a_ > c_d_1_max_)
+                if (q * xyz.a_ > c_d_1_max_)
                 {
                     continue;
                 }
