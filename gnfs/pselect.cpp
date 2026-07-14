@@ -1239,9 +1239,11 @@ void PolynomialPairCalculator::XYZ::make_flists()
 
 void PolynomialPairCalculator::XYZ::find_good_mu()
 {
-    const double fudge(10.0);
+    // epsilon = a_{d-2,max} / m_0  as specified by Algorithm 3.6 step 3(c) of
+    // Kleinjung (2006).  The approximation error for a_{d-2,mu}/m_0 is
+    // O(d*l^2*(d*a_d+p)/m_0), which is orders of magnitude smaller than epsilon
+    // for typical parameters, so no extra fudge factor is needed.
     double epsilon = ppc_.c_d_2_max_.get_double() / m0_.get_double();
-    epsilon /= fudge;
     if (ppc_.debug_)
     {
         std::cout << "epsilon  = " << epsilon << std::endl;
@@ -1388,13 +1390,14 @@ PolynomialPairCalculator::XYZ::XYZ(const PolynomialPairCalculator::XYZ& xyz, con
     a_ *= q;
 
     //
-    // m  is set here
+    // m  is set here: smallest multiple of the new a_ that is >= m_
     //  0
     //
     m0_ = ppc_.m_;
     if (m0_ % a_ != zero)
     {
         m0_ -= m0_ % a_;
+        m0_ += a_;
     }
 
     if (ppc_.debug_)
