@@ -773,8 +773,8 @@ private:
         PrimeCombinationSearch(const PolynomialPairCalculator& ppc, const Combinations& combination, long int primes_to_combine)
             : ppc_(ppc), combination_(combination), primes_to_combine_(primes_to_combine), p_(primes_to_combine_), a_(1L), x_(primes_to_combine_),
               m_(primes_to_combine_), f_(primes_to_combine_) {}
-        PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& xyz, const VeryLong& q, const VeryLong& s);
-        PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& xyz, const VeryLong& m_adjustment);
+        PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& pcs, const VeryLong& q, const VeryLong& s);
+        PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& pcs, const VeryLong& m_adjustment);
         void generate(std::vector<Kleinjung_poly_info>& top_polys);
         void generate(long int iterations, const VeryLong& q, const VeryLong& s, std::vector<Kleinjung_poly_info>& top_polys);
         bool make_a();
@@ -1380,11 +1380,11 @@ void PolynomialPairCalculator::PrimeCombinationSearch::generate(std::vector<Klei
     process_good_mu(top_polys);
 }
 
-PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& xyz, const VeryLong& q, const VeryLong& s)
-    : ppc_(xyz.ppc_), combination_(xyz.combination_), primes_to_combine_(xyz.primes_to_combine_), p_(xyz.p_),
-      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_),
-      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_),
-      flist2_(xyz.flist2_), flist2_mu_length_(xyz.flist2_mu_length_)
+PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& pcs, const VeryLong& q, const VeryLong& s)
+    : ppc_(pcs.ppc_), combination_(pcs.combination_), primes_to_combine_(pcs.primes_to_combine_), p_(pcs.p_),
+      a_(pcs.a_), m0_(pcs.m0_), x_(pcs.x_), m_(pcs.m_), m_mu_0_(pcs.m_mu_0_), c_d_1_0_(pcs.c_d_1_0_),
+      f_(pcs.f_), f0_(pcs.f0_), N_inv_c_d_(pcs.N_inv_c_d_), flist1_(pcs.flist1_), flist1_mu_length_(pcs.flist1_mu_length_),
+      flist2_(pcs.flist2_), flist2_mu_length_(pcs.flist2_mu_length_)
 {
     const VeryLong zero(0L);
     a_ *= q;
@@ -1409,8 +1409,8 @@ PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const P
     // i = 0
     {
         VeryLong q_inv = q.inverse(p_[0]);
-        VeryLong a_inv = xyz.a_.inverse(q);
-        VeryLong extra_term = xyz.a_;
+        VeryLong a_inv = pcs.a_.inverse(q);
+        VeryLong extra_term = pcs.a_;
         extra_term *= a_inv;
         extra_term *= s;
         extra_term %= a_;
@@ -1418,7 +1418,7 @@ PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const P
         for (size_t j = 0; j < ppc_.roots_mod_p_[combination_(0)].size(); ++j)
         {
             VeryLong& x_i_j = m_[0][j];
-            x_i_j -= xyz.m0_;
+            x_i_j -= pcs.m0_;
             x_i_j *= q;
             x_i_j *= q_inv;
             // add to m_[0][j] the term that comes from q, s
@@ -1485,11 +1485,11 @@ PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const P
     make_flists();
 }
 
-PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& xyz, const VeryLong& m_adjustment)
-    : ppc_(xyz.ppc_), combination_(xyz.combination_), primes_to_combine_(xyz.primes_to_combine_), p_(xyz.p_),
-      a_(xyz.a_), m0_(xyz.m0_), x_(xyz.x_), m_(xyz.m_), m_mu_0_(xyz.m_mu_0_), c_d_1_0_(xyz.c_d_1_0_),
-      f_(xyz.f_), f0_(xyz.f0_), N_inv_c_d_(xyz.N_inv_c_d_), flist1_(xyz.flist1_), flist1_mu_length_(xyz.flist1_mu_length_),
-      flist2_(xyz.flist2_), flist2_mu_length_(xyz.flist2_mu_length_)
+PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const PolynomialPairCalculator::PrimeCombinationSearch& pcs, const VeryLong& m_adjustment)
+    : ppc_(pcs.ppc_), combination_(pcs.combination_), primes_to_combine_(pcs.primes_to_combine_), p_(pcs.p_),
+      a_(pcs.a_), m0_(pcs.m0_), x_(pcs.x_), m_(pcs.m_), m_mu_0_(pcs.m_mu_0_), c_d_1_0_(pcs.c_d_1_0_),
+      f_(pcs.f_), f0_(pcs.f0_), N_inv_c_d_(pcs.N_inv_c_d_), flist1_(pcs.flist1_), flist1_mu_length_(pcs.flist1_mu_length_),
+      flist2_(pcs.flist2_), flist2_mu_length_(pcs.flist2_mu_length_)
 {
     const VeryLong zero(0L);
     //
@@ -1509,7 +1509,7 @@ PolynomialPairCalculator::PrimeCombinationSearch::PrimeCombinationSearch(const P
         for (size_t j = 0; j < ppc_.roots_mod_p_[combination_(0)].size(); ++j)
         {
             VeryLong& x_i_j = m_[0][j];
-            x_i_j -= xyz.m0_;
+            x_i_j -= pcs.m0_;
             x_i_j += m0_;
         }
     }
@@ -1771,7 +1771,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                 {
                     q *= extra_primes_[combination_1(i)];
                 }
-                if (q * xyz.a_ > c_d_1_max_)
+                if (q * pcs.a_ > c_d_1_max_)
                 {
                     continue;
                 }
