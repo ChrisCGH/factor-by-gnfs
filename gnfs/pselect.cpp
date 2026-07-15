@@ -1962,7 +1962,7 @@ bool PolynomialPairCalculator::generate(long int degree)
             std::cout << "E_F = " << E_F << std::endl;
         }
         std::sort(poly_list.begin(), poly_list.end());
-        if (poly_list.size() > 0)
+        if (!poly_list.empty())
         {
             std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
         }
@@ -2041,6 +2041,82 @@ bool PolynomialPairCalculator::generate(long int degree)
         std::cout << "Exiting kleingjung ..." << std::endl;
     }
     return true;
+}
+
+void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
+                                    VeryLong& new_m,
+                                    VeryLong& s_vl,
+                                    double average_log_size,
+                                    std::fstream& Output_file)
+{
+    bool step3_done = false;
+    double best_E_F = 100.0;
+    Polynomial<VeryLong> best_step3_poly;
+    VeryLong best_step3_m;
+    VeryLong best_step3_s;
+    double best_step3_alpha = 0.0;
+    while (!step3_done)
+    {
+        Polynomial<VeryLong> better_poly;
+        std::vector<PolynomialOptimizer::Poly_info> poly_list;
+
+        better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
+        if (!poly_list.empty())
+        {
+            std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+        }
+        std::cout << "best E(F) = " << best_E_F << std::endl;
+        double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
+        // can we improve size with a final translation?
+        VeryLong better_m;
+        VeryLong better_s;
+
+        Polynomial<VeryLong> even_better_poly = PolynomialOptimizer::translate(better_poly, 1L, new_m, s_vl, better_m, better_s);
+        double better_I_F_S = PolynomialOptimizer::average_log_size(even_better_poly, better_s);
+        double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
+        double E_F = I_F_S + alpha;
+        std::cout << "E(F) = " << E_F << std::endl;
+
+        double better_alpha = PolynomialOptimizer::alpha_F(even_better_poly, 2000, 200);
+        double better_E_F = better_I_F_S + better_alpha;
+        std::cout << "better E(F) = " << better_E_F << std::endl;
+        step3_done = true;
+        if (E_F < best_E_F)
+        {
+            min_poly = better_poly;
+            best_E_F = E_F;
+            best_step3_poly = better_poly;
+            best_step3_m = new_m;
+            best_step3_s = s_vl;
+            best_step3_alpha = alpha;
+            step3_done = false;
+        }
+        if (better_E_F < best_E_F)
+        {
+            min_poly = even_better_poly;
+            best_E_F = better_E_F;
+            best_step3_poly = even_better_poly;
+            best_step3_m = better_m;
+            best_step3_s = better_s;
+            best_step3_alpha = better_alpha;
+            new_m = better_m;
+            s_vl = better_s;
+            step3_done = false;
+        }
+        if (best_E_F > Skewed_config.REPEAT_CUTOFF()) step3_done = true;
+        if (best_E_F < Skewed_config.PRINTING_BOUND())
+        {
+            Output_file << best_step3_poly << std::endl;
+            Output_file << "m = " << best_step3_m << std::endl;
+            Output_file << "s = " << best_step3_s << std::endl;
+            Output_file << "alpha = " << best_step3_alpha << std::endl;
+            Output_file << "E(F) = " << best_E_F << std::endl;
+            Output_file << best_step3_poly.evaluate(new_m) << std::endl;
+            Output_file << std::endl;
+            Output_file << "==============================================================================" << std::endl;
+            Output_file << std::flush;
+        }
+    }
 }
 
 // Skewed polynomial selection (Procedure 5.1.6 in Murphy's thesis)
@@ -2244,74 +2320,7 @@ void skewed_polynomial_selection()
                         if (average_log_size < ALS_MAX)
                         {
                             // step 3
-                            int step3_done = 0;
-                            double best_E_F = 100.0;
-                            Polynomial<VeryLong> best_step3_poly;
-                            VeryLong best_step3_m;
-                            VeryLong best_step3_s;
-                            double best_step3_alpha = 0.0;
-                            while (!step3_done)
-                            {
-                                Polynomial<VeryLong> better_poly;
-                                std::vector<PolynomialOptimizer::Poly_info> poly_list;
-
-                                better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
-                                if (poly_list.size() > 0)
-                                {
-                                    std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
-                                }
-                                std::cout << "best E(F) = " << best_E_F << std::endl;
-                                double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
-                                // can we improve size with a final translation?
-                                VeryLong better_m;
-                                VeryLong better_s;
-
-                                Polynomial<VeryLong> even_better_poly = PolynomialOptimizer::translate(better_poly, 1L, new_m, s_vl, better_m, better_s);
-                                double better_I_F_S = PolynomialOptimizer::average_log_size(even_better_poly, better_s);
-                                double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
-                                double E_F = I_F_S + alpha;
-                                std::cout << "E(F) = " << E_F << std::endl;
-
-                                double better_alpha = PolynomialOptimizer::alpha_F(even_better_poly, 2000, 200);
-                                double better_E_F = better_I_F_S + better_alpha;
-                                std::cout << "better E(F) = " << better_E_F << std::endl;
-                                step3_done = 1;
-                                if (E_F < best_E_F)
-                                {
-                                    min_poly = better_poly;
-                                    best_E_F = E_F;
-                                    best_step3_poly = better_poly;
-                                    best_step3_m = new_m;
-                                    best_step3_s = s_vl;
-                                    best_step3_alpha = alpha;
-                                    step3_done = 0;
-                                }
-                                if (better_E_F < best_E_F)
-                                {
-                                    min_poly = even_better_poly;
-                                    best_E_F = better_E_F;
-                                    best_step3_poly = even_better_poly;
-                                    best_step3_m = better_m;
-                                    best_step3_s = better_s;
-                                    best_step3_alpha = better_alpha;
-                                    new_m = better_m;
-                                    s_vl = better_s;
-                                    step3_done = 0;
-                                }
-                                if (best_E_F > Skewed_config.REPEAT_CUTOFF()) step3_done = 1;
-                                if (best_E_F < Skewed_config.PRINTING_BOUND())
-                                {
-                                    Output_file << best_step3_poly << std::endl;
-                                    Output_file << "m = " << best_step3_m << std::endl;
-                                    Output_file << "s = " << best_step3_s << std::endl;
-                                    Output_file << "alpha = " << best_step3_alpha << std::endl;
-                                    Output_file << "E(F) = " << best_E_F << std::endl;
-                                    Output_file << best_step3_poly.evaluate(new_m) << std::endl;
-                                    Output_file << std::endl;
-                                    Output_file << "==============================================================================" << std::endl;
-                                    Output_file << std::flush;
-                                }
-                            }
+                            step3_optimize_root_properties(min_poly, new_m, s_vl, average_log_size, Output_file);
                         }
                         fm = fm + cubic_adjustment;
                     }
