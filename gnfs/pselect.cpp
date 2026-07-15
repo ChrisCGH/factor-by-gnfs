@@ -458,6 +458,36 @@ Polynomial<VeryLong> base_m_polynomial_1(const VeryLong& N, const long int degre
     Polynomial<VeryLong> poly(coefficients);
     return poly;
 }
+
+void search_for_good_m(const VeryLong& N,
+                       const VeryLong& ad,
+                       const long int degree,
+                       const std::vector<double>& md_powers,
+                       std::vector<VeryLong>& m_powers,
+                       VeryLong& m,
+                       VeryLong& nleft)
+{
+    const VeryLong zero(0L);
+    int good_m_found = 0;
+    while (!good_m_found)
+    {
+        double err = 0.0;
+        for (long int ii = 1; ii < degree + 1; ii++)
+        {
+            m_powers[ii] = m * m_powers[ii - 1];
+        }
+
+        nleft = N - ad * m_powers[degree]; // N - a_d m^d
+        err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
+        if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
+                VeryLong(err) == zero) good_m_found = 1;
+        else
+        {
+            VeryLong quotient = VeryLong(err);
+            m += quotient;
+        }
+    }
+}
 };
 
 void display_mu(const std::vector<long int>& mu)
@@ -2222,31 +2252,11 @@ void skewed_polynomial_selection()
                 m_powers[0] = 1L;
                 m = VeryLong(md);
 
-                int good_m_found = 0;
-                VeryLong quotient;
                 VeryLong nleft;
-                while (!good_m_found)
-                {
-                    double err = 0.0;
-                    for (int ii = 1; ii < degree + 1; ii++)
-                    {
-                        m_powers[ii] = m * m_powers[ii - 1];
-                    }
-
-                    nleft = N - ad * m_powers[degree]; // N - a_d m^d
-                    err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
-                    const VeryLong zero(0L);
-                    if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
-                            VeryLong(err) == zero) good_m_found = 1;
-                    else
-                    {
-                        quotient = VeryLong(err);
-                        m += quotient;
-                    }
-                }
+                search_for_good_m(N, ad, degree, md_powers, m_powers, m, nleft);
 
                 VeryLong remainder = nleft % m_powers[degree - 1];
-                quotient = nleft / m_powers[degree - 1];
+                VeryLong quotient = nleft / m_powers[degree - 1];
                 VeryLong rr = m_powers[degree - 1] - remainder;
                 if (remainder > rr)
                 {
