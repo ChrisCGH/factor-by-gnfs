@@ -2149,6 +2149,72 @@ void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
     }
 }
 
+// For each cubic adjustment i*X^2*(X - m) (i = -1, 0, 1 for degree > 4,
+// or i = 0 only for degree <= 4), repeatedly calls minimize_I until
+// convergence, then runs step3_optimize_root_properties if the result
+// is below ALS_MAX.
+void apply_cubic_adjustment_and_minimize(
+    Polynomial<VeryLong> fm,
+    const VeryLong& m,
+    int degree,
+    double ALS_MAX,
+    std::fstream& Output_file)
+{
+    std::vector<VeryLong> ca_coeff;
+    ca_coeff.resize(4);
+    ca_coeff[3] = 1L;
+    ca_coeff[2] = m * VeryLong(-1L);
+    ca_coeff[1] = 0L;
+    ca_coeff[0] = 0L;
+    Polynomial<VeryLong> cubic_adjustment(ca_coeff);
+    long int ca_start = -1;
+    long int ca_end = 2;
+    if (degree > 4) fm = fm - cubic_adjustment;
+    else
+    {
+        ca_start = 0;
+        ca_end = 1;
+    }
+
+    VeryLong s_vl;
+    Polynomial<VeryLong> min_poly;
+
+    for (long int ca = ca_start; ca < ca_end; ca++)
+    {
+        double average_log_size = ALS_MAX + 1;
+
+        VeryLong new_m;
+        Polynomial<VeryLong> try_poly = fm;
+        VeryLong try_m = m;
+        double change = 1.0;
+        double prev_als = 100.0;
+        while (change > 0 && fabs(change) > 0.1)
+        {
+            VeryLong dummy;
+            min_poly = PolynomialOptimizer::minimize_I(try_poly, 1L, try_m, try_m, s_vl, average_log_size, dummy, new_m);
+            change = prev_als - average_log_size;
+            if (change > 0.0)
+            {
+                try_poly = min_poly;
+                try_m = new_m;
+                prev_als = average_log_size;
+            }
+            else
+            {
+                average_log_size = prev_als;
+                min_poly = try_poly;
+                new_m = try_m;
+            }
+        }
+        if (average_log_size < ALS_MAX)
+        {
+            // step 3
+            step3_optimize_root_properties(min_poly, new_m, s_vl, average_log_size, Output_file);
+        }
+        fm = fm + cubic_adjustment;
+    }
+}
+
 // Skewed polynomial selection (Procedure 5.1.6 in Murphy's thesis)
 void skewed_polynomial_selection()
 {
@@ -2181,8 +2247,6 @@ void skewed_polynomial_selection()
         23, 29, 31, 37, 41
     };
     int finished = 0;
-    VeryLong s_vl;
-    Polynomial<VeryLong> min_poly;
     VeryLong ad;
 
     while (!finished)
@@ -2281,59 +2345,7 @@ void skewed_polynomial_selection()
 
                     if (new_ad >= min_ad)
                     {
-
-                    // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
-                    // but only for degree 5 and above.
-                    std::vector<VeryLong> ca_coeff;
-                    ca_coeff.resize(4);
-                    ca_coeff[3] = 1L;
-                    ca_coeff[2] = m * VeryLong(-1L);
-                    ca_coeff[1] = 0L;
-                    ca_coeff[0] = 0L;
-                    Polynomial<VeryLong> cubic_adjustment(ca_coeff);
-                    long int ca_start = -1;
-                    long int ca_end = 2;
-                    if (degree > 4) fm = fm - cubic_adjustment;
-                    else
-                    {
-                        ca_start = 0;
-                        ca_end = 1;
-                    }
-
-                    for (long int ca = ca_start; ca < ca_end; ca++)
-                    {
-                        double average_log_size = ALS_MAX + 1;
-
-                        VeryLong new_m;
-                        Polynomial<VeryLong> try_poly = fm;
-                        VeryLong try_m = m;
-                        double change = 1.0;
-                        double prev_als = 100.0;
-                        while (change > 0 && fabs(change) > 0.1)
-                        {
-                            VeryLong dummy;
-                            min_poly = PolynomialOptimizer::minimize_I(try_poly, 1L, try_m, try_m, s_vl, average_log_size, dummy, new_m);
-                            change = prev_als - average_log_size;
-                            if (change > 0.0)
-                            {
-                                try_poly = min_poly;
-                                try_m = new_m;
-                                prev_als = average_log_size;
-                            }
-                            else
-                            {
-                                average_log_size = prev_als;
-                                min_poly = try_poly;
-                                new_m = try_m;
-                            }
-                        }
-                        if (average_log_size < ALS_MAX)
-                        {
-                            // step 3
-                            step3_optimize_root_properties(min_poly, new_m, s_vl, average_log_size, Output_file);
-                        }
-                        fm = fm + cubic_adjustment;
-                    }
+                        apply_cubic_adjustment_and_minimize(fm, m, degree, ALS_MAX, Output_file);
                     } // if (new_ad >= min_ad)
                 }
             }
