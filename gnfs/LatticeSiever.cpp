@@ -513,9 +513,8 @@ void LatticeSiever::check_interval2()
             
             CandidateState candidate{
                 static_cast<size_t>(sieve_ptr - fixed_sieve_array_),
-                false
+                !sieve_bit_array_.isSet(static_cast<size_t>(sieve_ptr - fixed_sieve_array_))
             };
-            candidate.is_active = !sieve_bit_array_.isSet(candidate.offset);
             
             if (__builtin_expect(candidate.is_active, 1))
             {
