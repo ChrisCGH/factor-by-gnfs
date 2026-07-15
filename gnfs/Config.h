@@ -22,6 +22,7 @@ public:
         MAX_SMALL_PRIME_ = 100;
         ALPHA_CUTOFF_ = -4.5;
         C_START_ = 4500L;
+        C_START_RANDOM_ = false;
         C_RESTART_ = 0L;
         C_FACTOR_ = 1000L;
         REPEAT_CUTOFF_ = 48.5;
@@ -91,7 +92,15 @@ public:
                 }
                 else if (str.find("C_START = ") == 0)
                 {
-                    C_START_ = s;
+                    if (s == "RANDOM")
+                    {
+                        C_START_RANDOM_ = true;
+                        C_START_ = 1L;
+                    }
+                    else
+                    {
+                        C_START_ = s;
+                    }
                 }
                 else if (str.find("C_RESTART = ") == 0)
                 {
@@ -199,6 +208,10 @@ public:
     {
         return C_START_;
     }
+    bool C_START_IS_RANDOM() const
+    {
+        return C_START_RANDOM_;
+    }
     VeryLong C_RESTART() const
     {
         return C_RESTART_;
@@ -248,7 +261,10 @@ public:
         std::cout << "ALPHA_CUTOFF = " << ALPHA_CUTOFF() << std::endl;
         std::cout << "PRINTING_BOUND = " << PRINTING_BOUND() << std::endl;
         std::cout << "REPEAT_CUTOFF = " << REPEAT_CUTOFF() << std::endl;
-        std::cout << "C_START = " << C_START() << std::endl;
+        if (C_START_RANDOM_)
+            std::cout << "C_START = RANDOM" << std::endl;
+        else
+            std::cout << "C_START = " << C_START() << std::endl;
         std::cout << "C_RESTART = " << C_RESTART() << std::endl;
         std::cout << "C_FACTOR = " << C_FACTOR() << std::endl;
         std::cout << "NON_MONIC = " << NON_MONIC() << std::endl;
@@ -274,6 +290,7 @@ private:
     double PRINTING_BOUND_;
     double REPEAT_CUTOFF_;
     VeryLong C_START_;
+    bool C_START_RANDOM_;
     VeryLong C_RESTART_;
     long int C_FACTOR_;
     double GOOD_M_CUTOFF_;

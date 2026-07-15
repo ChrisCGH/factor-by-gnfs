@@ -1771,7 +1771,7 @@ bool PolynomialPairCalculator::generate(long int degree)
                 {
                     q *= extra_primes_[combination_1(i)];
                 }
-                if (q * pcs.a_ > c_d_1_max_)
+                if (q * xyz.a_ > c_d_1_max_)
                 {
                     continue;
                 }
@@ -2079,6 +2079,21 @@ void skewed_polynomial_selection()
     while (!finished)
     {
         VeryLong c = Skewed_config.C_START();
+
+        if (Skewed_config.C_START_IS_RANDOM())
+        {
+            c = VeryLong(1L);
+            const int MAX_RANDOM_ITERATIONS = 1000;
+            int iterations = 0;
+            while (ln(c) < min_log_ad / 2.0 && iterations < MAX_RANDOM_ITERATIONS)
+            {
+                long int p = primes[genrand() % NUMBER_OF_PRIMES];
+                if (ln(c * VeryLong(p)) < max_log_ad) c = c * VeryLong(p);
+                else break;
+                ++iterations;
+            }
+            std::cout << "Random C_START generated: " << c << std::endl;
+        }
 
         if (Skewed_config.C_FACTOR() != 0L)
         {

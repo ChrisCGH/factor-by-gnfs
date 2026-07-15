@@ -72,6 +72,7 @@ is the maximum value for the leading coefficient of the non-linear polynomial.
 .B C_START
 gives a factor that the leading coefficient of the non-linear polynomial must have. If the leading coefficient is divisible by a number of small primes then the non-linear polynomial has better "root properties" (see Murphy for a full discussion), so C_START should be set to the product of a number of small primes, possibly repeated.
 The skewed program searches for non-linear polynomials with leading coefficient between MIN_AD and MAX_AD, such that the leading coefficient is a multiple of C_START.
+If C_START is set to RANDOM, then a C_START value is generated randomly as the product of a number of small primes (including repeats), giving a different starting point on each run.
 .sp
 .B C_RESTART
 if non-zero, is the initial value to take for the leading coefficient of the non-linear polynomial, allowing the skewed program to be restarted from a given point in the search.
