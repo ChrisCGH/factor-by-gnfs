@@ -472,7 +472,7 @@ void search_for_good_m(const VeryLong& N,
     while (!good_m_found)
     {
         double err = 0.0;
-        for (long int ii = 1; ii < degree + 1; ii++)
+        for (int ii = 1; ii < degree + 1; ii++)
         {
             m_powers[ii] = m * m_powers[ii - 1];
         }
