@@ -467,7 +467,6 @@ void search_for_good_m(const VeryLong& N,
                        VeryLong& m,
                        VeryLong& nleft)
 {
-    const VeryLong zero(0L);
     bool good_m_found = false;
     while (!good_m_found)
     {
@@ -480,7 +479,7 @@ void search_for_good_m(const VeryLong& N,
         nleft = N - ad * m_powers[degree]; // N - a_d m^d
         err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
         if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
-                VeryLong(err) == zero) good_m_found = true;
+                VeryLong(err) == VeryLong(0L)) good_m_found = true;
         else
         {
             VeryLong quotient = VeryLong(err);
