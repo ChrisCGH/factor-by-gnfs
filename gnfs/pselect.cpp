@@ -2176,13 +2176,12 @@ void apply_cubic_adjustment_and_minimize(
         ca_end = 1;
     }
 
-    VeryLong s_vl;
-    Polynomial<VeryLong> min_poly;
-
     for (long int ca = ca_start; ca < ca_end; ca++)
     {
         double average_log_size = ALS_MAX + 1;
 
+        VeryLong s_vl;
+        Polynomial<VeryLong> min_poly;
         VeryLong new_m;
         Polynomial<VeryLong> try_poly = fm;
         VeryLong try_m = m;
