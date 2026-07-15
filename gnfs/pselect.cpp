@@ -1962,7 +1962,10 @@ bool PolynomialPairCalculator::generate(long int degree)
             std::cout << "E_F = " << E_F << std::endl;
         }
         std::sort(poly_list.begin(), poly_list.end());
-        std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+        if (poly_list.size() > 0)
+        {
+            std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+        }
         const size_t max_polys_to_examine = 2000;
         if (poly_list.size() > max_polys_to_examine)
         {
@@ -2253,7 +2256,10 @@ void skewed_polynomial_selection()
                                 std::vector<PolynomialOptimizer::Poly_info> poly_list;
 
                                 better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
-                                std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+                                if (poly_list.size() > 0)
+                                {
+                                    std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+                                }
                                 std::cout << "best E(F) = " << best_E_F << std::endl;
                                 double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
                                 // can we improve size with a final translation?
