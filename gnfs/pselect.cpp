@@ -1944,9 +1944,12 @@ bool PolynomialPairCalculator::generate(long int degree)
         VeryLong a = minimized_polys[i].a_;
         VeryLong b = minimized_polys[i].b_;
         Polynomial<VeryLong> kj = minimized_polys[i].fm_;
-
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << b << std::endl;
+        
+        if (debug_)
+        {
+            std::cout << "a = " << a << std::endl;
+            std::cout << "b = " << b << std::endl;
+        }
 
         VeryLongModular::set_default_modulus(N_);
         VeryLongModular tmp1 = VeryLongModular(b) / VeryLongModular(a);
@@ -1965,18 +1968,24 @@ bool PolynomialPairCalculator::generate(long int degree)
             std::cout << "Problem: new_poly(b, a) != 0 % N" << std::endl;
         }
         double als = PolynomialOptimizer::average_log_size(new_poly, s_vl.get_long());
-        std::cout << "kj = " << kj << std::endl;
-        std::cout << "f = " << new_poly << std::endl;
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << new_b << std::endl;
-        std::cout << "m = " << new_m << std::endl;
-        std::cout << "s = " << s_vl << std::endl;
-        std::cout << "als = " << als << std::endl;
+        if (debug_)
+        {
+            std::cout << "kj = " << kj << std::endl;
+            std::cout << "f = " << new_poly << std::endl;
+            std::cout << "a = " << a << std::endl;
+            std::cout << "b = " << new_b << std::endl;
+            std::cout << "m = " << new_m << std::endl;
+            std::cout << "s = " << s_vl << std::endl;
+            std::cout << "als = " << als << std::endl;
+        }
         I_F_S = PolynomialOptimizer::average_log_size(new_poly, s_vl);
         double alpha = PolynomialOptimizer::alpha_F(new_poly, 2000, 200);
         double E_F = I_F_S + alpha;
-        std::cout << "alpha = " << alpha << std::endl;
-        std::cout << "E_F = " << E_F << std::endl;
+        if (debug_)
+        {
+            std::cout << "alpha = " << alpha << std::endl;
+            std::cout << "E_F = " << E_F << std::endl;
+        }
         std::vector<PolynomialOptimizer::Poly_info> poly_list;
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
@@ -1988,8 +1997,11 @@ bool PolynomialPairCalculator::generate(long int degree)
             double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
             double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
             double E_F = I_F_S + alpha;
-            std::cout << "alpha = " << alpha << std::endl;
-            std::cout << "E_F = " << E_F << std::endl;
+            if (debug_)
+            {
+                std::cout << "alpha = " << alpha << std::endl;
+                std::cout << "E_F = " << E_F << std::endl;
+            }
         }
         std::sort(poly_list.begin(), poly_list.end());
         if (!poly_list.empty())
@@ -2042,12 +2054,18 @@ bool PolynomialPairCalculator::generate(long int degree)
             ++examined;
         }
 
-        std::cout << "better_poly = " << better_poly << std::endl;
+        if (debug_)
+        {
+            std::cout << "better_poly = " << better_poly << std::endl;
+        }
         double better_I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
         alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
         E_F = better_I_F_S + alpha;
-        std::cout << "alpha = " << alpha << std::endl;
-        std::cout << "E(F) = " << E_F << std::endl;
+        if (debug_)
+        {
+            std::cout << "alpha = " << alpha << std::endl;
+            std::cout << "E(F) = " << E_F << std::endl;
+        }
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
             output_file_ << "f1 = " << better_poly << std::endl;
@@ -2094,8 +2112,8 @@ void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
         if (!poly_list.empty())
         {
             std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+            std::cout << "best E(F) = " << best_E_F << std::endl;
         }
-        std::cout << "best E(F) = " << best_E_F << std::endl;
         double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
         // can we improve size with a final translation?
         VeryLong better_m;
@@ -2105,11 +2123,17 @@ void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
         double better_I_F_S = PolynomialOptimizer::average_log_size(even_better_poly, better_s);
         double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
         double E_F = I_F_S + alpha;
-        std::cout << "E(F) = " << E_F << std::endl;
+        if (!poly_list.empty())
+        {
+            std::cout << "E(F) = " << E_F << std::endl;
+        }
 
         double better_alpha = PolynomialOptimizer::alpha_F(even_better_poly, 2000, 200);
         double better_E_F = better_I_F_S + better_alpha;
-        std::cout << "better E(F) = " << better_E_F << std::endl;
+        if (!poly_list.empty())
+        {
+            std::cout << "better E(F) = " << better_E_F << std::endl;
+        }
         step3_done = true;
         if (E_F < best_E_F)
         {
