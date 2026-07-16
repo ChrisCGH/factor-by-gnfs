@@ -1799,9 +1799,9 @@ bool PolynomialPairCalculator::generate(long int degree)
     long int primes_to_combine = std::min(max_primes_to_combine, primes_.size());
     for (Combinations combination(primes_to_combine, primes_.size()); !combination.done(); combination.next())
     {
+        debug_output(debug_, "Combination : ");
         if (debug_)
         {
-            debug_output(debug_, "Combination : ");
             combination.display();
         }
         PrimeCombinationSearch xyz(*this, combination, primes_to_combine);
