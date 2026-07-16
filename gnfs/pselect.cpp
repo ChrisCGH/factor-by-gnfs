@@ -23,6 +23,30 @@ namespace
 {
 Skewed_selection_config Skewed_config("skewed.cfg");
 
+template <typename T>
+void write_debug_value(std::ostream& os, const T& value)
+{
+    os << value;
+}
+
+template <typename T, typename... Args>
+void write_debug_value(std::ostream& os, const T& value, const Args&... args)
+{
+    os << value;
+    write_debug_value(os, args...);
+}
+
+template <typename... Args>
+void debug_output(bool enabled, const Args&... args)
+{
+    if (!enabled)
+    {
+        return;
+    }
+    write_debug_value(std::cout, args...);
+    std::cout << std::endl;
+}
+
 struct Kleinjung_poly_info
 {
     Kleinjung_poly_info(const VeryLong& a, const VeryLong& b, const Polynomial<VeryLong>& fm)
@@ -1672,10 +1696,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     oss << " d-1,max" << std::endl;
     oss << "c        = " << c_d_2_max_ << std::endl;
     oss << " d-2,max" << std::endl;
-    if (debug_)
-    {
-        std::cout << oss.str();
-    }
+    debug_output(debug_, oss.str());
 
     VeryLong minus_c_d = -c_d_;
     VeryLong minus_c_d_d = minus_c_d * VeryLong(d_);
@@ -1686,10 +1707,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     for (int i = 1; i < d_; i++) c[i] = zero;
     c[d_] = c_d_;
     poly_ = Polynomial<VeryLong>(c);
-    if (debug_)
-    {
-        std::cout << "poly_ = " << poly_ << std::endl;
-    }
+    debug_output(debug_, "poly_ = ", poly_);
 
     VeryLong::generate_prime_table();
 
@@ -1783,7 +1801,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     {
         if (debug_)
         {
-            std::cout << "Combination : ";
+            debug_output(debug_, "Combination : ");
             combination.display();
         }
         PrimeCombinationSearch xyz(*this, combination, primes_to_combine);
@@ -1945,11 +1963,8 @@ bool PolynomialPairCalculator::generate(long int degree)
         VeryLong b = minimized_polys[i].b_;
         Polynomial<VeryLong> kj = minimized_polys[i].fm_;
         
-        if (debug_)
-        {
-            std::cout << "a = " << a << std::endl;
-            std::cout << "b = " << b << std::endl;
-        }
+        debug_output(debug_, "a = ", a);
+        debug_output(debug_, "b = ", b);
 
         VeryLongModular::set_default_modulus(N_);
         VeryLongModular tmp1 = VeryLongModular(b) / VeryLongModular(a);
@@ -1968,24 +1983,18 @@ bool PolynomialPairCalculator::generate(long int degree)
             std::cout << "Problem: new_poly(b, a) != 0 % N" << std::endl;
         }
         double als = PolynomialOptimizer::average_log_size(new_poly, s_vl.get_long());
-        if (debug_)
-        {
-            std::cout << "kj = " << kj << std::endl;
-            std::cout << "f = " << new_poly << std::endl;
-            std::cout << "a = " << a << std::endl;
-            std::cout << "b = " << new_b << std::endl;
-            std::cout << "m = " << new_m << std::endl;
-            std::cout << "s = " << s_vl << std::endl;
-            std::cout << "als = " << als << std::endl;
-        }
+        debug_output(debug_, "kj = ", kj);
+        debug_output(debug_, "f = ", new_poly);
+        debug_output(debug_, "a = ", a);
+        debug_output(debug_, "b = ", new_b);
+        debug_output(debug_, "m = ", new_m);
+        debug_output(debug_, "s = ", s_vl);
+        debug_output(debug_, "als = ", als);
         I_F_S = PolynomialOptimizer::average_log_size(new_poly, s_vl);
         double alpha = PolynomialOptimizer::alpha_F(new_poly, 2000, 200);
         double E_F = I_F_S + alpha;
-        if (debug_)
-        {
-            std::cout << "alpha = " << alpha << std::endl;
-            std::cout << "E_F = " << E_F << std::endl;
-        }
+        debug_output(debug_, "alpha = ", alpha);
+        debug_output(debug_, "E_F = ", E_F);
         std::vector<PolynomialOptimizer::Poly_info> poly_list;
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
@@ -1997,11 +2006,8 @@ bool PolynomialPairCalculator::generate(long int degree)
             double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
             double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
             double E_F = I_F_S + alpha;
-            if (debug_)
-            {
-                std::cout << "alpha = " << alpha << std::endl;
-                std::cout << "E_F = " << E_F << std::endl;
-            }
+            debug_output(debug_, "alpha = ", alpha);
+            debug_output(debug_, "E_F = ", E_F);
         }
         std::sort(poly_list.begin(), poly_list.end());
         if (!poly_list.empty())
@@ -2054,18 +2060,12 @@ bool PolynomialPairCalculator::generate(long int degree)
             ++examined;
         }
 
-        if (debug_)
-        {
-            std::cout << "better_poly = " << better_poly << std::endl;
-        }
+        debug_output(debug_, "better_poly = ", better_poly);
         double better_I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
         alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
         E_F = better_I_F_S + alpha;
-        if (debug_)
-        {
-            std::cout << "alpha = " << alpha << std::endl;
-            std::cout << "E(F) = " << E_F << std::endl;
-        }
+        debug_output(debug_, "alpha = ", alpha);
+        debug_output(debug_, "E(F) = ", E_F);
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
             output_file_ << "f1 = " << better_poly << std::endl;
@@ -2084,10 +2084,7 @@ bool PolynomialPairCalculator::generate(long int degree)
             output_file_ << std::flush;
         }
     }
-    if (debug_)
-    {
-        std::cout << "Exiting kleingjung ..." << std::endl;
-    }
+    debug_output(debug_, "Exiting kleingjung ...");
     return true;
 }
 
