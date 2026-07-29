@@ -803,26 +803,27 @@ void LatticeSiever::remove_sieved_factors1()
 void LatticeSiever::remove_sieved_factors2()
 {
     //std::cout << "Removing sieved factors for ... f = " << f2_ << std::endl;
+    // Use a hash table of the (typically much smaller) potentially-smooth
+    // point list instead of sorting the (potentially very large) prime
+    // factor list. This avoids an O(n log n) sort of rat_pf_list_ (which can
+    // hold up to rat_pf_list_size entries) in favour of an O(n) scan with
+    // O(1) average-case hash lookups, matching the approach already used in
+    // remove_sieved_factors1().
+    PSPHashTable psp_hash_table(PotentiallySmoothPoint::get_sieve_ptr, PotentiallySmoothPoint::compare);
+    psp_hash_table.load(head_psp_);
     rat_pf_list_.set_end();
-    rat_pf_list_.sort();
     PrimeFactor* pf_iter = rat_pf_list_.begin();
-
-    PotentiallySmoothPoint* smooth_iter = head_psp_;
-
-    while (pf_iter != rat_pf_list_.end() && smooth_iter)
+    while (pf_iter != rat_pf_list_.end())
     {
-        if (pf_iter->offset_ + fixed_sieve_array_ > smooth_iter->ptr_)
+        if (!sieve_bit_array_.isSet(pf_iter->offset_))
         {
-            smooth_iter = smooth_iter->next_;
-        }
-        else
-        {
-            if (pf_iter->offset_ + fixed_sieve_array_ == smooth_iter->ptr_)
+            PotentiallySmoothPoint* psp = psp_hash_table.find((pf_iter->offset_ + fixed_sieve_array_));
+            if (psp)
             {
-                smooth_iter->add_factor2(pf_iter->p_);
+                psp->add_factor2(pf_iter->p_);
             }
-            ++pf_iter;
         }
+        ++pf_iter;
     }
     rat_pf_list_.reset();
 }
