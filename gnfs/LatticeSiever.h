@@ -724,6 +724,7 @@ private:
     void sieve2(FactorBase::a_iterator iter, long int r1);
     long int check_interval1(long int q);
     void check_interval2();
+    std::pair<long int, long int> block_start_to_c_d(size_t block_start) const;
     std::pair<long int, long int> offset_to_c_d(size_t offset);
     size_t c_d_to_offset(const std::pair<long int, long int>& cd);
     bool allocate_c_d_region();

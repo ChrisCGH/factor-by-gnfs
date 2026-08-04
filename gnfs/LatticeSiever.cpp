@@ -371,6 +371,12 @@ size_t LatticeSiever::c_d_to_offset(const std::pair<long int, long int>& cd)
     return cd.first - min_c + (max_c - min_c + 1) * cd.second;
 }
 
+std::pair<long int, long int> LatticeSiever::block_start_to_c_d(size_t block_start) const
+{
+    return std::make_pair(min_c + (block_start % c_span),
+                          min_d + (block_start / c_span));
+}
+
 long int LatticeSiever::check_interval1(long int q)
 {
     // Use precomputed value
@@ -455,6 +461,18 @@ long int LatticeSiever::check_interval1(long int q)
 
 void LatticeSiever::check_interval2()
 {
+    struct CandidateCursorState
+    {
+        long int c;
+        long int d;
+    };
+
+    struct CandidateState
+    {
+        size_t offset;
+        bool is_active;
+    };
+
     // Use precomputed values
     double log_L1d2 = log_L2_pow_LP2_;
 
@@ -472,20 +490,17 @@ void LatticeSiever::check_interval2()
         size_t block_start = block * CACHE_BLOCK_SIZE;
         size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
         
-        // Calculate starting c and d for this block
-        long int start_c = min_c + (block_start % c_span);
-        long int start_d = min_d + (block_start / c_span);
+        const std::pair<long int, long int> start_cd = block_start_to_c_d(block_start);
         
         SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
         SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
         
-        long int c = start_c;
-        long int d = start_d;
+        CandidateCursorState cursor{start_cd.first, start_cd.second};
         
         if (debug_ && block % 100 == 0)
         {
             std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " starting at (c,d)=(" << c << "," << d << ")" << std::endl;
+                      << " starting at (c,d)=(" << cursor.c << "," << cursor.d << ")" << std::endl;
         }
 
         while (sieve_ptr < sieve_end_ptr)
@@ -496,20 +511,23 @@ void LatticeSiever::check_interval2()
                 __builtin_prefetch(sieve_ptr + 64, 0, 1);
             }
             
-            size_t offset = sieve_ptr - fixed_sieve_array_;
+            CandidateState candidate{
+                static_cast<size_t>(sieve_ptr - fixed_sieve_array_),
+                !sieve_bit_array_.isSet(static_cast<size_t>(sieve_ptr - fixed_sieve_array_))
+            };
             
-            if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
+            if (__builtin_expect(candidate.is_active, 1))
             {
                 if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
                 {
-                    double value1 = evaluate_on_lattice(f2d_, c, d, c1_, c2_);
+                    double value1 = evaluate_on_lattice(f2d_, cursor.c, cursor.d, c1_, c2_);
                     double abs_value1 = (value1 < 0.0) ? -value1 : value1;
                     int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
                     cutoff -= adjustment;
                     
                     if ((int)(*sieve_ptr) > cutoff)
                     {
-                        VeryLong v = abs(evaluate_on_lattice(f2_, c, d, c1_, c2_));
+                        VeryLong v = abs(evaluate_on_lattice(f2_, cursor.c, cursor.d, c1_, c2_));
                         
                         // Bounds check before array access
                         if (number_potentially_smooth_ >= max_potentially_smooth)
@@ -521,7 +539,7 @@ void LatticeSiever::check_interval2()
                             return;  // Early exit to avoid overflow
                         }
                         
-                        potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(c, d, sieve_ptr, v);
+                        potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(cursor.c, cursor.d, sieve_ptr, v);
                         if (number_potentially_smooth_ > 0)
                         {
                             potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
@@ -531,21 +549,21 @@ void LatticeSiever::check_interval2()
                     }
                     else
                     {
-                        sieve_bit_array_.set(offset);
+                        sieve_bit_array_.set(candidate.offset);
                     }
                 }
                 else
                 {
-                    sieve_bit_array_.set(offset);
+                    sieve_bit_array_.set(candidate.offset);
                 }
             }
             
-            ++c;
+            ++cursor.c;
             ++sieve_ptr;
-            if (c > max_c)
+            if (cursor.c > max_c)
             {
-                c = min_c;
-                ++d;
+                cursor.c = min_c;
+                ++cursor.d;
             }
         }
     }
@@ -785,26 +803,27 @@ void LatticeSiever::remove_sieved_factors1()
 void LatticeSiever::remove_sieved_factors2()
 {
     //std::cout << "Removing sieved factors for ... f = " << f2_ << std::endl;
+    // Use a hash table of the (typically much smaller) potentially-smooth
+    // point list instead of sorting the (potentially very large) prime
+    // factor list. This avoids an O(n log n) sort of rat_pf_list_ (which can
+    // hold up to rat_pf_list_size entries) in favour of an O(n) scan with
+    // O(1) average-case hash lookups, matching the approach already used in
+    // remove_sieved_factors1().
+    PSPHashTable psp_hash_table(PotentiallySmoothPoint::get_sieve_ptr, PotentiallySmoothPoint::compare);
+    psp_hash_table.load(head_psp_);
     rat_pf_list_.set_end();
-    rat_pf_list_.sort();
     PrimeFactor* pf_iter = rat_pf_list_.begin();
-
-    PotentiallySmoothPoint* smooth_iter = head_psp_;
-
-    while (pf_iter != rat_pf_list_.end() && smooth_iter)
+    while (pf_iter != rat_pf_list_.end())
     {
-        if (pf_iter->offset_ + fixed_sieve_array_ > smooth_iter->ptr_)
+        if (!sieve_bit_array_.isSet(pf_iter->offset_))
         {
-            smooth_iter = smooth_iter->next_;
-        }
-        else
-        {
-            if (pf_iter->offset_ + fixed_sieve_array_ == smooth_iter->ptr_)
+            PotentiallySmoothPoint* psp = psp_hash_table.find((pf_iter->offset_ + fixed_sieve_array_));
+            if (psp)
             {
-                smooth_iter->add_factor2(pf_iter->p_);
+                psp->add_factor2(pf_iter->p_);
             }
-            ++pf_iter;
         }
+        ++pf_iter;
     }
     rat_pf_list_.reset();
 }
@@ -1079,14 +1098,14 @@ void LatticeSiever::print_relation(long int c, long int d,
                 find_roots_mod_p<VeryLong, long int, LongModular>(f1_, p, roots);
                 alg_factor_base_->add_extra(p, roots);
             }
-            int done = 0;
+            bool done = false;
             for (auto iter = alg_factor_base_->begin(p);
                     !done && iter != alg_factor_base_->end(p);
                     ++iter)
             {
                 // find the r such that a = br mod p or r = p
                 long int r = *iter;
-                if (r == p) done = 1;
+                if (r == p) done = true;
                 else
                 {
                     long long int xll = b % p;
@@ -1096,7 +1115,7 @@ void LatticeSiever::print_relation(long int c, long int d,
                     //if (x < 0) x += p; replace by modasm
                     long int y = a % p;
                     if (y < 0) y += p;
-                    if (x == y) done = 1;
+                    if (x == y) done = true;
                 }
                 if (done) *relfile_ << " " << p << "/" << r;
             }
@@ -1667,10 +1686,10 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
 // Lattice sieving for NFS
 bool LatticeSiever::sieve(long int q)
 {
-    static int firsttime = 1;
+    static bool firsttime = true;
     if (firsttime)
     {
-        firsttime = 0;
+        firsttime = false;
         VeryLong::generate_prime_table();
     }
     // Lattice sieve for NFS, based on description in

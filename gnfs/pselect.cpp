@@ -23,6 +23,30 @@ namespace
 {
 Skewed_selection_config Skewed_config("skewed.cfg");
 
+template <typename T>
+void write_debug_value(std::ostream& os, const T& value)
+{
+    os << value;
+}
+
+template <typename T, typename... Args>
+void write_debug_value(std::ostream& os, const T& value, const Args&... args)
+{
+    os << value;
+    write_debug_value(os, args...);
+}
+
+template <typename... Args>
+void debug_output(bool enabled, const Args&... args)
+{
+    if (!enabled)
+    {
+        return;
+    }
+    write_debug_value(std::cout, args...);
+    std::cout << std::endl;
+}
+
 struct Kleinjung_poly_info
 {
     Kleinjung_poly_info(const VeryLong& a, const VeryLong& b, const Polynomial<VeryLong>& fm)
@@ -457,6 +481,36 @@ Polynomial<VeryLong> base_m_polynomial_1(const VeryLong& N, const long int degre
 
     Polynomial<VeryLong> poly(coefficients);
     return poly;
+}
+
+void search_for_good_m(const VeryLong& N,
+                       const VeryLong& ad,
+                       const long int degree,
+                       const std::vector<double>& md_powers,
+                       std::vector<VeryLong>& m_powers,
+                       VeryLong& m,
+                       VeryLong& nleft)
+{
+    bool good_m_found = false;
+    while (!good_m_found)
+    {
+        double err = 0.0;
+        for (int ii = 1; ii < degree + 1; ii++)
+        {
+            m_powers[ii] = m * m_powers[ii - 1];
+        }
+
+        nleft = N - ad * m_powers[degree]; // N - a_d m^d
+        err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
+        VeryLong err_rounded(err);
+        if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
+                err_rounded == 0L) good_m_found = true;
+        else
+        {
+            VeryLong quotient = VeryLong(err);
+            m += quotient;
+        }
+    }
 }
 };
 
@@ -1642,10 +1696,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     oss << " d-1,max" << std::endl;
     oss << "c        = " << c_d_2_max_ << std::endl;
     oss << " d-2,max" << std::endl;
-    if (debug_)
-    {
-        std::cout << oss.str();
-    }
+    debug_output(debug_, oss.str());
 
     VeryLong minus_c_d = -c_d_;
     VeryLong minus_c_d_d = minus_c_d * VeryLong(d_);
@@ -1656,10 +1707,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     for (int i = 1; i < d_; i++) c[i] = zero;
     c[d_] = c_d_;
     poly_ = Polynomial<VeryLong>(c);
-    if (debug_)
-    {
-        std::cout << "poly_ = " << poly_ << std::endl;
-    }
+    debug_output(debug_, "poly_ = ", poly_);
 
     VeryLong::generate_prime_table();
 
@@ -1751,9 +1799,9 @@ bool PolynomialPairCalculator::generate(long int degree)
     long int primes_to_combine = std::min(max_primes_to_combine, primes_.size());
     for (Combinations combination(primes_to_combine, primes_.size()); !combination.done(); combination.next())
     {
+        debug_output(debug_, "Combination : ");
         if (debug_)
         {
-            std::cout << "Combination : ";
             combination.display();
         }
         PrimeCombinationSearch xyz(*this, combination, primes_to_combine);
@@ -1914,9 +1962,9 @@ bool PolynomialPairCalculator::generate(long int degree)
         VeryLong a = minimized_polys[i].a_;
         VeryLong b = minimized_polys[i].b_;
         Polynomial<VeryLong> kj = minimized_polys[i].fm_;
-
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << b << std::endl;
+        
+        debug_output(debug_, "a = ", a);
+        debug_output(debug_, "b = ", b);
 
         VeryLongModular::set_default_modulus(N_);
         VeryLongModular tmp1 = VeryLongModular(b) / VeryLongModular(a);
@@ -1935,18 +1983,18 @@ bool PolynomialPairCalculator::generate(long int degree)
             std::cout << "Problem: new_poly(b, a) != 0 % N" << std::endl;
         }
         double als = PolynomialOptimizer::average_log_size(new_poly, s_vl.get_long());
-        std::cout << "kj = " << kj << std::endl;
-        std::cout << "f = " << new_poly << std::endl;
-        std::cout << "a = " << a << std::endl;
-        std::cout << "b = " << new_b << std::endl;
-        std::cout << "m = " << new_m << std::endl;
-        std::cout << "s = " << s_vl << std::endl;
-        std::cout << "als = " << als << std::endl;
+        debug_output(debug_, "kj = ", kj);
+        debug_output(debug_, "f = ", new_poly);
+        debug_output(debug_, "a = ", a);
+        debug_output(debug_, "b = ", new_b);
+        debug_output(debug_, "m = ", new_m);
+        debug_output(debug_, "s = ", s_vl);
+        debug_output(debug_, "als = ", als);
         I_F_S = PolynomialOptimizer::average_log_size(new_poly, s_vl);
         double alpha = PolynomialOptimizer::alpha_F(new_poly, 2000, 200);
         double E_F = I_F_S + alpha;
-        std::cout << "alpha = " << alpha << std::endl;
-        std::cout << "E_F = " << E_F << std::endl;
+        debug_output(debug_, "alpha = ", alpha);
+        debug_output(debug_, "E_F = ", E_F);
         std::vector<PolynomialOptimizer::Poly_info> poly_list;
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
@@ -1958,11 +2006,14 @@ bool PolynomialPairCalculator::generate(long int degree)
             double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
             double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
             double E_F = I_F_S + alpha;
-            std::cout << "alpha = " << alpha << std::endl;
-            std::cout << "E_F = " << E_F << std::endl;
+            debug_output(debug_, "alpha = ", alpha);
+            debug_output(debug_, "E_F = ", E_F);
         }
         std::sort(poly_list.begin(), poly_list.end());
-        std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+        if (!poly_list.empty())
+        {
+            std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+        }
         const size_t max_polys_to_examine = 2000;
         if (poly_list.size() > max_polys_to_examine)
         {
@@ -2009,12 +2060,12 @@ bool PolynomialPairCalculator::generate(long int degree)
             ++examined;
         }
 
-        std::cout << "better_poly = " << better_poly << std::endl;
+        debug_output(debug_, "better_poly = ", better_poly);
         double better_I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
         alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
         E_F = better_I_F_S + alpha;
-        std::cout << "alpha = " << alpha << std::endl;
-        std::cout << "E(F) = " << E_F << std::endl;
+        debug_output(debug_, "alpha = ", alpha);
+        debug_output(debug_, "E(F) = ", E_F);
         if (E_F < Skewed_config.PRINTING_BOUND())
         {
             output_file_ << "f1 = " << better_poly << std::endl;
@@ -2033,11 +2084,155 @@ bool PolynomialPairCalculator::generate(long int degree)
             output_file_ << std::flush;
         }
     }
-    if (debug_)
-    {
-        std::cout << "Exiting kleingjung ..." << std::endl;
-    }
+    debug_output(debug_, "Exiting kleingjung ...");
     return true;
+}
+
+void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
+                                    VeryLong& new_m,
+                                    VeryLong& s_vl,
+                                    double average_log_size,
+                                    std::fstream& Output_file)
+{
+    bool step3_done = false;
+    double best_E_F = 100.0;
+    Polynomial<VeryLong> best_step3_poly;
+    VeryLong best_step3_m;
+    VeryLong best_step3_s;
+    double best_step3_alpha = 0.0;
+    while (!step3_done)
+    {
+        Polynomial<VeryLong> better_poly;
+        std::vector<PolynomialOptimizer::Poly_info> poly_list;
+
+        better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
+        if (!poly_list.empty())
+        {
+            std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
+            std::cout << "best E(F) = " << best_E_F << std::endl;
+        }
+        double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
+        // can we improve size with a final translation?
+        VeryLong better_m;
+        VeryLong better_s;
+
+        Polynomial<VeryLong> even_better_poly = PolynomialOptimizer::translate(better_poly, 1L, new_m, s_vl, better_m, better_s);
+        double better_I_F_S = PolynomialOptimizer::average_log_size(even_better_poly, better_s);
+        double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
+        double E_F = I_F_S + alpha;
+        if (!poly_list.empty())
+        {
+            std::cout << "E(F) = " << E_F << std::endl;
+        }
+
+        double better_alpha = PolynomialOptimizer::alpha_F(even_better_poly, 2000, 200);
+        double better_E_F = better_I_F_S + better_alpha;
+        if (!poly_list.empty())
+        {
+            std::cout << "better E(F) = " << better_E_F << std::endl;
+        }
+        step3_done = true;
+        if (E_F < best_E_F)
+        {
+            min_poly = better_poly;
+            best_E_F = E_F;
+            best_step3_poly = better_poly;
+            best_step3_m = new_m;
+            best_step3_s = s_vl;
+            best_step3_alpha = alpha;
+            step3_done = false;
+        }
+        if (better_E_F < best_E_F)
+        {
+            min_poly = even_better_poly;
+            best_E_F = better_E_F;
+            best_step3_poly = even_better_poly;
+            best_step3_m = better_m;
+            best_step3_s = better_s;
+            best_step3_alpha = better_alpha;
+            new_m = better_m;
+            s_vl = better_s;
+            step3_done = false;
+        }
+        if (best_E_F > Skewed_config.REPEAT_CUTOFF()) step3_done = true;
+        if (best_E_F < Skewed_config.PRINTING_BOUND())
+        {
+            Output_file << best_step3_poly << std::endl;
+            Output_file << "m = " << best_step3_m << std::endl;
+            Output_file << "s = " << best_step3_s << std::endl;
+            Output_file << "alpha = " << best_step3_alpha << std::endl;
+            Output_file << "E(F) = " << best_E_F << std::endl;
+            Output_file << best_step3_poly.evaluate(new_m) << std::endl;
+            Output_file << std::endl;
+            Output_file << "==============================================================================" << std::endl;
+            Output_file << std::flush;
+        }
+    }
+}
+
+// For each cubic adjustment i*X^2*(X - m) (i = -1, 0, 1 for degree > 4,
+// or i = 0 only for degree <= 4), repeatedly calls minimize_I until
+// convergence, then runs step3_optimize_root_properties if the result
+// is below ALS_MAX.
+void apply_cubic_adjustment_and_minimize(
+    Polynomial<VeryLong> fm,
+    const VeryLong& m,
+    int degree,
+    double ALS_MAX,
+    std::fstream& Output_file)
+{
+    std::vector<VeryLong> ca_coeff;
+    ca_coeff.resize(4);
+    ca_coeff[3] = 1L;
+    ca_coeff[2] = m * VeryLong(-1L);
+    ca_coeff[1] = 0L;
+    ca_coeff[0] = 0L;
+    Polynomial<VeryLong> cubic_adjustment(ca_coeff);
+    long int ca_start = -1;
+    long int ca_end = 2;
+    if (degree > 4) fm = fm - cubic_adjustment;
+    else
+    {
+        ca_start = 0;
+        ca_end = 1;
+    }
+
+    for (long int ca = ca_start; ca < ca_end; ca++)
+    {
+        double average_log_size = ALS_MAX + 1;
+
+        VeryLong s_vl;
+        Polynomial<VeryLong> min_poly;
+        VeryLong new_m;
+        Polynomial<VeryLong> try_poly = fm;
+        VeryLong try_m = m;
+        double change = 1.0;
+        double prev_als = 100.0;
+        while (change > 0 && fabs(change) > 0.1)
+        {
+            VeryLong dummy;
+            min_poly = PolynomialOptimizer::minimize_I(try_poly, 1L, try_m, try_m, s_vl, average_log_size, dummy, new_m);
+            change = prev_als - average_log_size;
+            if (change > 0.0)
+            {
+                try_poly = min_poly;
+                try_m = new_m;
+                prev_als = average_log_size;
+            }
+            else
+            {
+                average_log_size = prev_als;
+                min_poly = try_poly;
+                new_m = try_m;
+            }
+        }
+        if (average_log_size < ALS_MAX)
+        {
+            // step 3
+            step3_optimize_root_properties(min_poly, new_m, s_vl, average_log_size, Output_file);
+        }
+        fm = fm + cubic_adjustment;
+    }
 }
 
 // Skewed polynomial selection (Procedure 5.1.6 in Murphy's thesis)
@@ -2072,8 +2267,6 @@ void skewed_polynomial_selection()
         23, 29, 31, 37, 41
     };
     int finished = 0;
-    VeryLong s_vl;
-    Polynomial<VeryLong> min_poly;
     VeryLong ad;
 
     while (!finished)
@@ -2143,31 +2336,11 @@ void skewed_polynomial_selection()
                 m_powers[0] = 1L;
                 m = VeryLong(md);
 
-                int good_m_found = 0;
-                VeryLong quotient;
                 VeryLong nleft;
-                while (!good_m_found)
-                {
-                    double err = 0.0;
-                    for (int ii = 1; ii < degree + 1; ii++)
-                    {
-                        m_powers[ii] = m * m_powers[ii - 1];
-                    }
-
-                    nleft = N - ad * m_powers[degree]; // N - a_d m^d
-                    err = nleft.get_double() / (ad.get_double() * (double)degree * md_powers[degree - 1]);
-                    const VeryLong zero(0L);
-                    if (fabs(err) < Skewed_config.GOOD_M_CUTOFF() ||
-                            VeryLong(err) == zero) good_m_found = 1;
-                    else
-                    {
-                        quotient = VeryLong(err);
-                        m += quotient;
-                    }
-                }
+                search_for_good_m(N, ad, degree, md_powers, m_powers, m, nleft);
 
                 VeryLong remainder = nleft % m_powers[degree - 1];
-                quotient = nleft / m_powers[degree - 1];
+                VeryLong quotient = nleft / m_powers[degree - 1];
                 VeryLong rr = m_powers[degree - 1] - remainder;
                 if (remainder > rr)
                 {
@@ -2192,123 +2365,7 @@ void skewed_polynomial_selection()
 
                     if (new_ad >= min_ad)
                     {
-
-                    // try adjusting fm by adding a cubic adjustment iX^2(X - m) where i = -1, 0, 1
-                    // but only for degree 5 and above.
-                    std::vector<VeryLong> ca_coeff;
-                    ca_coeff.resize(4);
-                    ca_coeff[3] = 1L;
-                    ca_coeff[2] = m * VeryLong(-1L);
-                    ca_coeff[1] = 0L;
-                    ca_coeff[0] = 0L;
-                    Polynomial<VeryLong> cubic_adjustment(ca_coeff);
-                    long int ca_start = -1;
-                    long int ca_end = 2;
-                    if (degree > 4) fm = fm - cubic_adjustment;
-                    else
-                    {
-                        ca_start = 0;
-                        ca_end = 1;
-                    }
-
-                    for (long int ca = ca_start; ca < ca_end; ca++)
-                    {
-                        double average_log_size = ALS_MAX + 1;
-
-                        VeryLong new_m;
-                        Polynomial<VeryLong> try_poly = fm;
-                        VeryLong try_m = m;
-                        double change = 1.0;
-                        double prev_als = 100.0;
-                        while (change > 0 && fabs(change) > 0.1)
-                        {
-                            VeryLong dummy;
-                            min_poly = PolynomialOptimizer::minimize_I(try_poly, 1L, try_m, try_m, s_vl, average_log_size, dummy, new_m);
-                            change = prev_als - average_log_size;
-                            if (change > 0.0)
-                            {
-                                try_poly = min_poly;
-                                try_m = new_m;
-                                prev_als = average_log_size;
-                            }
-                            else
-                            {
-                                average_log_size = prev_als;
-                                min_poly = try_poly;
-                                new_m = try_m;
-                            }
-                        }
-                        if (average_log_size < ALS_MAX)
-                        {
-                            // step 3
-                            int step3_done = 0;
-                            double best_E_F = 100.0;
-                            Polynomial<VeryLong> best_step3_poly;
-                            VeryLong best_step3_m;
-                            VeryLong best_step3_s;
-                            double best_step3_alpha = 0.0;
-                            while (!step3_done)
-                            {
-                                Polynomial<VeryLong> better_poly;
-                                std::vector<PolynomialOptimizer::Poly_info> poly_list;
-
-                                better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
-                                std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
-                                std::cout << "best E(F) = " << best_E_F << std::endl;
-                                double I_F_S = PolynomialOptimizer::average_log_size(better_poly, s_vl);
-                                // can we improve size with a final translation?
-                                VeryLong better_m;
-                                VeryLong better_s;
-
-                                Polynomial<VeryLong> even_better_poly = PolynomialOptimizer::translate(better_poly, 1L, new_m, s_vl, better_m, better_s);
-                                double better_I_F_S = PolynomialOptimizer::average_log_size(even_better_poly, better_s);
-                                double alpha = PolynomialOptimizer::alpha_F(better_poly, 2000, 200);
-                                double E_F = I_F_S + alpha;
-                                std::cout << "E(F) = " << E_F << std::endl;
-
-                                double better_alpha = PolynomialOptimizer::alpha_F(even_better_poly, 2000, 200);
-                                double better_E_F = better_I_F_S + better_alpha;
-                                std::cout << "better E(F) = " << better_E_F << std::endl;
-                                step3_done = 1;
-                                if (E_F < best_E_F)
-                                {
-                                    min_poly = better_poly;
-                                    best_E_F = E_F;
-                                    best_step3_poly = better_poly;
-                                    best_step3_m = new_m;
-                                    best_step3_s = s_vl;
-                                    best_step3_alpha = alpha;
-                                    step3_done = 0;
-                                }
-                                if (better_E_F < best_E_F)
-                                {
-                                    min_poly = even_better_poly;
-                                    best_E_F = better_E_F;
-                                    best_step3_poly = even_better_poly;
-                                    best_step3_m = better_m;
-                                    best_step3_s = better_s;
-                                    best_step3_alpha = better_alpha;
-                                    new_m = better_m;
-                                    s_vl = better_s;
-                                    step3_done = 0;
-                                }
-                                if (best_E_F > Skewed_config.REPEAT_CUTOFF()) step3_done = 1;
-                                if (best_E_F < Skewed_config.PRINTING_BOUND())
-                                {
-                                    Output_file << best_step3_poly << std::endl;
-                                    Output_file << "m = " << best_step3_m << std::endl;
-                                    Output_file << "s = " << best_step3_s << std::endl;
-                                    Output_file << "alpha = " << best_step3_alpha << std::endl;
-                                    Output_file << "E(F) = " << best_E_F << std::endl;
-                                    Output_file << best_step3_poly.evaluate(new_m) << std::endl;
-                                    Output_file << std::endl;
-                                    Output_file << "==============================================================================" << std::endl;
-                                    Output_file << std::flush;
-                                }
-                            }
-                        }
-                        fm = fm + cubic_adjustment;
-                    }
+                        apply_cubic_adjustment_and_minimize(fm, m, degree, ALS_MAX, Output_file);
                     } // if (new_ad >= min_ad)
                 }
             }
