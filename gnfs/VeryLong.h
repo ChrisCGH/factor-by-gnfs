@@ -330,9 +330,17 @@ public:
     friend ostream& operator<< (ostream& os, const VeryLong& vl)
     {
         char* tmp = mpz_get_str(nullptr, 10, vl.vl_);
-        os << tmp;
         void (*freefunc)(void*, size_t);
         mp_get_memory_functions(nullptr, nullptr, &freefunc);
+        try
+        {
+            os << tmp;
+        }
+        catch (...)
+        {
+            freefunc(tmp, std::strlen(tmp) + 1);
+            throw;
+        }
         freefunc(tmp, std::strlen(tmp) + 1);
         return os;
     }
