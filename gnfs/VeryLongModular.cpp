@@ -83,13 +83,12 @@ int VeryLongModular::is_zero() const
 
 int VeryLongModular::is_one() const
 {
-    const VeryLongModular one(1L);
-    return (*this == one);
+    return (mpz_cmp_ui(vl_, 1UL) == 0);
 }
 
 int VeryLongModular::operator== (const VeryLong& vl) const
 {
-    static VeryLong tmp;
+    VeryLong tmp;
     mpz_mod(tmp.vl_, vl.vl_, modulus_);
     if (vl.is_zero())
     {
@@ -120,7 +119,7 @@ VeryLongModular& VeryLongModular::operator= (const VeryLong& vl)
 
 VeryLongModular operator+ (const VeryLongModular& vl1, const VeryLongModular& vl2)
 {
-    static VeryLongModular vl;
+    VeryLongModular vl;
     mpz_add(vl.vl_, vl1.vl_, vl2.vl_);
     mpz_mod(vl.vl_, vl.vl_, VeryLongModular::modulus_);
     return vl;
@@ -128,7 +127,7 @@ VeryLongModular operator+ (const VeryLongModular& vl1, const VeryLongModular& vl
 
 VeryLongModular operator- (const VeryLongModular& vl1, const VeryLongModular& vl2)
 {
-    static VeryLongModular vl;
+    VeryLongModular vl;
     mpz_sub(vl.vl_, vl1.vl_, vl2.vl_);
     mpz_mod(vl.vl_, vl.vl_, VeryLongModular::modulus_);
     return vl;
@@ -136,7 +135,7 @@ VeryLongModular operator- (const VeryLongModular& vl1, const VeryLongModular& vl
 
 VeryLongModular operator* (const VeryLongModular& vl1, const VeryLongModular& vl2)
 {
-    static VeryLongModular vl;
+    VeryLongModular vl;
     mpz_mul(vl.vl_, vl1.vl_, vl2.vl_);
     mpz_mod(vl.vl_, vl.vl_, VeryLongModular::modulus_);
     return vl;
@@ -144,11 +143,11 @@ VeryLongModular operator* (const VeryLongModular& vl1, const VeryLongModular& vl
 
 VeryLongModular operator/ (const VeryLongModular& vl1, const VeryLongModular& vl2)
 {
-    if (vl2 == VeryLongModular(0L))
+    if (vl2.is_zero())
     {
         throw std::string("operator/(VeryLongModular) : divide by zero, quotient undefined");
     }
-    static VeryLongModular vl;
+    VeryLongModular vl;
     mpz_invert(vl.vl_, vl2.vl_, VeryLongModular::modulus_);
     mpz_mul(vl.vl_, vl.vl_, vl1.vl_);
     mpz_mod(vl.vl_, vl.vl_, VeryLongModular::modulus_);
@@ -183,11 +182,14 @@ VeryLongModular& VeryLongModular::operator*= (const VeryLongModular& vl)
 
 VeryLongModular& VeryLongModular::add_product(const VeryLongModular& x, const VeryLongModular& y, const VeryLongModular& z)
 {
-    VeryLongModular r = x;
-    r *= y;
-    r *= z;
-    mpz_add(vl_, vl_, r.vl_);
+    mpz_t tmp;
+    mpz_init(tmp);
+    mpz_mul(tmp, x.vl_, y.vl_);
+    mpz_mul(tmp, tmp, z.vl_);
+    mpz_mod(tmp, tmp, modulus_);
+    mpz_add(vl_, vl_, tmp);
     mpz_mod(vl_, vl_, modulus_);
+    mpz_clear(tmp);
     return *this;
 }
 
@@ -208,7 +210,7 @@ VeryLongModular inverse(const VeryLongModular& vl)
 
 VeryLongModular& VeryLongModular::operator/= (const VeryLongModular& vl)
 {
-    if (vl == VeryLongModular(0L))
+    if (vl.is_zero())
     {
         throw std::string("VeryLongModular::operator/= : divide by zero, quotient undefined");
     }

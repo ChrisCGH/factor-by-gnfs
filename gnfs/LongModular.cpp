@@ -28,8 +28,8 @@ LongModular::LongModular(const long int li) : _li(li)
     staticInit();
     if (li < 0)
     {
-        long int tmp = li;
-        while (tmp < 0) tmp += modulus_;
+        long int tmp = li % static_cast<long int>(modulus_);
+        if (tmp < 0) tmp += modulus_;
         _li = tmp;
     }
     _li = _li % modulus_;
@@ -40,9 +40,9 @@ LongModular::LongModular(const long long int lli) : _li(0)
     staticInit();
     if (lli < 0)
     {
-        long long int tmp = lli;
-        while (tmp < 0) tmp += modulus_;
-        _li = tmp % modulus_;
+        long long int tmp = lli % static_cast<long long int>(modulus_);
+        if (tmp < 0) tmp += modulus_;
+        _li = tmp;
     }
     else
     {
@@ -58,8 +58,8 @@ LongModular::LongModular(const long int modulus, const long int l) : _li(l)
     modulus_ = modulus;
     if (l < 0)
     {
-        long int tmp = l;
-        while (tmp < 0) tmp += modulus_;
+        long int tmp = l % static_cast<long int>(modulus_);
+        if (tmp < 0) tmp += modulus_;
         _li = tmp;
     }
     //while (_li < 0) _li += modulus_;
@@ -72,8 +72,8 @@ LongModular::LongModular(const std::string& s) : _li(0L)
     long int li = std::atoi(s.c_str());
     if (li < 0)
     {
-        long int tmp = li;
-        while (tmp < 0) tmp += modulus_;
+        long int tmp = li % static_cast<long int>(modulus_);
+        if (tmp < 0) tmp += modulus_;
         _li = tmp;
     }
     else

@@ -14,13 +14,13 @@ endif
 #LIBS = -L/usr/lib -L/usr/local/lib -lgmp -lstdc++ -Wl,--stack,209715200,--heap,1073741824
 INCLUDES = -I/usr/local/include
 #OPT = -O3 -mfpmath=sse
-#OPT = -O3
+OPT = -O3 -march=native -flto
 #PROFILE = -pg
 COVERAGE = -fprofile-arcs -ftest-coverage
 COVERAGE_OPT = 
 #PROFILE = -fprofile-arcs -fbranch-probabilities
 #PROFILE = 
-ARCH = -march=athlon64
+ARCH = -march=native
 USING_CPPUNIT = -DUSING_CPPUNIT 
 #ARCH = -march=pentium4 -mfpmath=sse -momit-leaf-frame-pointer 
 #ARCH = -march=pentium4 
