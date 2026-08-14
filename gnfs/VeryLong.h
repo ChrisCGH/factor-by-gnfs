@@ -5,6 +5,7 @@
 #include <stdint.h>
 using std::ostream;
 #include <stdio.h>
+#include <cstring>
 #include <math.h>
 #include <sys/types.h>
 #ifndef WIN32
@@ -97,8 +98,7 @@ public:
     }
     bool is_one() const
     {
-        const VeryLong one(1L);
-        return (*this == one);
+        return (mpz_cmp_ui(vl_, 1UL) == 0);
     }
     operator MPFloat() const
     {
@@ -329,9 +329,19 @@ public:
 
     friend ostream& operator<< (ostream& os, const VeryLong& vl)
     {
-        static char tmp[10240];
-        mpz_get_str(tmp, 10, vl.vl_);
-        os << tmp;
+        char* tmp = mpz_get_str(nullptr, 10, vl.vl_);
+        void (*freefunc)(void*, size_t);
+        mp_get_memory_functions(nullptr, nullptr, &freefunc);
+        try
+        {
+            os << tmp;
+        }
+        catch (...)
+        {
+            freefunc(tmp, std::strlen(tmp) + 1);
+            throw;
+        }
+        freefunc(tmp, std::strlen(tmp) + 1);
         return os;
     }
     long int get_long() const

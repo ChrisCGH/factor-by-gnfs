@@ -337,6 +337,7 @@ bool VeryLong::factorise_p_minus_1(VeryLong* factor, VeryLong* new_N)
     long int diff = 0;
     VeryLongModular y;
     std::vector<VeryLongModular> yVector;
+    yVector.reserve((Max_diff - 1) / 2 + 1);
     for (diff = 2; diff <= Max_diff; diff += 2)
     {
         y = x;
