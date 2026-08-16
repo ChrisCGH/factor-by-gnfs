@@ -10,18 +10,26 @@
 #include "RootConfig.h"
 #include <string>
 #include <unordered_map>
+#include <cstdlib>
 
 namespace
 {
 long long strtoll(const char* str)
 {
-    double x = std::atof(str);
-    return (long long)x;
+    // Avoid going through double (as std::atof would), since a double's
+    // 53-bit mantissa cannot represent all values that fit in a long long,
+    // which would silently corrupt large relation values.
+    return std::strtoll(str, nullptr, 10);
 }
 
 int readRatRelations(const std::string& filename, RelationList& ratRelations)
 {
     std::fstream infile(filename.c_str(), std::ios::in);
+    if (!infile)
+    {
+        std::cerr << "Problem: unable to open file " << filename << std::endl;
+        return 0;
+    }
     int done = 0;
     int line = 0;
     std::string str;
@@ -29,7 +37,11 @@ int readRatRelations(const std::string& filename, RelationList& ratRelations)
     static std::string::size_type buflen = 0;
     while (!done)
     {
-        getline(infile, str);
+        if (!getline(infile, str))
+        {
+            std::cerr << "Problem: unexpected end of file reading " << filename << std::endl;
+            return 0;
+        }
         if (str.empty()) continue;
         if (str.size() > buflen)
         {
@@ -103,10 +115,9 @@ int main(int argc, char** argv)
     {
         VeryLong::addPrime(config.EXTRA_PRIME(i));
     }
-    char fbFile[132];
-    strcpy(fbFile, config.ROOT_ID().c_str());
-    strcat(fbFile, ".fb.dat");
-    NumberField nf(f1, fbFile);
+    std::string fbFile(config.ROOT_ID());
+    fbFile += ".fb.dat";
+    NumberField nf(f1, fbFile.c_str());
 
     AlgebraicNumber::setNumberField(nf);
 
@@ -145,7 +156,11 @@ int main(int argc, char** argv)
     // read relations from relfile."rat"
     ratRelFile += ".rat";
     RelationList relationRat;
-    readRatRelations(ratRelFile, relationRat);
+    if (!readRatRelations(ratRelFile, relationRat))
+    {
+        std::cerr << "Problem reading relations from " << ratRelFile << std::endl;
+        return 1;
+    }
 
     Polynomial<VeryLong> f2 = config.f2();
     std::vector<VeryLong> factors;
