@@ -423,10 +423,16 @@ Ideal Ideal::invert() const
     static Matrix<Quotient<VeryLong> > T;
     static Quotient<VeryLong> qd;
 
-    static bool first_time = true;
-    if (first_time)
+    // delta, T and qd only depend on the current number field, so they can be
+    // cached across calls, but the cache must be invalidated if the number
+    // field has changed (e.g. AlgebraicNumber::setNumberField() called again
+    // with a different field) since a stale cache would silently give wrong
+    // inversion results. cached_nf starts as 0, which never equals a valid
+    // &nf, so this also covers the first-time initialization case.
+    static const NumberField* cached_nf = 0;
+    if (cached_nf != &nf)
     {
-        first_time = false;
+        cached_nf = &nf;
         const std::vector<AlgebraicNumber>& omega = AlgebraicNumber::integralBasis();
 
         // Step 1. [Compute d(K) del(K)^-1]
@@ -653,6 +659,7 @@ Matrix<VeryLong> Ideal::reducedBasisOmega() const
     // H2 gives basis in terms of integral basis
     Matrix<Quotient<VeryLong> > H2(nf.winv());
     H2 *= hnf_basis_;
+    H2 /= denominator_;
 
     Matrix<VeryLong> rb(n, n);
     const VeryLong one(1L);
@@ -660,11 +667,11 @@ Matrix<VeryLong> Ideal::reducedBasisOmega() const
     {
         for (int j = 0; j < n; j++)
         {
-            if (H2(i,j).numerator() % denominator_ != 0L)
+            if (H2(i,j).denominator() != one)
             {
                 throw std::string("reducedBasisOmega can only be calculated for integral ideals");
             }
-            rb(i,j) = H2(i,j).numerator() / denominator_;
+            rb(i,j) = H2(i,j).numerator();
         }
     }
     LLL_reduce_3_on_columns(rb);
