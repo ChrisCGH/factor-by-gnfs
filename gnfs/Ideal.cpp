@@ -427,12 +427,11 @@ Ideal Ideal::invert() const
     // cached across calls, but the cache must be invalidated if the number
     // field has changed (e.g. AlgebraicNumber::setNumberField() called again
     // with a different field) since a stale cache would silently give wrong
-    // inversion results.
+    // inversion results. cached_nf starts as 0, which never equals a valid
+    // &nf, so this also covers the first-time initialization case.
     static const NumberField* cached_nf = 0;
-    static bool first_time = true;
-    if (first_time || cached_nf != &nf)
+    if (cached_nf != &nf)
     {
-        first_time = false;
         cached_nf = &nf;
         const std::vector<AlgebraicNumber>& omega = AlgebraicNumber::integralBasis();
 
