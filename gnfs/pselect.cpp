@@ -131,31 +131,31 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
     }
     std::cout << "alpha cutoff = " << alpha_cutoff << std::endl;
 
-    static short* cont_array_data = 0;
+    static std::vector<short> cont_array_data;
     static long int cont_array_data_size = 0;
-    if (cont_array_data == 0)
+    if (cont_array_data.empty())
     {
         cont_array_data_size = (2 * MAX_J1 + 1) * (2 * MAX_J0 + 1) ;
-        cont_array_data = new short [ cont_array_data_size ];
+        cont_array_data.resize(cont_array_data_size);
     }
 
-    static short** cont_array = 0;
-    if (cont_array == 0)
+    static std::vector<short*> cont_array;
+    if (cont_array.empty())
     {
-        cont_array = new short* [ 2 * MAX_J1 + 1 ];
+        cont_array.resize(2 * MAX_J1 + 1);
         for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
         {
-            cont_array[j1] = cont_array_data + j1 * (2 * MAX_J0 + 1);
+            cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
         }
     }
-    static short* j0_array = 0;
-    if (j0_array == 0)
+    static std::vector<short> j0_array;
+    if (j0_array.empty())
     {
-        j0_array = new short [ MAX_J0 ];
+        j0_array.resize(MAX_J0);
     }
     unsigned long int p_k;
 
-    memset((char*)cont_array_data, 0, cont_array_data_size * sizeof(short));
+    memset((char*)cont_array_data.data(), 0, cont_array_data_size * sizeof(short));
     long int p = zpnextb(2);
     VeryLong leading_coefficient = min_poly.coefficient(min_poly.deg());
     time_t start = time(0);
@@ -211,7 +211,7 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
 
         for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
         {
-            memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
+            memset((char*)j0_array.data(), 0, sizeof(short)*MAX_J0);
             for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
             // use finite differences to calculate f(l) for consecutive values of l
             // Reset the working difference table from the precomputed initial table
@@ -517,11 +517,15 @@ void search_for_good_m(const VeryLong& N,
 void display_mu(const std::vector<long int>& mu)
 {
     std::cout << "mu = (";
-    for (size_t i = 0; i < mu.size() - 1; ++i)
+    if (!mu.empty())
     {
-        std::cout << mu[i] << ",";
+        for (size_t i = 0; i < mu.size() - 1; ++i)
+        {
+            std::cout << mu[i] << ",";
+        }
+        std::cout << mu[mu.size() - 1];
     }
-    std::cout << mu[mu.size() - 1] << ")" << std::endl;
+    std::cout << ")" << std::endl;
 }
 
 
@@ -673,7 +677,9 @@ private:
     class flist_hash_table_
     {
     public:
-        void add(const flist_item& item)
+        // Returns true if the item was stored, false if the target bucket was
+        // already full and the item had to be dropped.
+        bool add(const flist_item& item)
         {
             size_t slot = (item.sum_ + 0.5) * S;
             if (slot >= S)
@@ -683,7 +689,18 @@ private:
             {
                 fl.item_[fl.item_count_] = item;
                 ++fl.item_count_;
+                return true;
             }
+            ++dropped_count_;
+            return false;
+        }
+        size_t dropped_count() const
+        {
+            return dropped_count_;
+        }
+        void reset_dropped_count()
+        {
+            dropped_count_ = 0;
         }
         void check_for_match(long int degree,
                              const flist_item& item,
@@ -766,8 +783,10 @@ private:
                 flist_list& fll = hash_table_[i];
                 fll.item_count_ = 0;
             }
+            dropped_count_ = 0;
         }
     private:
+        size_t dropped_count_ = 0;
         struct flist_list
         {
             size_t item_count_;
@@ -1279,6 +1298,15 @@ void PolynomialPairCalculator::PrimeCombinationSearch::make_flists()
         }
         flist2_.add(flist_item(modZ(sum), n));
     }
+    if (flist2_.dropped_count() > 0)
+    {
+        // A full hash bucket silently discards items beyond its fixed
+        // capacity, which can cause valid mu combinations to be missed.
+        // Surface this so incomplete coverage is visible rather than
+        // looking like "found a slightly worse polynomial".
+        std::cout << "Warning: flist2 hash table dropped " << flist2_.dropped_count()
+                   << " item(s) due to full bucket(s); some mu combinations may have been missed" << std::endl;
+    }
     if (ppc_.debug_)
     {
         std::cout << "flist1 : " << std::endl;
@@ -1403,10 +1431,13 @@ void PolynomialPairCalculator::PrimeCombinationSearch::process_good_mu(std::vect
                     std::cout << "fm[" << i << "] = " << top_polys[i].fm_ << std::endl;
                 }
             }
-        }
-        if (top_polys.size() >= max_top_polys)
-        {
-            top_polys.erase(top_polys.end() - 1);
+            // Only trim when this insertion actually pushed the list past the
+            // limit, so top_polys retains max_top_polys entries once filled
+            // instead of stabilizing one short.
+            if (top_polys.size() > max_top_polys)
+            {
+                top_polys.erase(top_polys.end() - 1);
+            }
         }
         ++ppc_.count_;
         if (ppc_.count_ % 10000 == 0)
@@ -1649,6 +1680,16 @@ void PolynomialPairCalculator::PrimeCombinationSearch::generate(long int iterati
 bool PolynomialPairCalculator::generate(long int degree)
 {
     const VeryLong zero(0L);
+    // The non-monic search below requires computing nth_root with exponents
+    // such as (degree - 3) and (degree - 4), so degree must be at least 4
+    // (degree == 3 would attempt nth_root(0), which crashes in the
+    // underlying GMP implementation).
+    if (degree < 4)
+    {
+        std::cerr << "Problem: PolynomialPairCalculator::generate requires degree >= 4, got "
+                   << degree << std::endl;
+        return false;
+    }
     // Choose a, the product of several small primes and
     // find b, such that c_d b^d = N mod a
     double ALS_MAX = Skewed_config.MAX_ALS();
