@@ -1407,12 +1407,15 @@ SparseMatrix2::SparseMatrix2(const std::string& file, bool split) : dense_file_(
 }
 
 SparseMatrix2::SparseMatrix2(const std::vector<long int>& points, long int rows, long int columns)
+    : dense_file_(0), split_(false), rows_(0L), cols_(0L), allocated_points_(points.size()), dense_rows_(0L)
+    , set_points_(0), next_point_(0), last_point_(0)
 {
     set_points_ = new Point [ points.size() ];
     for (size_t i = 0; i < points.size(); ++i)
     {
         set_points_[i] = points[i];
     }
+    next_point_ = set_points_;
     last_point_ = set_points_ + points.size();
     rows_ = rows;
     cols_ = columns;
@@ -1689,6 +1692,9 @@ void SparseMatrix2::extend(size_t row, size_t cols)
 void SparseMatrix2::clear()
 {
     delete [] set_points_;
+    set_points_ = 0;
+    delete dense_file_;
+    dense_file_ = 0;
 }
 
 void SparseMatrix2::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const
@@ -2951,6 +2957,7 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
     if (very_dense_file_)
     {
         delete very_dense_file_;
+        very_dense_file_ = 0;
     }
 
     std::cerr << "SparseMatrix3::SparseMatrix3() : rows_ = " << static_cast<unsigned int>(rows_) << ", cols_ = " << static_cast<unsigned int>(cols_) << ", sparse_count_ = " << static_cast<unsigned int>(sparse_count_) << ", medium_count_ = " << static_cast<unsigned int>(medium_count_) << ", very_dense_count_ = " << static_cast<unsigned int>(very_dense_count_) << std::endl;
@@ -2976,6 +2983,12 @@ void SparseMatrix3::clear()
         delete medium_[i];
     }
     medium_.clear();
+
+    if (very_dense_file_)
+    {
+        delete very_dense_file_;
+        very_dense_file_ = 0;
+    }
 }
 
 void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX)
@@ -3463,12 +3476,15 @@ SparseMatrix4::SparseMatrix4(const std::string& file, bool split) : dense_file_(
 }
 
 SparseMatrix4::SparseMatrix4(const std::vector<long int>& points, long int rows, long int columns)
+    : dense_file_(0), split_(false), rows_(0L), rows_added_(0L), cols_(0L), allocated_points_(points.size()), dense_rows_(0L)
+    , set_points_(0), next_point_(0), last_point_(0)
 {
     set_points_ = new Point [ points.size() ];
     for (size_t i = 0; i < points.size(); ++i)
     {
         set_points_[i] = points[i];
     }
+    next_point_ = set_points_;
     last_point_ = set_points_ + points.size();
     rows_ = rows;
     rows_added_ = rows;
@@ -3723,6 +3739,9 @@ void SparseMatrix4::extend(long int cols)
 void SparseMatrix4::clear()
 {
     delete [] set_points_;
+    set_points_ = 0;
+    delete dense_file_;
+    dense_file_ = 0;
 }
 
 void SparseMatrix4::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const

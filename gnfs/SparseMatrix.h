@@ -1116,7 +1116,7 @@ private:
         const long int extra = 1000L;
         if (rows > allocated_rows_)
         {
-            allocated_rows_ = rows + extra;
+            allocated_rows_ = std::max(rows + extra, allocated_rows_ + allocated_rows_ / 2);
             ISparseRow** new_row = new ISparseRow* [ allocated_rows_ ];
             for (size_t row = 0; row < rows_; ++row)
             {
@@ -1247,6 +1247,8 @@ public:
     SparseMatrix2(const std::string& file, bool split = false);
     SparseMatrix2(const std::vector<long int>& points, long int rows, long int columns);
     ~SparseMatrix2();
+    SparseMatrix2(const SparseMatrix2&) = delete;
+    SparseMatrix2& operator=(const SparseMatrix2&) = delete;
     void add_row(size_t row, const std::string& str);
     void add_row(size_t row, size_t num_cols);
     friend void multiply(const SparseMatrix2& A, const BitMatrix& X, BitMatrix& AX);
@@ -1300,6 +1302,8 @@ public:
     SparseMatrix4(const std::string& file, bool split = false);
     SparseMatrix4(const std::vector<long int>& points, long int rows, long int columns);
     ~SparseMatrix4();
+    SparseMatrix4(const SparseMatrix4&) = delete;
+    SparseMatrix4& operator=(const SparseMatrix4&) = delete;
     void add_row(size_t row, const std::string& str);
     void add_row(size_t row, size_t num_cols);
     friend void multiply(const SparseMatrix4& A, const BitMatrix& X, BitMatrix& AX);
@@ -1352,6 +1356,8 @@ class SparseMatrix3
 public:
     SparseMatrix3(const std::string& file, bool split = false);
     ~SparseMatrix3();
+    SparseMatrix3(const SparseMatrix3&) = delete;
+    SparseMatrix3& operator=(const SparseMatrix3&) = delete;
     void clear();
     size_t rows() const
     {
