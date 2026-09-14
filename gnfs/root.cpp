@@ -16,6 +16,8 @@
 #include "ExceptionalPrimes.h"
 #include <iomanip>
 #include <omp.h>
+#include <cstdlib>
+#include <memory>
 //#define CHECKNORM 1
 #ifdef CHECKNORM
 #include "RootConfig.h"
@@ -56,8 +58,10 @@ std::unordered_map<long int, VeryLong> unfactored_norm_delta;
 #endif
 long long strtoll(const char* str)
 {
-    double x = std::atof(str);
-    return (long long)x;
+    // Avoid going through double (as std::atof would), since a double's
+    // 53-bit mantissa cannot represent all values that fit in a long long,
+    // which would silently corrupt large relation values.
+    return std::strtoll(str, nullptr, 10);
 }
 
 bool Debug = false;
@@ -510,6 +514,11 @@ bool readRelations(const char* filename, RelationList& numerRelations, RelationL
     FactorBase& fb = nf->factorBase();
 
     std::fstream infile(filename, std::ios::in);
+    if (!infile)
+    {
+        std::cerr << "Problem: unable to open file " << filename << std::endl;
+        return false;
+    }
     // file format should be
     // a b
     std::string str;
@@ -1100,10 +1109,15 @@ void processApproximation(const RelationList& relationNumer,
     double ln_norm_G = 0.0;
 #endif
     int degree = nf->degree();
-    std::fstream* dumpfile = 0;
+    std::unique_ptr<std::fstream> dumpfile;
     if (!Dump_file.empty())
     {
-        dumpfile = new std::fstream(Dump_file.c_str(), std::ios::out);
+        dumpfile = std::make_unique<std::fstream>(Dump_file.c_str(), std::ios::out);
+        if (!*dumpfile)
+        {
+            std::cerr << "Problem: unable to open dump file " << Dump_file << std::endl;
+            dumpfile.reset();
+        }
     }
 
     if (dumpfile)
@@ -1379,7 +1393,6 @@ void processApproximation(const RelationList& relationNumer,
     if (dumpfile) *dumpfile << H_norms[H_norms.size() - 1] << std::endl;
 
     if (dumpfile) *dumpfile << "END" << std::endl;
-    if (dumpfile) delete dumpfile;
 
     std::cout << "Good primes processed" << std::endl;
 
@@ -1431,11 +1444,9 @@ void processApproximation(const RelationList& relationNumer,
     // The correct combination should have a norm which is a perfect square.
     // There are 2^degree possible combinations to try ... (use Grey code to
     // iterate through them?)
-    // mask[i] is bit i set, all others zero
-    static size_t mask[10] =
-    {
-        0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200
-    };
+    // bit i of combination selects between the two candidate signs for
+    // lifted_coefficients[i]. Computed on the fly (rather than via a fixed-size
+    // lookup table) so this works correctly for any polynomial degree.
     bool square_found = false;
     AlgebraicNumber best_gamma_L(0L);
     VeryLong best_norm(0L);
@@ -1444,7 +1455,7 @@ void processApproximation(const RelationList& relationNumer,
         gamma_L = AlgebraicNumber(0L);
         for (int i = 0; i < degree; ++i)
         {
-            if (mask[i] & combination)
+            if ((static_cast<size_t>(1) << i) & combination)
             {
                 gamma_L += lifted_coefficients[i] * omega[i];
             }
@@ -1914,6 +1925,11 @@ void readDump(const char* filename,
     std::vector<double> ln_contributing_norms;
     {
         std::fstream dumpfile(filename, std::ios::in);
+        if (!dumpfile)
+        {
+            std::cerr << "Problem: unable to open dump file " << filename << std::endl;
+            return;
+        }
 
         std::string str;
         char tmp[1024];
