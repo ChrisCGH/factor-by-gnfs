@@ -104,9 +104,9 @@ int main(int argc, char** argv)
     RootConfig config("root.cfg");
     config.display();
     std::string relfile_str = config.RELATION_FILE();
+    if (argc > 1) relfile_str = argv[1];
     std::string ratRelFile(relfile_str);
     const char* relfile = relfile_str.c_str();
-    if (argc > 1) relfile = argv[1];
 
     Polynomial<VeryLong> f1 = config.f1();
     std::cout << "f1 = " << f1 << std::endl;
@@ -197,12 +197,14 @@ int main(int argc, char** argv)
                 }
                 if (v != 0)
                 {
-                    std::cout << "Problem: incorrect valuation : (a,b) = (" << a << "," << b << "), p = " << p << ", v = " << v << ", f = " << f << std::endl;
+                    std::cerr << "Problem: incorrect valuation : (a,b) = (" << a << "," << b << "), p = " << p << ", v = " << v << ", f = " << f << std::endl;
+                    return 1;
                 }
             }
             if (f != 1L)
             {
-                std::cout << "Problem: f(" << a << "," << b << ") not smooth, remaining quotient = " << f << std::endl;
+                std::cerr << "Problem: f(" << a << "," << b << ") not smooth, remaining quotient = " << f << std::endl;
+                return 1;
             }
             ++numerIter;
         }
@@ -221,21 +223,34 @@ int main(int argc, char** argv)
                 }
                 if (v != 0)
                 {
-                    std::cout << "Problem: incorrect valuation : (a,b) = (" << a << "," << b << "), p = " << p << ", v = " << v << ", f = " << f << std::endl;
+                    std::cerr << "Problem: incorrect valuation : (a,b) = (" << a << "," << b << "), p = " << p << ", v = " << v << ", f = " << f << std::endl;
+                    return 1;
                 }
             }
             if (f != 1L)
             {
-                std::cout << "Problem: f(" << a << "," << b << ") not smooth, remaining quotient = " << f << std::endl;
+                std::cerr << "Problem: f(" << a << "," << b << ") not smooth, remaining quotient = " << f << std::endl;
+                return 1;
             }
             ++denomIter;
         }
+        else
+        {
+            std::cerr << "Problem: relation (a,b) = (" << a << "," << b << ") in " << ratRelFile
+                       << " does not match the corresponding numerator/denominator relation" << std::endl;
+            return 1;
+        }
         ++ratIter;
+    }
+    if (numerIter != relationNumer.end() || denomIter != relationDenom.end())
+    {
+        std::cerr << "Problem: not all numerator/denominator relations were matched against " << ratRelFile << std::endl;
+        return 1;
     }
 
     VeryLongModular phi_g(1L);
     VeryLongModular c_d(f2.coefficient(f2.deg()));
-    long int S = relationNumer.size() - relationDenom.size();
+    long int S = static_cast<long int>(relationNumer.size()) - static_cast<long int>(relationDenom.size());
 
     for (auto& pr: primes)
     {
@@ -245,6 +260,7 @@ int main(int argc, char** argv)
         if (v % 2 != 0)
         {
             std::cerr << "Problem: rational side not a square, contains " << p << "^" << v << std::endl;
+            return 1;
         }
         v /= 2;
         if (v > 0)
