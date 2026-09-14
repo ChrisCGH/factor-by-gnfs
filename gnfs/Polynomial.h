@@ -734,7 +734,10 @@ public:
 
     void set_coefficient(long int i, const F& value)
     {
-        if (i < 0 || i > deg()) return;
+        if (i < 0 || i > deg())
+        {
+            throw std::string("Polynomial::set_coefficient() : index out of range");
+        }
         _coefficients[i] = value;
     }
 

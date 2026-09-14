@@ -1,4 +1,4 @@
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC optimize("O3")
 // AVX2 target removed - not supported on all CPUs
 #endif

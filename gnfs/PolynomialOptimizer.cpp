@@ -415,32 +415,32 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
     }
 
 
-    static short* cont_array_data = 0;
+    static std::vector<short> cont_array_data;
     static long int cont_array_data_size = 0;
-    if (cont_array_data == 0)
+    if (cont_array_data.empty())
     {
         cont_array_data_size = (2 * MAX_J1 + 1) * (2 * MAX_J0 + 1) ;
-        cont_array_data = new short [ cont_array_data_size ];
+        cont_array_data.resize(cont_array_data_size);
     }
 
-    static short** cont_array = 0;
-    if (cont_array == 0)
+    static std::vector<short*> cont_array;
+    if (cont_array.empty())
     {
-        cont_array = new short* [ 2 * MAX_J1 + 1 ];
+        cont_array.resize(2 * MAX_J1 + 1);
         for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
         {
-            cont_array[j1] = cont_array_data + j1 * (2 * MAX_J0 + 1);
+            cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
         }
     }
-    static short* j0_array = 0;
-    if (j0_array == 0)
+    static std::vector<short> j0_array;
+    if (j0_array.empty())
     {
-        j0_array = new short [ MAX_J0 ];
+        j0_array.resize(MAX_J0);
     }
     unsigned long int p_k;  // p^k
     //long int k = 0;
 
-    memset((char*)cont_array_data, 0, cont_array_data_size * sizeof(short));
+    memset((char*)cont_array_data.data(), 0, cont_array_data_size * sizeof(short));
     long int p = zpnextb(2);
     VeryLong leading_coefficient = min_poly.coefficient(min_poly.deg());
     time_t start = time(0);
@@ -503,7 +503,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
 
             for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
             {
-                memset((char*)j0_array, 0, sizeof(short)*MAX_J0);
+                memset((char*)j0_array.data(), 0, sizeof(short)*MAX_J0);
                 for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
                 // use finite differences to calculate f(l) for consecutive values of l
                 // Reset difference table for this j1 iteration by copying precomputed initial_diffs
