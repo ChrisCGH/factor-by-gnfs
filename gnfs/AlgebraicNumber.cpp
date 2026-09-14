@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <stdexcept>
+#include <sstream>
 #include "MPFloat.h"
 #include <fstream>
 #include <float.h>
@@ -36,7 +37,13 @@ AlgebraicNumber::AlgebraicNumber() : ibc_defined_(false), M_(AlgebraicNumber::de
 AlgebraicNumber::AlgebraicNumber(std::vector<Quotient<VeryLong > >& coeff)
     : c_(coeff), ibc_defined_(false), M_(AlgebraicNumber::degree(), AlgebraicNumber::degree()), matrix_defined_(false)
 {
-    // what if coeff.size() > AlgebraicNumber::degree() ?
+    if (coeff.size() != static_cast<size_t>(AlgebraicNumber::degree()))
+    {
+        std::ostringstream oss;
+        oss << "AlgebraicNumber::AlgebraicNumber(coeff) : coeff.size() (" << coeff.size()
+            << ") != degree() (" << AlgebraicNumber::degree() << ")";
+        throw std::runtime_error(oss.str());
+    }
 }
 
 AlgebraicNumber::AlgebraicNumber(const VeryLong& v)
@@ -65,6 +72,13 @@ AlgebraicNumber::AlgebraicNumber(const VeryLong& a, const VeryLong& b)
 AlgebraicNumber::AlgebraicNumber(const Matrix<VeryLong>& M, const VeryLong& denominator, int column)
     : ibc_defined_(false), M_(AlgebraicNumber::degree(), AlgebraicNumber::degree()), matrix_defined_(false)
 {
+    if (M.rows() != static_cast<size_t>(AlgebraicNumber::degree()))
+    {
+        std::ostringstream oss;
+        oss << "AlgebraicNumber::AlgebraicNumber(M, denominator, column) : M.rows() (" << M.rows()
+            << ") != degree() (" << AlgebraicNumber::degree() << ")";
+        throw std::runtime_error(oss.str());
+    }
     c_.resize(M.rows());
     for (size_t i = 0; i < M.rows(); i++)
     {
@@ -75,6 +89,13 @@ AlgebraicNumber::AlgebraicNumber(const Matrix<VeryLong>& M, const VeryLong& deno
 AlgebraicNumber::AlgebraicNumber(const Matrix<Quotient<VeryLong> >& M, int column)
     : ibc_defined_(false), M_(AlgebraicNumber::degree(), AlgebraicNumber::degree()), matrix_defined_(false)
 {
+    if (M.rows() != static_cast<size_t>(AlgebraicNumber::degree()))
+    {
+        std::ostringstream oss;
+        oss << "AlgebraicNumber::AlgebraicNumber(M, column) : M.rows() (" << M.rows()
+            << ") != degree() (" << AlgebraicNumber::degree() << ")";
+        throw std::runtime_error(oss.str());
+    }
     c_.resize(M.rows());
     for (size_t i = 0; i < M.rows(); i++)
     {
@@ -429,14 +450,14 @@ AlgebraicNumber operator/(const AlgebraicNumber& a1,
 {
     if (!a1.matrix_defined_) a1.defineMatrix();
     if (!a2.matrix_defined_) a2.defineMatrix();
+    if (determinant(a2.M_) == Quotient<VeryLong>(0L))
+    {
+        throw std::runtime_error("AlgebraicNumber::operator/() : division by a non-invertible algebraic number (norm is zero)");
+    }
     Matrix<Quotient<VeryLong > > m(a1.M_);
     Matrix<Quotient<VeryLong > > m2(a1.M_.rows(), a1.M_.columns());
     invert(a2.M_, m2);
     m = a1.M_ * m2;
-
-    //cout << "a2.M_ = " << endl << a2.M_;
-    //cout << "a2.M_^(-1) = " << endl << m2;
-    //cout << endl << a2.M_ * m2;
 
     std::vector<Quotient<VeryLong > > c;
     c.resize(a1.c_.size());
@@ -482,17 +503,19 @@ void AlgebraicNumber::defineMatrix() const
         }
 
         if (i < d - 1) tmp = tmp * alp;
-        //if (i < d - 1) tmp *= alp;
     }
 
-//   cout << "M_ =" << endl << M_;
     matrix_defined_ = true;
 }
 
 AlgebraicNumber& AlgebraicNumber::alpha()
 {
-    static const NumberField* last_nf = nullptr;
-    static AlgebraicNumber* alpha_ = nullptr;
+    // These caches are thread-local (rather than plain statics) so that multiple
+    // threads working with different NumberField instances (e.g. via OpenMP) do
+    // not race on last_nf/alpha_, matching the analogous thread_local per-prime
+    // state in AlgebraicNumber_in_O_pO_.
+    thread_local const NumberField* last_nf = nullptr;
+    thread_local AlgebraicNumber* alpha_ = nullptr;
     if (last_nf != numberField_)
     {
         delete alpha_;
@@ -520,8 +543,9 @@ AlgebraicNumber& AlgebraicNumber::alpha()
 
 const std::vector<AlgebraicNumber>& AlgebraicNumber::integralBasis()
 {
-    static const NumberField* last_nf = nullptr;
-    static std::vector<AlgebraicNumber> ib;
+    // thread_local for the same reason as in alpha() above.
+    thread_local const NumberField* last_nf = nullptr;
+    thread_local std::vector<AlgebraicNumber> ib;
     if (last_nf != numberField_)
     {
         ib.clear();
@@ -817,15 +841,18 @@ long double AlgebraicNumber::mod_sigma_2(int j) const
     {
         long double coeff = cc.numerator().get_long_double() / cc.denominator().get_long_double();
         sigma += coeff * alpha_power;
+        if (isnan(sigma.real()) || isnan(sigma.imag())) throw std::overflow_error("NaN in complex multiply");
+        if (isinf(sigma.real()) || isinf(sigma.imag())) throw std::overflow_error("Inf in complex multiply");
         alpha_power *= alpha_j;
     }
     long double mod2 = std::norm(sigma);
+    if (isinf(mod2)) throw std::overflow_error("Inf in modulus_squared");
+    if (isnan(mod2)) throw std::overflow_error("NaN in modulus_squared");
     return mod2;
 }
 
 Polynomial<VeryLong> AlgebraicNumber::minimalPolynomial() const
 {
-    //cout << "Calculating minimal polynomial of " << *this << endl;
     int d = degree();
     // Now compute successive powers to find minimal polynomial
     int power = 2;
@@ -852,8 +879,6 @@ Polynomial<VeryLong> AlgebraicNumber::minimalPolynomial() const
         kerAA = kernel(AA);
     }
 
-    //cout << "AA = " << endl << AA;
-    //cout << "kerAA = " << endl << kerAA;
     // columns of kerAA now give coefficients of relations between powers of alph
     // find the minimal polynomial by looking for the column with least highest
     // non-zero row
@@ -886,9 +911,7 @@ Polynomial<VeryLong> AlgebraicNumber::minimalPolynomial() const
     }
     Polynomial<VeryLong> m(coeff);
     m.make_primitive();
-    //cout << "Minimal polynomial is " << m << endl;
     AlgebraicNumber check(m, *this);
-    //cout << "check = " << check << endl;
     return m;
 }
 
@@ -903,17 +926,9 @@ AlgebraicNumber AlgebraicNumber::sqrt() const
     Polynomial<VeryLong> X2(c);
     Polynomial<VeryLong> AX2 = A.evaluate(X2);
 
-    //cout << "A(X^2) = " << AX2 << endl;
-
     std::vector<Polynomial<VeryLong> > factors;
     VeryLong cont;
     Polynomial<VeryLong>::factor(AX2, factors, cont);
-
-    //cout << "Factors of A(X^2) are : " << endl;
-    //for (size_t i = 0; i < factors.size(); i++)
-    //{
-    //cout << factors[i] << endl;
-    //}
 
     if (factors.size() == 2)
     {
@@ -924,23 +939,19 @@ AlgebraicNumber AlgebraicNumber::sqrt() const
             s[i] = AlgebraicNumber(factors[0].coefficient(i));
         }
         Polynomial<AlgebraicNumber> S(s);
-        //cout << "S = " << S << endl;
         s.resize(3);
         s[0] = - *this;
         s[1] = AlgebraicNumber(0L);
         s[2] = AlgebraicNumber(1L);
         Polynomial<AlgebraicNumber> X2_minus_x(s);
-        //cout << "X^2 - x = " << X2_minus_x << endl;
         Polynomial<AlgebraicNumber> Q;
         Polynomial<AlgebraicNumber> R;
         euclidean_division(S, X2_minus_x, Q, R);
-        //cout << "result of euclidean division :" << endl;
-        //cout << "Q = " << Q << endl;
-        //cout << "R = " << R << endl;
-        //cout << "Q * (X^2 - x) + R = " << Q * X2_minus_x + R << endl;
         if (R.deg() != 1)
         {
-            std::cout << "Problem : R is not degree 1 : " << R << std::endl;
+            std::ostringstream oss;
+            oss << "AlgebraicNumber::sqrt() : remainder R is not degree 1 : " << R;
+            throw std::runtime_error(oss.str());
         }
 
         AlgebraicNumber a = R.coefficient(1);
@@ -970,8 +981,10 @@ VeryLongModular AlgebraicNumber::Phi(const VeryLong& N, const VeryLong& m) const
         //VeryLongModular vlm = VeryLongModular(q.numerator()) / VeryLongModular(q.denominator());
         if (denom == zero)
         {
-            std::cout << "Problem in Phi(" << *this << ")" << std::endl;
-            std::cout << "c_[" << i << "] = " << c_[i] << std::endl;
+            std::ostringstream oss;
+            oss << "AlgebraicNumber::Phi() : denominator of coefficient c_[" << i << "] (" << c_[i]
+                << ") is zero modulo N (" << N << ") for *this = " << *this;
+            throw std::runtime_error(oss.str());
         }
         VeryLongModular vlm = numer / denom;
         result *= m_;

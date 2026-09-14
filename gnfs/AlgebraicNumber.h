@@ -21,6 +21,10 @@ public:
     AlgebraicNumber& operator=(const AlgebraicNumber& a);
     bool operator==(const AlgebraicNumber& a) const;
     bool operator!=(const AlgebraicNumber& a) const;
+    // Note: this is not a real ordering (it always returns false), so
+    // AlgebraicNumber must not be used as a key in ordered containers
+    // (e.g. std::set, std::map) or sorted with std::sort. It exists only
+    // to satisfy interfaces that require operator< to be present.
     bool operator<(const AlgebraicNumber& a) const
     {
         return false;
