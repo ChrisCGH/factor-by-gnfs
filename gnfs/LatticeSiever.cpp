@@ -487,11 +487,11 @@ void LatticeSiever::check_interval2()
                 double abs_value1 = (value1 < 0.0) ? -value1 : value1;
                 int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
                 cutoff -= adjustment;
-                
+
                 if ((int)(*sieve_ptr) > cutoff)
                 {
                     VeryLong v = abs(evaluate_on_lattice(f2_, cd.first, cd.second, c1_, c2_));
-                    
+
                     if (number_potentially_smooth_ >= max_potentially_smooth)
                     {
                         if (debug_)
