@@ -386,6 +386,7 @@ long int LatticeSiever::check_interval1(long int q)
     int adjustment = SIEVE_BOUND_ADJUSTMENT1_;
     int cutoff0 = INITIAL_CUTOFF_;
     long int potential = 0;
+    algebraic_candidate_offsets_.clear();
 
     if (debug_)
     {
@@ -431,6 +432,7 @@ long int LatticeSiever::check_interval1(long int q)
                     if (__builtin_expect((int)(*sieve_ptr) > cutoff, 0))
                     {
                         *sieve_ptr = 0;
+                        algebraic_candidate_offsets_.push_back(static_cast<uint32_t>(offset));
                         ++potential;
                     }
                     else
@@ -461,18 +463,6 @@ long int LatticeSiever::check_interval1(long int q)
 
 void LatticeSiever::check_interval2()
 {
-    struct CandidateCursorState
-    {
-        long int c;
-        long int d;
-    };
-
-    struct CandidateState
-    {
-        size_t offset;
-        bool is_active;
-    };
-
     // Use precomputed values
     double log_L1d2 = log_L2_pow_LP2_;
 
@@ -484,89 +474,52 @@ void LatticeSiever::check_interval2()
         std::cerr << "check_interval2: Processing in blocks of " << CACHE_BLOCK_SIZE << " bytes" << std::endl;
     }
 
-    // Process sieve array in cache-sized blocks
-    for (size_t block = 0; block < BLOCKS_PER_SIEVE; ++block)
+    for (uint32_t candidate_offset : algebraic_candidate_offsets_)
     {
-        size_t block_start = block * CACHE_BLOCK_SIZE;
-        size_t block_end = std::min(block_start + CACHE_BLOCK_SIZE, (size_t)fixed_sieve_array_size);
-        
-        const std::pair<long int, long int> start_cd = block_start_to_c_d(block_start);
-        
-        SIEVE_TYPE* __restrict__ sieve_ptr = fixed_sieve_array_ + block_start;
-        SIEVE_TYPE* __restrict__ const sieve_end_ptr = fixed_sieve_array_ + block_end;
-        
-        CandidateCursorState cursor{start_cd.first, start_cd.second};
-        
-        if (debug_ && block % 100 == 0)
+        const size_t offset = candidate_offset;
+        if (__builtin_expect(!sieve_bit_array_.isSet(offset), 1))
         {
-            std::cerr << "Processing block " << block << "/" << BLOCKS_PER_SIEVE 
-                      << " starting at (c,d)=(" << cursor.c << "," << cursor.d << ")" << std::endl;
-        }
+            SIEVE_TYPE* const sieve_ptr = fixed_sieve_array_ + offset;
+            if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))
+            {
+                const std::pair<long int, long int> cd = offset_to_c_d(offset);
+                double value1 = evaluate_on_lattice(f2d_, cd.first, cd.second, c1_, c2_);
+                double abs_value1 = (value1 < 0.0) ? -value1 : value1;
+                int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
+                cutoff -= adjustment;
 
-        while (sieve_ptr < sieve_end_ptr)
-        {
-            // Prefetch next cache line within this block
-            if (sieve_ptr + 64 < sieve_end_ptr)
-            {
-                __builtin_prefetch(sieve_ptr + 64, 0, 1);
-            }
-            
-            CandidateState candidate{
-                static_cast<size_t>(sieve_ptr - fixed_sieve_array_),
-                !sieve_bit_array_.isSet(static_cast<size_t>(sieve_ptr - fixed_sieve_array_))
-            };
-            
-            if (__builtin_expect(candidate.is_active, 1))
-            {
-                if (__builtin_expect((int)(*sieve_ptr) >= cutoff0, 1))  // Common in interval2
+                if ((int)(*sieve_ptr) > cutoff)
                 {
-                    double value1 = evaluate_on_lattice(f2d_, cursor.c, cursor.d, c1_, c2_);
-                    double abs_value1 = (value1 < 0.0) ? -value1 : value1;
-                    int cutoff = static_cast<int>(logq(abs_value1, LOGQ_BASE) - log_L1d2);
-                    cutoff -= adjustment;
+                    VeryLong v = abs(evaluate_on_lattice(f2_, cd.first, cd.second, c1_, c2_));
+
+                    if (number_potentially_smooth_ >= max_potentially_smooth)
+                    {
+                        if (debug_)
+                        {
+                            std::cerr << "WARNING: Reached max_potentially_smooth limit" << std::endl;
+                        }
+                        return;
+                    }
                     
-                    if ((int)(*sieve_ptr) > cutoff)
+                    potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(cd.first, cd.second, sieve_ptr, v);
+                    if (number_potentially_smooth_ > 0)
                     {
-                        VeryLong v = abs(evaluate_on_lattice(f2_, cursor.c, cursor.d, c1_, c2_));
-                        
-                        // Bounds check before array access
-                        if (number_potentially_smooth_ >= max_potentially_smooth)
-                        {
-                            if (debug_)
-                            {
-                                std::cerr << "WARNING: Reached max_potentially_smooth limit" << std::endl;
-                            }
-                            return;  // Early exit to avoid overflow
-                        }
-                        
-                        potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(cursor.c, cursor.d, sieve_ptr, v);
-                        if (number_potentially_smooth_ > 0)
-                        {
-                            potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
-                                potentially_smooth_point_ + number_potentially_smooth_;
-                        }
-                        ++number_potentially_smooth_;
+                        potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
+                            potentially_smooth_point_ + number_potentially_smooth_;
                     }
-                    else
-                    {
-                        sieve_bit_array_.set(candidate.offset);
-                    }
+                    ++number_potentially_smooth_;
                 }
                 else
                 {
-                    sieve_bit_array_.set(candidate.offset);
+                    sieve_bit_array_.set(offset);
                 }
             }
-            
-            ++cursor.c;
-            ++sieve_ptr;
-            if (cursor.c > max_c)
+            else
             {
-                cursor.c = min_c;
-                ++cursor.d;
+                sieve_bit_array_.set(offset);
             }
-        }
-    }
+        }    
+    }    
     
     if (debug_)
     {
