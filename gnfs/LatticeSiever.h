@@ -817,6 +817,7 @@ private:
     PotentiallySmoothPoint* potentially_smooth_point_;
     PotentiallySmoothPoint* head_psp_;
     int number_potentially_smooth_;
+    std::vector<uint32_t> algebraic_candidate_offsets_;
     std::pair<long int, long int> c1_;
     std::pair<long int, long int> c2_;
     const Parallelogram c_region_;
