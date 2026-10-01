@@ -1,4 +1,6 @@
 #include "blockLanczos.h"
+#include <algorithm>
+#include <array>
 #include <iostream>
 #include <ctime>
 #include <stdexcept>
@@ -26,6 +28,105 @@ std::string time_str()
 {
     std::cerr << msg << std::endl;
     std::exit(1);
+}
+
+class RowTransform64
+{
+public:
+    explicit RowTransform64(const BITMATRIX& right)
+        : cols_(right.cols())
+    {
+        if (right.rows() != BITOPERATIONS::BITS_IN_WORD) throw "RowTransform64: right matrix must have 64 rows";
+        std::fill(lookup_, lookup_ + LOOKUP_SIZE, 0ULL);
+        const unsigned long long int* right_rows = right.row_.begin();
+        for (size_t selector_byte = 0; selector_byte < BYTE_VALUE_COUNT; ++selector_byte)
+        {
+            size_t selector = selector_byte;
+            for (size_t bit = 0; bit < BYTE_COUNT; ++bit)
+            {
+                if (selector & 1U)
+                {
+                    lookup_[selector_byte] ^= *(right_rows + bit);
+                    lookup_[1 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 8);
+                    lookup_[2 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 16);
+                    lookup_[3 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 24);
+                    lookup_[4 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 32);
+                    lookup_[5 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 40);
+                    lookup_[6 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 48);
+                    lookup_[7 * BYTE_VALUE_COUNT + selector_byte] ^= *(right_rows + bit + 56);
+                }
+                selector >>= 1;
+            }
+        }
+    }
+
+    unsigned long long int apply(unsigned long long int selector) const
+    {
+        unsigned long long int row = 0ULL;
+        row ^= lookup_[static_cast<unsigned char>(selector)];
+        row ^= lookup_[1 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 8)];
+        row ^= lookup_[2 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 16)];
+        row ^= lookup_[3 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 24)];
+        row ^= lookup_[4 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 32)];
+        row ^= lookup_[5 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 40)];
+        row ^= lookup_[6 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 48)];
+        row ^= lookup_[7 * BYTE_VALUE_COUNT + static_cast<unsigned char>(selector >> 56)];
+        return row;
+    }
+
+    size_t cols() const
+    {
+        return cols_;
+    }
+
+private:
+    static const size_t BYTE_COUNT = 8;
+    static const size_t BYTE_VALUE_COUNT = 256;
+    static const size_t LOOKUP_SIZE = BYTE_COUNT * BYTE_VALUE_COUNT;
+
+    size_t cols_;
+    unsigned long long int lookup_[LOOKUP_SIZE];
+};
+
+struct RowTransformTerm
+{
+    const BITMATRIX* source;
+    const RowTransform64* transform;
+};
+
+template <size_t TERM_COUNT>
+void assign_row_transform_sum(const std::array<RowTransformTerm, TERM_COUNT>& terms, BITMATRIX& dst)
+{
+    const size_t row_count = terms[0].source->rows();
+    for (size_t term = 1; term < TERM_COUNT; ++term)
+    {
+        if (terms[term].source->rows() != row_count) throw "assign_row_transform_sum: incompatible BitMatrices";
+    }
+    dst.row_.clear();
+    dst.row_.resize(row_count);
+    dst.cols_ = terms[0].transform->cols();
+
+    unsigned long long int* dst_rows = dst.row_.begin();
+    for (size_t row = 0; row < row_count; ++row)
+    {
+        unsigned long long int value = 0ULL;
+        for (size_t term = 0; term < TERM_COUNT; ++term)
+        {
+            value ^= terms[term].transform->apply(terms[term].source->row_[row]);
+        }
+        dst_rows[row] = value;
+    }
+}
+
+void xor_row_transform(const BITMATRIX& source, const RowTransform64& transform, BITMATRIX& dst)
+{
+    if (source.rows() != dst.rows() || dst.cols() != transform.cols()) throw "xor_row_transform: incompatible BitMatrices";
+
+    unsigned long long int* dst_rows = dst.row_.begin();
+    for (size_t row = 0; row < source.rows(); ++row)
+    {
+        dst_rows[row] ^= transform.apply(source.row_[row]);
+    }
 }
 }
 
@@ -83,7 +184,6 @@ void BlockLanczos::readMatrix(const std::string& matrix_file)
 void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
 {
     std::cerr << "blockLanczos: started" << std::endl;
-    size_t n = n_;
     int N = N_;
     SPARSEMATRIX& B = *B_;
 
@@ -132,8 +232,8 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
             //           i i  i 0
             innerProduct(Vi, V0, tmp);
             multiply(Winvi, tmp, tmp1);
-            multiply(Vi, tmp1, tmp);
-            X += tmp;
+            RowTransform64 x_update(tmp1);
+            xor_row_transform(Vi, x_update, X);
 
             // Calculate D, E and F
             BITMATRIX SS_t;
@@ -159,12 +259,10 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
             //              t
             // newV = AV S S  + V D + V   E
             //          i i i    i     i-1
-            BITMATRIX newV(n, N);
-            multiply(AV, SS_t, newV);
-            multiply(Vi, D, tmp);
-            newV += tmp;
-            multiply(Vim1, E, tmp);
-            newV += tmp;
+            RowTransform64 av_term(SS_t);
+            RowTransform64 vi_term(D);
+            RowTransform64 vim1_term(E);
+            BITMATRIX newV;
 
             // If Sim1 is identity matrix, then we don't need to
             // calculate F
@@ -185,11 +283,21 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
                 tmp1 += VAVim1;
                 multiply(tmp, tmp1, tmp2);
                 multiply(tmp2, SS_t, F);
-                multiply(Vim2, F, tmp);
-                //
-                // newV <- newV + V   F
-                //                 i-2
-                newV += tmp;
+                RowTransform64 vim2_term(F);
+                assign_row_transform_sum(std::array<RowTransformTerm, 4>{{
+                    {&AV, &av_term},
+                    {&Vi, &vi_term},
+                    {&Vim1, &vim1_term},
+                    {&Vim2, &vim2_term}
+                }}, newV);
+            }
+            else
+            {
+                assign_row_transform_sum(std::array<RowTransformTerm, 3>{{
+                    {&AV, &av_term},
+                    {&Vi, &vi_term},
+                    {&Vim1, &vim1_term}
+                }}, newV);
             }
 
             // We could check here that:
