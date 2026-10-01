@@ -161,19 +161,25 @@ private:
         }
         void add(LatticeSiever::SIEVE_TYPE* ptr, int32_t p)
         {
-            //pf_ptr_->set(ptr, p);
-            //pf_ptr_->ptr_ = ptr;
-            pf_ptr_->offset_ = ptr - sieve_array_;
+            add(ptr - sieve_array_, p);
+        }
+        void add(uint32_t offset, int32_t p)
+        {
+            if (pf_ptr_ == prime_factor_ + list_size_)
+            {
+                size_t used = pf_ptr_ - prime_factor_;
+                size_t new_size = list_size_ * 2;
+                PrimeFactor* new_prime_factor = new PrimeFactor[new_size];
+                std::copy(prime_factor_, pf_ptr_, new_prime_factor);
+                delete [] prime_factor_;
+                prime_factor_ = new_prime_factor;
+                pf_ptr_ = prime_factor_ + used;
+                pf_end_ = prime_factor_ + new_size;
+                list_size_ = new_size;
+            }
+            pf_ptr_->offset_ = offset;
             pf_ptr_->p_ = p;
             ++pf_ptr_;
-#ifdef OVERFLOW_CHECK
-            if (pf_ptr_ >= pf_end_)
-            {
-                std::stringstream ss;
-                ss << "PrimeFactorList::add(" << ptr << ", " << p << "), pf_list_ overflowed";
-                throw std::out_of_range(ss.str());
-            }
-#endif
         }
         void set_end()
         {
@@ -295,7 +301,8 @@ private:
 #endif
         }
 
-        void add(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter)
+        void add(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter,
+                 bool record_factors = true)
         {
             SIEVE_TYPE* __restrict__ sieve_array = sieve_array_;
             
@@ -349,10 +356,10 @@ private:
                             debug_file_ << std::hex << size_t(it[0].offset_) << std::dec << std::endl;
 #endif
                             *(it[0].offset_ + sieve_array) += it[0].logp_;
-                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
-                            pf->offset_ = it[0].offset_;
-                            pf->p_ = it[0].p_;
-                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                            if (record_factors)
+                            {
+                                SieveCacheItem::pf_list_->add(it[0].offset_, it[0].p_);
+                            }
                         }
                         // Item 1
                         if (!sieve_bit_array_.isSet(it[1].offset_))
@@ -361,10 +368,10 @@ private:
                             debug_file_ << std::hex << size_t(it[1].offset_) << std::dec << std::endl;
 #endif
                             *(it[1].offset_ + sieve_array) += it[1].logp_;
-                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
-                            pf->offset_ = it[1].offset_;
-                            pf->p_ = it[1].p_;
-                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                            if (record_factors)
+                            {
+                                SieveCacheItem::pf_list_->add(it[1].offset_, it[1].p_);
+                            }
                         }
                         // Item 2
                         if (!sieve_bit_array_.isSet(it[2].offset_))
@@ -373,10 +380,10 @@ private:
                             debug_file_ << std::hex << size_t(it[2].offset_) << std::dec << std::endl;
 #endif
                             *(it[2].offset_ + sieve_array) += it[2].logp_;
-                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
-                            pf->offset_ = it[2].offset_;
-                            pf->p_ = it[2].p_;
-                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                            if (record_factors)
+                            {
+                                SieveCacheItem::pf_list_->add(it[2].offset_, it[2].p_);
+                            }
                         }
                         // Item 3
                         if (!sieve_bit_array_.isSet(it[3].offset_))
@@ -385,10 +392,10 @@ private:
                             debug_file_ << std::hex << size_t(it[3].offset_) << std::dec << std::endl;
 #endif
                             *(it[3].offset_ + sieve_array) += it[3].logp_;
-                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
-                            pf->offset_ = it[3].offset_;
-                            pf->p_ = it[3].p_;
-                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                            if (record_factors)
+                            {
+                                SieveCacheItem::pf_list_->add(it[3].offset_, it[3].p_);
+                            }
                         }
                         it += 4;
                     }
@@ -402,10 +409,10 @@ private:
                             debug_file_ << std::hex << size_t(it->offset_) << std::dec << std::endl;
 #endif
                             *(it->offset_ + sieve_array) += it->logp_;
-                            PrimeFactor* pf = SieveCacheItem::pf_list_->pf_ptr_;
-                            pf->offset_ = it->offset_;
-                            pf->p_ = it->p_;
-                            SieveCacheItem::pf_list_->pf_ptr_ = pf + 1;
+                            if (record_factors)
+                            {
+                                SieveCacheItem::pf_list_->add(it->offset_, it->p_);
+                            }
                         }
                         ++it;
                     }
@@ -419,78 +426,6 @@ private:
             }
         }
 
-#ifdef RESIEVE1
-        void add1(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter)
-        {
-            while (count)
-            {
-                --count;
-                offset += inc;
-                SieveCacheBucket<cache_size>& scb = buckets_[offset >> bucket_bits];
-                SieveCacheItem* const & item = scb.next_cache_;
-                item->offset_ = offset;
-                item->p_ = iter->p;
-                item->logp_ = iter->logp;
-                if (item == scb.cache_ + cache_size - 1)
-                {
-                    SieveCacheItem* it = scb.cache_;
-                    for (long int i = 0; i < cache_size; ++i, ++it)
-                    {
-                        if (!sieve_bit_array_.isSet(it->offset_))
-                        {
-                            *(it->offset_ + sieve_array_) += it->logp_;
-                        }
-                    }
-                    scb.next_cache_ = scb.cache_;
-                }
-                else
-                {
-                    ++scb.next_cache_;
-                }
-            }
-        }
-
-        void add1_again(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter)
-        {
-            while (count)
-            {
-                --count;
-                offset += inc;
-#if 1
-                SieveCacheBucket<cache_size>& scb = buckets_[offset >> bucket_bits];
-                SieveCacheItem* const & item = scb.next_cache_;
-                item->offset_ = offset;
-                item->p_ = iter->p;
-                item->logp_ = 0;
-                if (item == scb.cache_ + cache_size - 1)
-                {
-                    SieveCacheItem* it = scb.cache_;
-                    for (long int i = 0; i < cache_size; ++i, ++it)
-                    {
-                        if (!sieve_bit_array_.isSet(it->offset_))
-                        {
-                            SieveCacheItem::pf_list_->pf_ptr_->offset_ = it->offset_;
-                            SieveCacheItem::pf_list_->pf_ptr_->p_ = it->p_;
-                            ++SieveCacheItem::pf_list_->pf_ptr_;
-                        }
-                    }
-                    scb.next_cache_ = scb.cache_;
-                }
-                else
-                {
-                    ++scb.next_cache_;
-                }
-#else
-                if (!sieve_bit_array_.isSet(offset))
-                {
-                    SieveCacheItem::pf_list_->pf_ptr_->offset_ = offset;
-                    SieveCacheItem::pf_list_->pf_ptr_->p_ = iter->p;
-                    ++SieveCacheItem::pf_list_->pf_ptr_;
-                }
-#endif
-            }
-        }
-#endif
         // Flush all remaining items from non-empty buckets to sieve_array_.
         // Sorts buckets by index first so writes proceed in sequential memory order,
         // improving spatial locality. Sorting ~1177 entries costs O(N log N) ≈ 12K
@@ -717,10 +652,7 @@ private:
     void sieve_by_vectors1();
     void sieve_by_vectors1_again();
     void sieve_by_vectors2();
-    void sieve1(FactorBase::a_iterator iter, long int r1);
-#ifdef RESIEVE1
-    void sieve1_again(FactorBase::a_iterator iter, long int r1);
-#endif
+    void sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors = true);
     void sieve2(FactorBase::a_iterator iter, long int r1);
     long int check_interval1(long int q);
     void check_interval2();
@@ -781,11 +713,7 @@ private:
 
     static const int LOGQ_BASE = 10;
     static const size_t rat_pf_list_size = 700000L;
-#ifdef RESIEVE1
     static const size_t alg_pf_list_size = 50000L;
-#else
-    static const size_t alg_pf_list_size = 50000000L;
-#endif
     static const int max_potentially_smooth = 200000;
 #ifdef BUCKET_BITS
     static const size_t bucket_bits = 16;
