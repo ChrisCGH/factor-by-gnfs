@@ -564,6 +564,7 @@ void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
 {
     for (long int p : small_primes_1_)
     {
+        if (smooth_iter->partial1_.remaining_quotient_ == 1L) break;
         while (smooth_iter->partial1_.remaining_quotient_ % p == 0L)
         {
             smooth_iter->add_factor1(p);
@@ -584,6 +585,7 @@ void LatticeSiever::divide_by_small_primes2(PotentiallySmoothPoint* smooth_iter)
     
     for (long int p : small_primes_2_)
     {
+        if (smooth_iter->partial2_.remaining_quotient_ == 1L) break;
         while (smooth_iter->partial2_.remaining_quotient_ % p == 0L)
         {
             if (debug_)
