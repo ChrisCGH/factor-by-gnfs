@@ -3209,6 +3209,11 @@ void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX)
 void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX)
 {
     BitMatrix64 BX;
+    sym_multiply(B, X, AX, BX);
+}
+
+void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX, BitMatrix64& BX)
+{
     multiply(B, X, BX);
     multiplyt(B, BX, AX);
 }

@@ -1375,6 +1375,7 @@ public:
     friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
     friend void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX);
     friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX);
+    friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX, BitMatrix64& BX);
     void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
     void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
     void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;

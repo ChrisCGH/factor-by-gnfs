@@ -111,11 +111,12 @@ void BlockLanczos::kernel(BITMATRIX& kerL, BITMATRIX& kerR)
     BITMATRIX& X = *X_;
 
     bool done = false;
+    BITMATRIX BX;
     while (!done)
     {
         std::cerr << "blockLanczos: iteration <" << iteration_ << ">" << std::endl;
         BITMATRIX AV;
-        sym_multiply(B, Vi, AV); // B^t B Vi
+        sym_multiply(B, Vi, AV, BX); // B^t B Vi
         innerProduct(Vi, AV, VAVi);   // Vi^t B^t B Vi
         if (VAVi.isZero()) done = true;
         else
