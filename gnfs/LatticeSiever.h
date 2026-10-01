@@ -654,6 +654,7 @@ public:
     void sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors = true,
                 bool add_to_sieve = true);
     void sieve2(FactorBase::a_iterator iter, long int r1);
+    bool lattice_intersection_root(long int p, long int r, long int& r1) const;
     long int check_interval1(long int q);
     void check_interval2();
     std::pair<long int, long int> block_start_to_c_d(size_t block_start) const;

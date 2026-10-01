@@ -1207,6 +1207,21 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
     }
 }
 
+bool LatticeSiever::lattice_intersection_root(long int p, long int r, long int& r1) const
+{
+    long long int Q_ll = c1_.first - (long long)c1_.second * r;
+    long int Q = modasm(Q_ll, p);
+    if (!Q) return false;
+
+    long long int R_ll = (long long)c2_.second * r - c2_.first;
+    long int R = modasm(R_ll, p);
+    if (!R) return false;
+
+    long int R_inv = inverse<long int>(R, p);
+    mulmodasm2(Q, R_inv, p, r1);
+    return true;
+}
+
 /*
  *   (a,b) = c c1 + d c2
  *         = (c c1.first + d c2.first, c c1.second + d c2.second)
@@ -1270,22 +1285,10 @@ void LatticeSiever::sieve_by_vectors1()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1(iter, r1, false);
-                }
+                sieve1(iter, r1, false);
             }
         }
     }
@@ -1321,22 +1324,10 @@ void LatticeSiever::sieve_by_vectors1_again()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1(iter, r1);
-                }
+                sieve1(iter, r1);
             }
         }
     }
@@ -1368,22 +1359,10 @@ void LatticeSiever::sieve_by_vectors2()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1(iter, r1);
-                }
+                sieve1(iter, r1);
             }
         }
     }
