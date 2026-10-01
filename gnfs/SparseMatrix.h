@@ -1402,14 +1402,15 @@ private:
     std::vector<SparseMatrix4::Point*> medium_row_entries_;
 
     // Very dense rows which are to be processed later
-    std::fstream* very_dense_file_;
+    std::vector<long int> very_dense_rows_;
     size_t very_dense_count_;
+    size_t very_dense_allocated_points_;
 
 private:
     void build_medium_row_entries();
     bool parse(const std::string& str, size_t row);
     bool parse_for_sizing(const std::string& str, long int row);
-    void write_very_dense_row(const std::string& str);
+    void write_very_dense_row(long int num_cols);
     void add_to_medium_dense_rows(long int num_cols);
     void add_to_size_of_medium_dense_rows(long int num_cols);
     void extend_dense(size_t stripe);

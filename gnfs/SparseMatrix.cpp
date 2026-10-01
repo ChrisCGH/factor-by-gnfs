@@ -2763,7 +2763,7 @@ bool SparseMatrix3::parse(const std::string& str, size_t row)
     // First, write out very dense rows to be processed later
     if (very_dense_count_ < max_very_dense_rows && density > very_dense_density_bound)
     {
-        write_very_dense_row(str);
+        write_very_dense_row(num_cols);
         return false;
     }
 
@@ -2792,6 +2792,7 @@ bool SparseMatrix3::parse_for_sizing(const std::string& str, long int row)
 
     if (very_dense_count_ < max_very_dense_rows && density > very_dense_density_bound)
     {
+        very_dense_allocated_points_ += static_cast<size_t>(num_cols) + 1;
         ++very_dense_count_;
         return false;
     }
@@ -2908,7 +2909,7 @@ void SparseMatrix3::add_to_size_of_medium_dense_rows(long int num_cols)
 }
 
 SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
-    : rows_(0), cols_(0), sparse_(0), sparse_count_(0), sparse_allocated_points_(0), medium_(0), medium_count_(0), number_of_stripes_(0), very_dense_file_(0), very_dense_count_(0)
+    : rows_(0), cols_(0), sparse_(0), sparse_count_(0), sparse_allocated_points_(0), medium_(0), medium_count_(0), number_of_stripes_(0), very_dense_rows_(), very_dense_count_(0), very_dense_allocated_points_(0)
 {
     MemoryMappedFile mmf(file.c_str());
     {
@@ -2930,6 +2931,7 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
         rows_ = rows;
         std::cerr << "About to create SparseMatrix2 : sparse_allocated_points_ = " << static_cast<unsigned int>(sparse_allocated_points_) << std::endl;
         sparse_ = new SparseMatrix2(sparse_allocated_points_);
+        very_dense_rows_.reserve(very_dense_allocated_points_);
 
         ++number_of_stripes_;
         medium_.reserve(number_of_stripes_);
@@ -2972,12 +2974,6 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
     }
     build_medium_row_entries();
 
-    if (very_dense_file_)
-    {
-        delete very_dense_file_;
-        very_dense_file_ = 0;
-    }
-
     std::cerr << "SparseMatrix3::SparseMatrix3() : rows_ = " << static_cast<unsigned int>(rows_) << ", cols_ = " << static_cast<unsigned int>(cols_) << ", sparse_count_ = " << static_cast<unsigned int>(sparse_count_) << ", medium_count_ = " << static_cast<unsigned int>(medium_count_) << ", very_dense_count_ = " << static_cast<unsigned int>(very_dense_count_) << std::endl;
 }
 
@@ -2990,6 +2986,12 @@ void SparseMatrix3::clear()
 {
     rows_ = 0;
     cols_ = 0;
+    sparse_count_ = 0;
+    sparse_allocated_points_ = 0;
+    medium_count_ = 0;
+    number_of_stripes_ = 0;
+    very_dense_count_ = 0;
+    very_dense_allocated_points_ = 0;
     if (sparse_)
     {
         delete sparse_;
@@ -3006,12 +3008,7 @@ void SparseMatrix3::clear()
     medium_row_indices_.clear();
     medium_row_entries_.clear();
     stripe_allocated_points_.clear();
-
-    if (very_dense_file_)
-    {
-        delete very_dense_file_;
-        very_dense_file_ = 0;
-    }
+    very_dense_rows_.clear();
 }
 
 void SparseMatrix3::build_medium_row_entries()
@@ -3265,24 +3262,43 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm)
 
     if (sm.very_dense_count_)
     {
-        MemoryMappedFile mmf("dense_rows.txt");
-        std::string str;
-        while (getline(mmf, str))
+        std::vector<long int>::const_iterator it = sm.very_dense_rows_.begin();
+        while (it != sm.very_dense_rows_.end())
         {
-            os << str << std::endl;
+            size_t cols = static_cast<size_t>(*it);
+            ++it;
+            os << cols;
+            for (size_t i = 0; i < cols; ++i, ++it)
+            {
+                os << " " << static_cast<unsigned int>(*it);
+            }
+            os << std::endl;
         }
     }
 
     return os;
 }
 
-void SparseMatrix3::write_very_dense_row(const std::string& str)
+void SparseMatrix3::write_very_dense_row(long int num_cols)
 {
-    if (!very_dense_file_)
+    const size_t row_offset = very_dense_rows_.size();
+    very_dense_rows_.push_back(0);
+    size_t cols_in_row = 0;
+    while (char* s = strtok(0, " "))
     {
-        very_dense_file_ = new std::fstream("dense_rows.txt", std::ios::out);
+        long int col = std::atol(s);
+        very_dense_rows_.push_back(col);
+        ++cols_in_row;
+        if (static_cast<size_t>(col) > cols_)
+        {
+            cols_ = static_cast<size_t>(col);
+        }
     }
-    *very_dense_file_ << str << std::endl;
+    if (cols_in_row != static_cast<size_t>(num_cols))
+    {
+        very_dense_rows_.resize(row_offset + cols_in_row + 1);
+    }
+    very_dense_rows_[row_offset] = static_cast<long int>(cols_in_row);
     ++very_dense_count_;
 }
 
@@ -3298,23 +3314,19 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const 
     BR.row_.resize(very_dense_count_);
     BR.cols_ = R.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrixRowIterator BL_row_iter = BL.row_.begin();
     BitMatrixRowIterator BR_row_iter = BR.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         uint32_t resultRowL = 0UL;
         uint32_t resultRowR = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRowL ^= *(L.row_.vec_ + n);
-            resultRowR ^= *(R.row_.vec_ + n);
+            resultRowL ^= *(L.row_.vec_ + *it);
+            resultRowR ^= *(R.row_.vec_ + *it);
         }
         *BL_row_iter = resultRowL;
         *BR_row_iter = resultRowR;
@@ -3335,23 +3347,19 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, cons
     BR.row_.resize(very_dense_count_);
     BR.cols_ = R.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrix64RowIterator BL_row_iter = BL.row_.begin();
     BitMatrix64RowIterator BR_row_iter = BR.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         unsigned long long int resultRowL = 0UL;
         unsigned long long int resultRowR = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRowL ^= *(L.row_.vec_ + n);
-            resultRowR ^= *(R.row_.vec_ + n);
+            resultRowL ^= *(L.row_.vec_ + *it);
+            resultRowR ^= *(R.row_.vec_ + *it);
         }
         *BL_row_iter = resultRowL;
         *BR_row_iter = resultRowR;
@@ -3369,19 +3377,16 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
     BL.row_.resize(very_dense_count_);
     BL.cols_ = L.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrixRowIterator BL_row_iter = BL.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         uint32_t resultRow = 0UL;
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRow ^= *(L.row_.vec_ + n);
+            resultRow ^= *(L.row_.vec_ + *it);
         }
         *BL_row_iter = resultRow;
         ++BL_row_iter;
@@ -3397,20 +3402,16 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitM
     BL.row_.resize(very_dense_count_);
     BL.cols_ = L.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrix64RowIterator BL_row_iter = BL.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         unsigned long long int resultRow = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRow ^= *(L.row_.vec_ + n);
+            resultRow ^= *(L.row_.vec_ + *it);
         }
         *BL_row_iter = resultRow;
         ++BL_row_iter;
