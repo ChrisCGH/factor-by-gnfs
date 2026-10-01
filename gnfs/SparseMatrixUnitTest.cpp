@@ -1,5 +1,7 @@
 #include <iostream>
 #include "SparseMatrix.h"
+#include <cstdio>
+#include <fstream>
 #include <limits>
 #include <complex>
 #include <sstream>
@@ -14,6 +16,7 @@ class SparseMatrixTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testSparseMatrix);
     CPPUNIT_TEST(testBitMatrix);
     CPPUNIT_TEST(testBitMatrix64);
+    CPPUNIT_TEST(testSparseMatrix3MediumRowStripes);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -23,6 +26,24 @@ public:
 
     void tearDown()
     {
+        std::remove("SparseMatrix3MediumRowStripes.dat");
+    }
+
+    static std::string sparseMatrix3MediumRowContent()
+    {
+        std::ostringstream oss;
+        oss << "10000\n";
+        oss << "1 4\n";
+        oss << "2 1 65540\n";
+        oss << "2 32769 32770\n";
+        oss << "3 2 32772 65543\n";
+        return oss.str();
+    }
+
+    static void writeSparseMatrix3MediumRowFile()
+    {
+        std::ofstream os("SparseMatrix3MediumRowStripes.dat");
+        os << sparseMatrix3MediumRowContent();
     }
 
     void check_row_operations(FileBasedSparseRow& row)
@@ -591,6 +612,97 @@ public:
         BitMatrix64 kerbm;
         kernel(bm, kerbm);
         CPPUNIT_ASSERT(!kerbm.isZero());
+    }
+
+    void testSparseMatrix3MediumRowStripes()
+    {
+        writeSparseMatrix3MediumRowFile();
+
+        SparseMatrix3 sm("SparseMatrix3MediumRowStripes.dat");
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(4), sm.rows());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(65544), sm.cols());
+
+        std::ostringstream serialized;
+        serialized << sm;
+        CPPUNIT_ASSERT_EQUAL(std::string("4\n1 4\n2 1 65540\n2 32769 32770\n3 2 32772 65543\n"), serialized.str());
+
+        BitMatrix X(sm.cols(), 3);
+        X.row_[4] = 0x1UL;
+        X.row_[1] = 0x2UL;
+        X.row_[65540] = 0x4UL;
+        X.row_[32769] = 0x3UL;
+        X.row_[32770] = 0x5UL;
+        X.row_[2] = 0x6UL;
+        X.row_[32772] = 0x7UL;
+        X.row_[65543] = 0x1UL;
+
+        BitMatrix AX;
+        multiply(sm, X, AX);
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(4), AX.rows());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), AX.cols());
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x1UL), AX.row_[0]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x6UL), AX.row_[1]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x6UL), AX.row_[2]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x0UL), AX.row_[3]);
+
+        BitMatrix Xt(sm.rows(), 3);
+        Xt.row_[0] = 0x1UL;
+        Xt.row_[1] = 0x2UL;
+        Xt.row_[2] = 0x4UL;
+        Xt.row_[3] = 0x7UL;
+
+        BitMatrix AtX;
+        multiplyt(sm, Xt, AtX);
+        CPPUNIT_ASSERT_EQUAL(sm.cols(), AtX.rows());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), AtX.cols());
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x0UL), AtX.row_[0]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x2UL), AtX.row_[1]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x7UL), AtX.row_[2]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x1UL), AtX.row_[4]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x4UL), AtX.row_[32769]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x4UL), AtX.row_[32770]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x7UL), AtX.row_[32772]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x2UL), AtX.row_[65540]);
+        CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0x7UL), AtX.row_[65543]);
+
+        BitMatrix64 X64(sm.cols(), 3);
+        X64.row_[4] = 0x1ULL;
+        X64.row_[1] = 0x2ULL;
+        X64.row_[65540] = 0x4ULL;
+        X64.row_[32769] = 0x3ULL;
+        X64.row_[32770] = 0x5ULL;
+        X64.row_[2] = 0x6ULL;
+        X64.row_[32772] = 0x7ULL;
+        X64.row_[65543] = 0x1ULL;
+
+        BitMatrix64 AX64;
+        multiply(sm, X64, AX64);
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(4), AX64.rows());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), AX64.cols());
+        CPPUNIT_ASSERT_EQUAL(0x1ULL, AX64.row_[0]);
+        CPPUNIT_ASSERT_EQUAL(0x6ULL, AX64.row_[1]);
+        CPPUNIT_ASSERT_EQUAL(0x6ULL, AX64.row_[2]);
+        CPPUNIT_ASSERT_EQUAL(0x0ULL, AX64.row_[3]);
+
+        BitMatrix64 Xt64(sm.rows(), 3);
+        Xt64.row_[0] = 0x1ULL;
+        Xt64.row_[1] = 0x2ULL;
+        Xt64.row_[2] = 0x4ULL;
+        Xt64.row_[3] = 0x7ULL;
+
+        BitMatrix64 AtX64;
+        multiplyt(sm, Xt64, AtX64);
+        CPPUNIT_ASSERT_EQUAL(sm.cols(), AtX64.rows());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), AtX64.cols());
+        CPPUNIT_ASSERT_EQUAL(0x0ULL, AtX64.row_[0]);
+        CPPUNIT_ASSERT_EQUAL(0x2ULL, AtX64.row_[1]);
+        CPPUNIT_ASSERT_EQUAL(0x7ULL, AtX64.row_[2]);
+        CPPUNIT_ASSERT_EQUAL(0x1ULL, AtX64.row_[4]);
+        CPPUNIT_ASSERT_EQUAL(0x4ULL, AtX64.row_[32769]);
+        CPPUNIT_ASSERT_EQUAL(0x4ULL, AtX64.row_[32770]);
+        CPPUNIT_ASSERT_EQUAL(0x7ULL, AtX64.row_[32772]);
+        CPPUNIT_ASSERT_EQUAL(0x2ULL, AtX64.row_[65540]);
+        CPPUNIT_ASSERT_EQUAL(0x7ULL, AtX64.row_[65543]);
     }
 };
 

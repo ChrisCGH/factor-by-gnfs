@@ -1396,12 +1396,17 @@ private:
     size_t medium_count_;
     size_t number_of_stripes_;
     std::unordered_map<size_t, size_t> stripe_allocated_points_;
+    std::vector<size_t> medium_row_offsets_;
+    std::vector<size_t> medium_row_stripes_;
+    std::vector<size_t> medium_row_indices_;
+    std::vector<SparseMatrix4::Point*> medium_row_entries_;
 
     // Very dense rows which are to be processed later
     std::fstream* very_dense_file_;
     size_t very_dense_count_;
 
 private:
+    void build_medium_row_entries();
     bool parse(const std::string& str, size_t row);
     bool parse_for_sizing(const std::string& str, long int row);
     void write_very_dense_row(const std::string& str);
