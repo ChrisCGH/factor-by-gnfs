@@ -1390,6 +1390,7 @@ private:
     SparseMatrix2* sparse_;
     size_t sparse_count_;
     size_t sparse_allocated_points_;
+    std::vector<size_t> sparse_row_offsets_;
 
     // Rows which are fairly sparse, divided into a number of stripes
     std::vector<SparseMatrix4* > medium_;
