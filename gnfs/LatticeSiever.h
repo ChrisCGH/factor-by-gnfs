@@ -302,7 +302,7 @@ private:
         }
 
         void add(uint32_t offset, int32_t count, int32_t inc, FactorBase::a_iterator iter,
-                 bool record_factors = true)
+                 bool record_factors = true, bool add_to_sieve = true)
         {
             SIEVE_TYPE* __restrict__ sieve_array = sieve_array_;
             
@@ -355,7 +355,10 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it[0].offset_) << std::dec << std::endl;
 #endif
-                            *(it[0].offset_ + sieve_array) += it[0].logp_;
+                            if (add_to_sieve)
+                            {
+                                *(it[0].offset_ + sieve_array) += it[0].logp_;
+                            }
                             if (record_factors)
                             {
                                 SieveCacheItem::pf_list_->add(it[0].offset_, it[0].p_);
@@ -367,7 +370,10 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it[1].offset_) << std::dec << std::endl;
 #endif
-                            *(it[1].offset_ + sieve_array) += it[1].logp_;
+                            if (add_to_sieve)
+                            {
+                                *(it[1].offset_ + sieve_array) += it[1].logp_;
+                            }
                             if (record_factors)
                             {
                                 SieveCacheItem::pf_list_->add(it[1].offset_, it[1].p_);
@@ -379,7 +385,10 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it[2].offset_) << std::dec << std::endl;
 #endif
-                            *(it[2].offset_ + sieve_array) += it[2].logp_;
+                            if (add_to_sieve)
+                            {
+                                *(it[2].offset_ + sieve_array) += it[2].logp_;
+                            }
                             if (record_factors)
                             {
                                 SieveCacheItem::pf_list_->add(it[2].offset_, it[2].p_);
@@ -391,7 +400,10 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it[3].offset_) << std::dec << std::endl;
 #endif
-                            *(it[3].offset_ + sieve_array) += it[3].logp_;
+                            if (add_to_sieve)
+                            {
+                                *(it[3].offset_ + sieve_array) += it[3].logp_;
+                            }
                             if (record_factors)
                             {
                                 SieveCacheItem::pf_list_->add(it[3].offset_, it[3].p_);
@@ -408,7 +420,10 @@ private:
 #ifdef DEBUG_SIEVE_CACHE
                             debug_file_ << std::hex << size_t(it->offset_) << std::dec << std::endl;
 #endif
-                            *(it->offset_ + sieve_array) += it->logp_;
+                            if (add_to_sieve)
+                            {
+                                *(it->offset_ + sieve_array) += it->logp_;
+                            }
                             if (record_factors)
                             {
                                 SieveCacheItem::pf_list_->add(it->offset_, it->p_);
@@ -433,7 +448,7 @@ private:
         // After flushing, tracked_ is cleared so each new sieve iteration re-registers
         // buckets as they receive items, ensuring no items are silently dropped.
         // Must be called exactly once per sieve pass (after all add() calls complete).
-        void dump(bool add_to_pf_list = true)
+        void dump(bool add_to_pf_list = true, bool add_to_sieve = true)
         {
             // Sort by bucket index to write to sieve_array_ in sequential order,
             // improving spatial locality during the write phase.
@@ -446,7 +461,10 @@ private:
                 {
                     if (!sieve_bit_array_.isSet(it->offset_))
                     {
-                        *(it->offset_ + sieve_array_) += it->logp_;
+                        if (add_to_sieve)
+                        {
+                            *(it->offset_ + sieve_array_) += it->logp_;
+                        }
                         if (add_to_pf_list)
                         {
                             SieveCacheItem::pf_list_->add(it->offset_ + sieve_array_, it->p_);
@@ -652,7 +670,8 @@ private:
     void sieve_by_vectors1();
     void sieve_by_vectors1_again();
     void sieve_by_vectors2();
-    void sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors = true);
+    void sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors = true,
+                bool add_to_sieve = true);
     void sieve2(FactorBase::a_iterator iter, long int r1);
     long int check_interval1(long int q);
     void check_interval2();

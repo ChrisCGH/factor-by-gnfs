@@ -1130,7 +1130,8 @@ int LatticeSiever::check_for_remaining_relations()
     return relations;
 }
 
-inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors)
+inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors,
+                                  bool add_to_sieve)
 {
     std::pair<int32_t, int32_t> e1;
     std::pair<int32_t, int32_t> e2;
@@ -1161,7 +1162,7 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1, bool
         {
             uint32_t ptr = e * e12 + (f_min - 1) * e22 - min_c;
             int32_t f_span = f_max - f_min + 1;
-            sieveCache_.add(ptr, f_span, e22, iter, record_factors);
+            sieveCache_.add(ptr, f_span, e22, iter, record_factors, add_to_sieve);
         }
         ++e;
     }
@@ -1339,7 +1340,7 @@ void LatticeSiever::sieve_by_vectors1_again()
     }
     
     // Dump all remaining cache items in sorted bucket order for spatial locality.
-    sieveCache_.dump(true);
+    sieveCache_.dump(true, false);
 }
 
 void LatticeSiever::sieve_by_vectors2()
