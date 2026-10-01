@@ -60,11 +60,15 @@ COVERAGE = -fprofile-arcs -ftest-coverage
 COVERAGE_OPT = 
 #ARCH = -march=athlon64
 USING_CPPUNIT = -DUSING_CPPUNIT 
+OPENMP ?= no
+ifeq ($(OPENMP),yes)
+OPENMP_FLAGS = -fopenmp
+endif
 ifeq ($(RUN_GCOV),yes)
 CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
 CFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH)
 else
-CCFLAGS = -Wall -g -std=c++2a $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC $(USING_CPPUNIT) -fopenmp
+CCFLAGS = -Wall -g -std=c++2a $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC $(USING_CPPUNIT) $(OPENMP_FLAGS)
 CFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH)
 endif
 CC = clang
@@ -711,4 +715,3 @@ cleanstest:
 
 clean:
 	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt
-
