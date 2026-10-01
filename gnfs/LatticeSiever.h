@@ -244,38 +244,13 @@ private:
             tracked_ = false;
         }
     };
-//#define BUCKET_BITS 1
-
-#ifdef BUCKET_BITS
-    template <int cache_size, int bucket_bits, int sieve_array_size>
-#else
-    template <int cache_size, uint32_t bucket_size, int sieve_array_size>
-#endif
-    class SieveCache
-    {
+template <int cache_size, int bucket_bits, int sieve_array_size>
+class SieveCache
+{
 //#define DEBUG_SIEVE_CACHE 1
-    public:
-#ifdef BUCKET_BITS
-        static const size_t bucket_count = sieve_array_size >> bucket_bits;
-        static const uint32_t bucket_size = 1 << bucket_bits;
-#else
-        /*
-            sieve_array_size                    bucket_count            (sieve_array_size - 1)/ bucket_size
-            1 - bucket_size                                1                                              0
-            (bucket_size + 1) - 2*bucket_size              2                                              1
-            (2*bucket_size + 1) - 3*bucket_size            3                                              2
-            ...
-            ((k-1)*bucket_size + 1) - k*bucket_size        k                                            k-1
-            ...
-
-
-         */
-        static const size_t bucket_count = ((sieve_array_size - 1) / bucket_size) + 1;
-        // Precompute reciprocal for fast division by bucket_size
-        // Using: (offset * reciprocal) >> 32 ≈ offset / bucket_size
-        static constexpr uint64_t bucket_size_reciprocal = 
-            (uint64_t)((1ULL << 32) + bucket_size - 1) / bucket_size;
-#endif
+public:
+    static const size_t bucket_count = sieve_array_size >> bucket_bits;
+    static const uint32_t bucket_size = 1 << bucket_bits;
         //SieveCache(LatticeSiever::SIEVE_TYPE* const sieve_array, const BitArray64<sieve_array_size>& sieve_bit_array)
         SieveCache(SIEVE_TYPE* const sieve_array, const BitArray64<sieve_array_size>& sieve_bit_array)
             : sieve_array_(sieve_array), sieve_bit_array_(sieve_bit_array)
@@ -314,13 +289,8 @@ private:
             {
                 --count;
                 offset += inc;
-#ifdef BUCKET_BITS
                 size_t bucket_idx = offset >> bucket_bits;
                 SieveCacheBucket<cache_size>& scb = buckets_[bucket_idx];
-#else
-                size_t bucket_idx = (uint32_t)(((uint64_t)offset * bucket_size_reciprocal) >> 32);
-                SieveCacheBucket<cache_size>& scb = buckets_[bucket_idx];
-#endif
                 SieveCacheItem* const & item = scb.next_cache_;
                 
                 // Track bucket if it's not already tracked
@@ -734,11 +704,7 @@ private:
     static const size_t rat_pf_list_size = 700000L;
     static const size_t alg_pf_list_size = 50000L;
     static const int max_potentially_smooth = 200000;
-#ifdef BUCKET_BITS
     static const size_t bucket_bits = 16;
-#else
-    static const size_t bucket_size = 57052;
-#endif
     static const int c_span_bits = 11;
     //static const int min_c = -8192;
     static const int min_c = -(1 << (c_span_bits - 1));
@@ -772,11 +738,7 @@ private:
     PrimeFactorList rat_pf_list_;
     PrimeFactorList alg_pf_list_;
     //BucketedPrimeFactorList<bucket_bits, fixed_sieve_array_size> alg_pf_list_;
-#ifdef BUCKET_BITS
     SieveCache<sieve_cache_size, bucket_bits, fixed_sieve_array_size> sieveCache_;
-#else
-    SieveCache<sieve_cache_size, bucket_size, fixed_sieve_array_size> sieveCache_;
-#endif
     Timing timer_;
     static long int total_relations_;
     static double total_sieving_time_;
