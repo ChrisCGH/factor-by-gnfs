@@ -3188,10 +3188,11 @@ void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX)
         {
             long int num_cols = - *p - 1;
             ++p;
+            unsigned long long int X_row = *X_row_iter;
             for (long int j = 0; j < num_cols; ++j, ++p)
             {
                 long int col = *p;
-                AtX.row_[col] ^= *X_row_iter;
+                AtX.row_[col] ^= X_row;
             }
             ++X_row_iter;
         }
@@ -3839,4 +3840,3 @@ void SparseMatrix4::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
         ++BL_row_iter;
     }
 }
-
