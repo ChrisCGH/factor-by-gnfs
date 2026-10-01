@@ -454,8 +454,8 @@ public:
         void dump_block_efficient(size_t block_start, size_t block_end, bool add_to_pf_list = true)
         {
             // Calculate bucket range that overlaps with this block
-            size_t first_bucket = block_start / bucket_size;
-            size_t last_bucket = (block_end - 1) / bucket_size;
+            size_t first_bucket = block_start >> bucket_bits;
+            size_t last_bucket = (block_end - 1) >> bucket_bits;
             
             // Track which buckets still have unprocessed items
             std::vector<size_t> buckets_to_keep;
