@@ -501,7 +501,7 @@ void LatticeSiever::check_interval2()
                         return;
                     }
                     
-                    potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(cd.first, cd.second, sieve_ptr, v);
+                    potentially_smooth_point_[number_potentially_smooth_].reset(cd.first, cd.second, sieve_ptr, v);
                     if (number_potentially_smooth_ > 0)
                     {
                         potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =
@@ -564,6 +564,7 @@ void LatticeSiever::divide_by_small_primes1(PotentiallySmoothPoint* smooth_iter)
 {
     for (long int p : small_primes_1_)
     {
+        if (smooth_iter->partial1_.remaining_quotient_ == 1L) break;
         while (smooth_iter->partial1_.remaining_quotient_ % p == 0L)
         {
             smooth_iter->add_factor1(p);
@@ -584,6 +585,7 @@ void LatticeSiever::divide_by_small_primes2(PotentiallySmoothPoint* smooth_iter)
     
     for (long int p : small_primes_2_)
     {
+        if (smooth_iter->partial2_.remaining_quotient_ == 1L) break;
         while (smooth_iter->partial2_.remaining_quotient_ % p == 0L)
         {
             if (debug_)
@@ -1130,7 +1132,8 @@ int LatticeSiever::check_for_remaining_relations()
     return relations;
 }
 
-inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
+inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1, bool record_factors,
+                                  bool add_to_sieve)
 {
     std::pair<int32_t, int32_t> e1;
     std::pair<int32_t, int32_t> e2;
@@ -1161,54 +1164,11 @@ inline void LatticeSiever::sieve1(FactorBase::a_iterator iter, long int r1)
         {
             uint32_t ptr = e * e12 + (f_min - 1) * e22 - min_c;
             int32_t f_span = f_max - f_min + 1;
-#ifdef RESIEVE1
-            sieveCache_.add1(ptr, f_span, e22, iter);
-#else
-            sieveCache_.add(ptr, f_span, e22, iter);
-#endif
+            sieveCache_.add(ptr, f_span, e22, iter, record_factors, add_to_sieve);
         }
         ++e;
     }
 }
-
-#ifdef RESIEVE1
-inline void LatticeSiever::sieve1_again(FactorBase::a_iterator iter, long int r1)
-{
-    std::pair<int32_t, int32_t> e1;
-    std::pair<int32_t, int32_t> e2;
-    generate_ef_lattice(iter->get_p(), r1, e1, e2);
-    int32_t e12 = e1.first + (e1.second << c_span_bits);
-    int32_t e22 = e2.first + (e2.second << c_span_bits);
-
-    Parallelogram E_region(c_region_, e1, e2);
-    
-    // Optimize: Use integer arithmetic where possible
-    double min_x = E_region.min_x();
-    double max_x = E_region.max_x();
-    
-    // Fast integer conversion for ceil and floor
-    // For ceil: for positive values, add 1 if fractional part exists
-    // For negative values, truncation already gives ceiling behavior
-    int32_t e_min = static_cast<int32_t>(min_x);
-    if (min_x > 0.0 && min_x > static_cast<double>(e_min)) e_min++;
-    int32_t e_max = static_cast<int32_t>(max_x);
-    
-    int32_t f_min = 0L;
-    int32_t f_max = 0L;
-    int32_t e = e_min;
-
-    while (e <= e_max)
-    {
-        if (E_region.y_limits1(e, f_min, f_max))
-        {
-            uint32_t ptr = e * e12 + (f_min - 1) * e22 - min_c;
-            int32_t f_span = f_max - f_min + 1;
-            sieveCache_.add1_again(ptr, f_span, e22, iter);
-        }
-        ++e;
-    }
-}
-#endif
 
 inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
 {
@@ -1245,6 +1205,21 @@ inline void LatticeSiever::sieve2(FactorBase::a_iterator iter, long int r1)
         }
         ++e;
     }
+}
+
+bool LatticeSiever::lattice_intersection_root(long int p, long int r, long int& r1) const
+{
+    long long int Q_ll = c1_.first - (long long)c1_.second * r;
+    long int Q = modasm(Q_ll, p);
+    if (!Q) return false;
+
+    long long int R_ll = (long long)c2_.second * r - c2_.first;
+    long int R = modasm(R_ll, p);
+    if (!R) return false;
+
+    long int R_inv = inverse<long int>(R, p);
+    mulmodasm2(Q, R_inv, p, r1);
+    return true;
 }
 
 /*
@@ -1292,9 +1267,6 @@ void LatticeSiever::sieve_by_vectors1()
         std::cerr << "sieve_by_vectors1 : min_c = " << min_c << std::endl;
         std::cerr << "c1 = (" << c1_.first << "," << c1_.second << "), c2 = (" << c2_.first << "," << c2_.second << ")" << std::endl;
     }
-#ifndef RESIEVE1
-    SieveCacheItem::set_pf_list(&alg_pf_list_);
-#endif
     auto iter = alg_factor_base_->begin();
     auto enditer = alg_factor_base_->end();
 
@@ -1313,37 +1285,19 @@ void LatticeSiever::sieve_by_vectors1()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1(iter, r1);
-                }
+                sieve1(iter, r1, false);
             }
         }
     }
     
-    // Dump all remaining cache items: sort by bucket index for sequential
-    // sieve_array_ writes (spatial locality), then process in order.
-    // This is simpler and more efficient than block-by-block processing.
-#ifdef RESIEVE1
+    // Dump all remaining cache items without retaining factor hits. The
+    // surviving candidates are re-sieved after rational elimination.
     sieveCache_.dump(false);
-#else
-    sieveCache_.dump(true);
-#endif
 }
 
-#ifdef RESIEVE1
 void LatticeSiever::sieve_by_vectors1_again()
 {
     if (debug_)
@@ -1359,6 +1313,7 @@ void LatticeSiever::sieve_by_vectors1_again()
     for (; iter != enditer; ++iter)
     {
         if (iter->get_p() < SMALL_PRIME_BOUND1_) continue;
+        if (iter->get_p() > B1_) break;
         for (auto root_info_iter = alg_factor_base_->begin(iter);
                 root_info_iter != alg_factor_base_->end(iter);
                 ++root_info_iter)
@@ -1369,30 +1324,17 @@ void LatticeSiever::sieve_by_vectors1_again()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1_again(iter, r1);
-                }
+                sieve1(iter, r1);
             }
         }
     }
     
     // Dump all remaining cache items in sorted bucket order for spatial locality.
-    sieveCache_.dump(true);
+    sieveCache_.dump(true, false);
 }
-#endif
 
 void LatticeSiever::sieve_by_vectors2()
 {
@@ -1417,22 +1359,10 @@ void LatticeSiever::sieve_by_vectors2()
             // now find short vectors in the sub-lattice of the (q,s) lattice
             // which intersects the (p,r) lattice.
 
-            long long int Q_ll = c1_.first - (long long)c1_.second * r;
-            long int Q = modasm(Q_ll, p);
-            if (Q)
+            long int r1;
+            if (lattice_intersection_root(p, r, r1))
             {
-                long long int R_ll = (long long)c2_.second * r - c2_.first;
-                long int R = modasm(R_ll, p);
-                // we are interested in (c,d) such that c Q = d R mod p
-                // or c Q R^-1 = d mod p or cr' = d mod p
-                if (R)
-                {
-                    long int R_inv = inverse<long int>((long int)R, p);
-                    // r' = (r c2_.second - c2_.first)^-1 (c1_.first - r c1_.second) mod p
-                    long int r1 = 0L;
-                    mulmodasm2(Q, R_inv, p, r1);
-                    sieve1(iter, r1);
-                }
+                sieve1(iter, r1);
             }
         }
     }
@@ -1566,9 +1496,7 @@ void LatticeSiever::sieve_by_vectors(long int q, long int s)
 
     if (number_potentially_smooth_ < max_potentially_smooth)
     {
-#ifdef RESIEVE1
         sieve_by_vectors1_again();
-#endif
         // Now remove the known factors for the algebraic norms
         timer_.start("remove factors for algebraic");
         remove_sieved_factors1();
