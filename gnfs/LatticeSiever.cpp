@@ -501,7 +501,7 @@ void LatticeSiever::check_interval2()
                         return;
                     }
                     
-                    potentially_smooth_point_[number_potentially_smooth_] = PotentiallySmoothPoint(cd.first, cd.second, sieve_ptr, v);
+                    potentially_smooth_point_[number_potentially_smooth_].reset(cd.first, cd.second, sieve_ptr, v);
                     if (number_potentially_smooth_ > 0)
                     {
                         potentially_smooth_point_[number_potentially_smooth_ - 1].next_ =

@@ -581,6 +581,17 @@ public:
         PotentiallySmoothPoint(long int c, long int d, SIEVE_TYPE* ptr, const VeryLong& v)
             : next_(0), c_(c), d_(d), ptr_(ptr), partial2_(v)
         {}
+        void reset(long int c, long int d, SIEVE_TYPE* ptr, const VeryLong& v)
+        {
+            next_ = 0;
+            c_ = c;
+            d_ = d;
+            ptr_ = ptr;
+            partial1_.remaining_quotient_ = 0L;
+            partial1_.factor_.clear();
+            partial2_.remaining_quotient_ = v;
+            partial2_.factor_.clear();
+        }
         int operator<(const PotentiallySmoothPoint& psp) const
         {
             return (ptr_ < psp.ptr_);
