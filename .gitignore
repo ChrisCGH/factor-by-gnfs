@@ -1,5 +1,6 @@
 gnfs/*.o
 gnfs/*.d
+gnfs/.build-config
 gnfs/*.lst
 gnfs/*.gch
 gnfs/*.tim
