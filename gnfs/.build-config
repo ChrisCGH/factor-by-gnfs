@@ -1,0 +1,1 @@
+clang -Wall -g -std=c++2a -O3   -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC -DUSING_CPPUNIT  
