@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory.h>
 #include <stdint.h>
-#ifndef WIN32
+#if defined(FILE_BASED_SPARSE_MATRIX) && !defined(WIN32)
 #include <unistd.h>
 #include <uuid/uuid.h>
 #endif
