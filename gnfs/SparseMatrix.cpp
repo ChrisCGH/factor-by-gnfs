@@ -15,7 +15,9 @@ namespace
 {
 const double medium_density_bound = 0.0001;
 const long int stripe_size = 32768;
+#ifdef _OPENMP
 const size_t sparse_matrix3_multiplyt_batch_size = 8192;
+#endif
 
 const double very_dense_density_bound = 0.4;
 const size_t max_very_dense_rows = 50;

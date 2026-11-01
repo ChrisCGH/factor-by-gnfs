@@ -138,6 +138,18 @@ ALL_CS = lip.c mt19937int.c
 ALL_SRCS = $(ALL_CPPS) $(ALL_CS) $(ALL_HEADERS)
 ALL_OBJS = $(ALL_CPPS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
 
+BUILD_CONFIG = .build-config
+
+.PHONY: FORCE
+FORCE:
+
+$(BUILD_CONFIG): FORCE
+	@printf '%s\n' '$(CC) $(CCFLAGS)' > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
+$(ALL_CPPS:.cpp=$(OBJEXT)): $(BUILD_CONFIG)
+
 QS_CPP_SRCS = qs.cpp SparseMatrix.cpp timings.cpp VeryLongModular.cpp VeryLong.cpp squfof.cpp blockLanczos.cpp pollard_rho.cpp
 
 C_SRCS = mt19937int.c lip.c
@@ -714,4 +726,4 @@ cleanstest:
 	rm -rf $(OUTPUTDIR)/stest $(STEST_OBJS)
 
 clean:
-	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt
+	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d $(BUILD_CONFIG) *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt
