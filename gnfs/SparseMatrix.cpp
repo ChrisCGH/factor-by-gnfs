@@ -6,15 +6,317 @@
 #include <memory>
 #include <ctype.h>
 #include "Logger.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 //static Timing Timer("bl.tim");
 namespace
 {
 const double medium_density_bound = 0.0001;
 const long int stripe_size = 32768;
+#ifdef _OPENMP
+const size_t sparse_matrix3_multiplyt_batch_size = 8192;
+#endif
 
 const double very_dense_density_bound = 0.4;
 const size_t max_very_dense_rows = 50;
+
+size_t sparse_matrix4_row_col_count(const long int* row_start)
+{
+    return static_cast<size_t>(-(*row_start + 1));
+}
+
+const long int* sparse_matrix4_row_data_begin(const long int* row_start)
+{
+    return row_start + 1;
+}
+
+const long int* sparse_matrix4_row_data_end(const long int* row_start)
+{
+    return sparse_matrix4_row_data_begin(row_start) + sparse_matrix4_row_col_count(row_start);
+}
+
+template <typename Word>
+void sparse_matrix3_multiply_rows_serial(
+    size_t sparse_count,
+    const long int* sparse_points,
+    const std::vector<size_t>& sparse_row_offsets,
+    size_t medium_count,
+    const std::vector<size_t>& medium_row_offsets,
+    const std::vector<long int*>& medium_row_entries,
+    const Word* x_rows,
+    Word* ax_rows)
+{
+    for (size_t row = 0; row < sparse_count; ++row)
+    {
+        Word result_row = 0;
+        const long int* p = sparse_points + sparse_row_offsets[row];
+        const long int* end = sparse_points + sparse_row_offsets[row + 1];
+        for (; p != end; ++p)
+        {
+            long int col = *p;
+            if (col < 0)
+            {
+                col = -col - 1;
+            }
+            result_row ^= x_rows[col];
+        }
+        ax_rows[row] = result_row;
+    }
+
+    for (size_t row = 0; row < medium_count; ++row)
+    {
+        Word result_row = 0;
+        for (size_t entry = medium_row_offsets[row]; entry < medium_row_offsets[row + 1]; ++entry)
+        {
+            const long int* row_start = medium_row_entries[entry];
+            for (const long int* p = sparse_matrix4_row_data_begin(row_start);
+                    p != sparse_matrix4_row_data_end(row_start);
+                    ++p)
+            {
+                result_row ^= x_rows[*p];
+            }
+        }
+        ax_rows[sparse_count + row] = result_row;
+    }
+}
+
+#ifdef _OPENMP
+template <typename Word>
+void sparse_matrix3_multiply_rows_parallel(
+    size_t sparse_count,
+    const long int* sparse_points,
+    const std::vector<size_t>& sparse_row_offsets,
+    size_t medium_count,
+    const std::vector<size_t>& medium_row_offsets,
+    const std::vector<long int*>& medium_row_entries,
+    const Word* x_rows,
+    Word* ax_rows)
+{
+#pragma omp parallel
+    {
+#pragma omp for schedule(static) nowait
+        for (ptrdiff_t row = 0; row < static_cast<ptrdiff_t>(sparse_count); ++row)
+        {
+            Word result_row = 0;
+            const long int* p = sparse_points + sparse_row_offsets[row];
+            const long int* end = sparse_points + sparse_row_offsets[row + 1];
+            for (; p != end; ++p)
+            {
+                long int col = *p;
+                if (col < 0)
+                {
+                    col = -col - 1;
+                }
+                result_row ^= x_rows[col];
+            }
+            ax_rows[row] = result_row;
+        }
+
+#pragma omp for schedule(static)
+        for (ptrdiff_t row = 0; row < static_cast<ptrdiff_t>(medium_count); ++row)
+        {
+            Word result_row = 0;
+            for (size_t entry = medium_row_offsets[row]; entry < medium_row_offsets[row + 1]; ++entry)
+            {
+                const long int* row_start = medium_row_entries[entry];
+                for (const long int* p = sparse_matrix4_row_data_begin(row_start);
+                        p != sparse_matrix4_row_data_end(row_start);
+                        ++p)
+                {
+                    result_row ^= x_rows[*p];
+                }
+            }
+            ax_rows[sparse_count + row] = result_row;
+        }
+    }
+}
+
+template <typename Word>
+class SparseMatrix3MultiplytReducer
+{
+public:
+    SparseMatrix3MultiplytReducer(Word* output_rows, omp_lock_t* stripe_locks)
+        : output_rows_(output_rows), stripe_locks_(stripe_locks)
+    {
+        updates_.reserve(sparse_matrix3_multiplyt_batch_size);
+    }
+
+    void add(size_t col, Word value)
+    {
+        updates_.push_back(std::make_pair(col, value));
+        if (updates_.size() >= sparse_matrix3_multiplyt_batch_size)
+        {
+            flush();
+        }
+    }
+
+    void flush()
+    {
+        if (updates_.empty())
+        {
+            return;
+        }
+
+        std::sort(updates_.begin(), updates_.end(),
+            [](const std::pair<size_t, Word>& lhs, const std::pair<size_t, Word>& rhs)
+            {
+                return lhs.first < rhs.first;
+            });
+
+        size_t write_index = 0;
+        for (size_t i = 0; i < updates_.size();)
+        {
+            const size_t col = updates_[i].first;
+            Word value = updates_[i].second;
+            ++i;
+            while (i < updates_.size() && updates_[i].first == col)
+            {
+                value ^= updates_[i].second;
+                ++i;
+            }
+            if (value != 0)
+            {
+                updates_[write_index++] = std::make_pair(col, value);
+            }
+        }
+
+        for (size_t i = 0; i < write_index;)
+        {
+            const size_t stripe = updates_[i].first / stripe_size;
+            size_t j = i + 1;
+            while (j < write_index && updates_[j].first / stripe_size == stripe)
+            {
+                ++j;
+            }
+
+            omp_set_lock(stripe_locks_ + stripe);
+            for (size_t k = i; k < j; ++k)
+            {
+                output_rows_[updates_[k].first] ^= updates_[k].second;
+            }
+            omp_unset_lock(stripe_locks_ + stripe);
+            i = j;
+        }
+
+        updates_.clear();
+    }
+
+private:
+    Word* output_rows_;
+    omp_lock_t* stripe_locks_;
+    std::vector<std::pair<size_t, Word> > updates_;
+};
+
+template <typename Word>
+void sparse_matrix3_multiplyt_parallel(
+    size_t cols,
+    size_t sparse_count,
+    const long int* sparse_points,
+    const std::vector<size_t>& sparse_row_offsets,
+    size_t medium_count,
+    const std::vector<size_t>& medium_row_offsets,
+    const std::vector<long int*>& medium_row_entries,
+    const Word* x_rows,
+    Word* atx_rows)
+{
+    const size_t stripe_count = cols == 0 ? 0 : (cols - 1) / stripe_size + 1;
+    std::vector<omp_lock_t> stripe_locks(stripe_count);
+    for (size_t stripe = 0; stripe < stripe_count; ++stripe)
+    {
+        omp_init_lock(stripe_locks.data() + stripe);
+    }
+
+#pragma omp parallel
+    {
+        SparseMatrix3MultiplytReducer<Word> reducer(atx_rows, stripe_locks.data());
+
+#pragma omp for schedule(static) nowait
+        for (ptrdiff_t row = 0; row < static_cast<ptrdiff_t>(sparse_count); ++row)
+        {
+            const Word x_row = x_rows[row];
+            const long int* p = sparse_points + sparse_row_offsets[row];
+            const long int* end = sparse_points + sparse_row_offsets[row + 1];
+            for (; p != end; ++p)
+            {
+                long int col = *p;
+                if (col < 0)
+                {
+                    col = -col - 1;
+                }
+                reducer.add(static_cast<size_t>(col), x_row);
+            }
+        }
+
+#pragma omp for schedule(static) nowait
+        for (ptrdiff_t row = 0; row < static_cast<ptrdiff_t>(medium_count); ++row)
+        {
+            const Word x_row = x_rows[sparse_count + row];
+            for (size_t entry = medium_row_offsets[row]; entry < medium_row_offsets[row + 1]; ++entry)
+            {
+                const long int* row_start = medium_row_entries[entry];
+                for (const long int* p = sparse_matrix4_row_data_begin(row_start);
+                        p != sparse_matrix4_row_data_end(row_start);
+                        ++p)
+                {
+                    reducer.add(static_cast<size_t>(*p), x_row);
+                }
+            }
+        }
+
+        reducer.flush();
+    }
+
+    for (size_t stripe = 0; stripe < stripe_count; ++stripe)
+    {
+        omp_destroy_lock(stripe_locks.data() + stripe);
+    }
+}
+#endif
+
+template <typename Word>
+void sparse_matrix3_multiplyt_serial(
+    size_t sparse_count,
+    const long int* sparse_points,
+    const std::vector<size_t>& sparse_row_offsets,
+    size_t medium_count,
+    const std::vector<size_t>& medium_row_offsets,
+    const std::vector<long int*>& medium_row_entries,
+    const Word* x_rows,
+    Word* atx_rows)
+{
+    for (size_t row = 0; row < sparse_count; ++row)
+    {
+        const Word x_row = x_rows[row];
+        const long int* p = sparse_points + sparse_row_offsets[row];
+        const long int* end = sparse_points + sparse_row_offsets[row + 1];
+        for (; p != end; ++p)
+        {
+            long int col = *p;
+            if (col < 0)
+            {
+                col = -col - 1;
+            }
+            atx_rows[col] ^= x_row;
+        }
+    }
+
+    for (size_t row = 0; row < medium_count; ++row)
+    {
+        const Word x_row = x_rows[sparse_count + row];
+        for (size_t entry = medium_row_offsets[row]; entry < medium_row_offsets[row + 1]; ++entry)
+        {
+            const long int* row_start = medium_row_entries[entry];
+            for (const long int* p = sparse_matrix4_row_data_begin(row_start);
+                    p != sparse_matrix4_row_data_end(row_start);
+                    ++p)
+            {
+                atx_rows[*p] ^= x_row;
+            }
+        }
+    }
+}
 };
 
 extern "C" unsigned long int genrand();
@@ -2748,7 +3050,7 @@ bool SparseMatrix3::parse(const std::string& str, size_t row)
     // First, write out very dense rows to be processed later
     if (very_dense_count_ < max_very_dense_rows && density > very_dense_density_bound)
     {
-        write_very_dense_row(str);
+        write_very_dense_row(num_cols);
         return false;
     }
 
@@ -2764,6 +3066,7 @@ bool SparseMatrix3::parse(const std::string& str, size_t row)
     {
         cols_ = sparse_->cols();
     }
+    sparse_row_offsets_.push_back(static_cast<size_t>(sparse_->next_point_ - sparse_->set_points_));
     ++sparse_count_;
 
     return true;
@@ -2777,6 +3080,7 @@ bool SparseMatrix3::parse_for_sizing(const std::string& str, long int row)
 
     if (very_dense_count_ < max_very_dense_rows && density > very_dense_density_bound)
     {
+        very_dense_allocated_points_ += static_cast<size_t>(num_cols) + 1;
         ++very_dense_count_;
         return false;
     }
@@ -2811,7 +3115,23 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols)
     std::ostringstream oss;
     long int prev_stripe = -1L;
     long int cols_in_stripe = 0L;
-    std::unordered_map<size_t, std::string> striped_row;
+    std::vector<size_t> striped_row_stripes;
+    std::vector<std::string> striped_rows;
+    auto flush_current_stripe = [&]()
+    {
+        if (prev_stripe == -1)
+        {
+            return;
+        }
+        std::string str = oss.str();
+        oss.str("");
+        oss.clear();
+        oss << cols_in_stripe << str;
+        striped_row_stripes.push_back(static_cast<size_t>(prev_stripe));
+        striped_rows.push_back(oss.str());
+        oss.str("");
+        oss.clear();
+    };
     while (char* s = strtok(0, " "))
     {
         size_t col = std::atol(s);
@@ -2820,15 +3140,7 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols)
 
         if (static_cast<long int>(stripe) != prev_stripe)
         {
-            if (prev_stripe != -1)
-            {
-                std::string str = oss.str();
-                oss.str("");
-                //std::cerr << "cols_in_stripe = " << cols_in_stripe << std::endl;
-                oss << cols_in_stripe << str;
-                striped_row[prev_stripe] = oss.str();
-                oss.str("");
-            }
+            flush_current_stripe();
             prev_stripe = static_cast<long int>(stripe);
             cols_in_stripe = 0L;
         }
@@ -2842,24 +3154,16 @@ void SparseMatrix3::add_to_medium_dense_rows(long int num_cols)
             cols_ = col;
         }
     }
-    std::string str = oss.str();
-    oss.str("");
-    //std::cerr << "cols_in_stripe = " << cols_in_stripe << std::endl;
-    oss << cols_in_stripe << str;
-    striped_row[prev_stripe] = oss.str();
-    extend_dense(prev_stripe);
-    for (size_t stripe = 0; stripe < medium_.size(); ++stripe)
+    flush_current_stripe();
+    for (size_t i = 0; i < striped_row_stripes.size(); ++i)
     {
-        auto found = striped_row.find(stripe);
-        if (found != striped_row.end())
-        {
-            medium_[stripe]->add_row(0, found->second);
-        }
-        else
-        {
-            medium_[stripe]->add_row(0, "0");
-        }
+        size_t stripe = striped_row_stripes[i];
+        size_t stripe_row_index = static_cast<size_t>(medium_[stripe]->rows_added_);
+        medium_[stripe]->add_row(0, striped_rows[i]);
+        medium_row_stripes_.push_back(stripe);
+        medium_row_indices_.push_back(stripe_row_index);
     }
+    medium_row_offsets_.push_back(medium_row_stripes_.size());
 }
 
 void SparseMatrix3::add_to_size_of_medium_dense_rows(long int num_cols)
@@ -2893,7 +3197,7 @@ void SparseMatrix3::add_to_size_of_medium_dense_rows(long int num_cols)
 }
 
 SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
-    : rows_(0), cols_(0), sparse_(0), sparse_count_(0), sparse_allocated_points_(0), medium_(0), medium_count_(0), number_of_stripes_(0), very_dense_file_(0), very_dense_count_(0)
+    : rows_(0), cols_(0), sparse_(0), sparse_count_(0), sparse_allocated_points_(0), sparse_row_offsets_(), medium_(0), medium_count_(0), number_of_stripes_(0), very_dense_rows_(), very_dense_count_(0), very_dense_allocated_points_(0)
 {
     MemoryMappedFile mmf(file.c_str());
     {
@@ -2915,6 +3219,7 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
         rows_ = rows;
         std::cerr << "About to create SparseMatrix2 : sparse_allocated_points_ = " << static_cast<unsigned int>(sparse_allocated_points_) << std::endl;
         sparse_ = new SparseMatrix2(sparse_allocated_points_);
+        very_dense_rows_.reserve(very_dense_allocated_points_);
 
         ++number_of_stripes_;
         medium_.reserve(number_of_stripes_);
@@ -2924,6 +3229,8 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
             SparseMatrix4* smp = new SparseMatrix4(medium_count_, stripe_allocated_points_[i]);
             medium_.push_back(smp);
         }
+        medium_row_offsets_.reserve(medium_count_ + 1);
+        medium_row_offsets_.push_back(0);
         medium_count_ = 0;
         very_dense_count_ = 0;
     }
@@ -2936,6 +3243,9 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
     if (!getline(mmf, str))
         return;
     rows_ = std::atol(str.c_str());
+    sparse_row_offsets_.clear();
+    sparse_row_offsets_.reserve(rows_ + 1);
+    sparse_row_offsets_.push_back(0);
 
     while (getline(mmf, str))
     {
@@ -2953,12 +3263,7 @@ SparseMatrix3::SparseMatrix3(const std::string& file, bool split)
         smp->last_point_ = smp->next_point_;
         smp->next_point_ = smp->set_points_;
     }
-
-    if (very_dense_file_)
-    {
-        delete very_dense_file_;
-        very_dense_file_ = 0;
-    }
+    build_medium_row_entries();
 
     std::cerr << "SparseMatrix3::SparseMatrix3() : rows_ = " << static_cast<unsigned int>(rows_) << ", cols_ = " << static_cast<unsigned int>(cols_) << ", sparse_count_ = " << static_cast<unsigned int>(sparse_count_) << ", medium_count_ = " << static_cast<unsigned int>(medium_count_) << ", very_dense_count_ = " << static_cast<unsigned int>(very_dense_count_) << std::endl;
 }
@@ -2972,6 +3277,13 @@ void SparseMatrix3::clear()
 {
     rows_ = 0;
     cols_ = 0;
+    sparse_count_ = 0;
+    sparse_allocated_points_ = 0;
+    medium_count_ = 0;
+    number_of_stripes_ = 0;
+    very_dense_count_ = 0;
+    very_dense_allocated_points_ = 0;
+    sparse_row_offsets_.clear();
     if (sparse_)
     {
         delete sparse_;
@@ -2983,12 +3295,40 @@ void SparseMatrix3::clear()
         delete medium_[i];
     }
     medium_.clear();
+    medium_row_offsets_.clear();
+    medium_row_stripes_.clear();
+    medium_row_indices_.clear();
+    medium_row_entries_.clear();
+    stripe_allocated_points_.clear();
+    very_dense_rows_.clear();
+}
 
-    if (very_dense_file_)
+void SparseMatrix3::build_medium_row_entries()
+{
+    medium_row_entries_.clear();
+    medium_row_entries_.reserve(medium_row_stripes_.size());
+
+    std::vector<std::vector<SparseMatrix4::Point*> > stripe_rows(medium_.size());
+    for (size_t stripe = 0; stripe < medium_.size(); ++stripe)
     {
-        delete very_dense_file_;
-        very_dense_file_ = 0;
+        SparseMatrix4* smp = medium_[stripe];
+        stripe_rows[stripe].reserve(smp->rows_added_);
+        for (SparseMatrix4::Point* p = smp->set_points_; p != smp->last_point_; )
+        {
+            stripe_rows[stripe].push_back(p);
+            p += sparse_matrix4_row_col_count(p) + 1;
+        }
     }
+
+    for (size_t i = 0; i < medium_row_stripes_.size(); ++i)
+    {
+        size_t stripe = medium_row_stripes_[i];
+        size_t stripe_row_index = medium_row_indices_[i];
+        medium_row_entries_.push_back(stripe_rows[stripe][stripe_row_index]);
+    }
+
+    medium_row_stripes_.clear();
+    medium_row_indices_.clear();
 }
 
 void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX)
@@ -2997,49 +3337,30 @@ void multiply(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AX)
     AX.row_.clear();
     AX.row_.resize(A.rows());
     AX.cols_ = X.cols_;
-
-    // 1. Multiply the sparse rows
-    BitMatrixRowIterator AX_row_iter = AX.row_.begin();
-    uint32_t resultRow = 0UL;
-    for (SparseMatrix2::Point* p = A.sparse_->set_points_; p != A.sparse_->last_point_; ++p)
+#ifdef _OPENMP
+    if (omp_get_max_threads() > 1 && A.rows() >= 256)
     {
-        long int col = *p;
-        if (col < 0)
-        {
-            col = -col - 1;
-            resultRow ^= *(X.row_.vec_ + col);
-            *AX_row_iter = resultRow;
-            ++AX_row_iter;
-            resultRow = 0UL;
-        }
-        else
-        {
-            resultRow ^= *(X.row_.vec_ + col);
-        }
+        sparse_matrix3_multiply_rows_parallel<uint32_t>(
+            A.sparse_count_,
+            A.sparse_->set_points_,
+            A.sparse_row_offsets_,
+            A.medium_count_,
+            A.medium_row_offsets_,
+            A.medium_row_entries_,
+            X.row_.vec_,
+            AX.row_.vec_);
+        return;
     }
-
-    BitMatrixRowIterator AX_row_iter_1 = AX_row_iter;
-    // 2. Multiply the medium rows which are striped
-    for (size_t i = 0; i < A.medium_.size(); ++i)
-    {
-        AX_row_iter = AX_row_iter_1;
-        SparseMatrix4* sm4 = A.medium_[i];
-        SparseMatrix4::Point* p = sm4->set_points_;
-        while (p != sm4->last_point_)
-        {
-            long int col = *p;
-            size_t col_count = -(col + 1);
-            ++p;
-            uint32_t resultRow = 0UL;
-            for (size_t k = 0; k < col_count; ++k, ++p)
-            {
-                long int col = *p;
-                resultRow ^= *(X.row_.vec_ + col);
-            }
-            *AX_row_iter ^= resultRow;
-            ++AX_row_iter;
-        }
-    }
+#endif
+    sparse_matrix3_multiply_rows_serial<uint32_t>(
+        A.sparse_count_,
+        A.sparse_->set_points_,
+        A.sparse_row_offsets_,
+        A.medium_count_,
+        A.medium_row_offsets_,
+        A.medium_row_entries_,
+        X.row_.vec_,
+        AX.row_.vec_);
 }
 
 void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX)
@@ -3048,49 +3369,30 @@ void multiply(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AX)
     AX.row_.clear();
     AX.row_.resize(A.rows());
     AX.cols_ = X.cols_;
-
-    // 1. Multiply the sparse rows
-    BitMatrix64RowIterator AX_row_iter = AX.row_.begin();
-    unsigned long long int resultRow = 0UL;
-    for (SparseMatrix2::Point* p = A.sparse_->set_points_; p != A.sparse_->last_point_; ++p)
+#ifdef _OPENMP
+    if (omp_get_max_threads() > 1 && A.rows() >= 256)
     {
-        long int col = *p;
-        if (col < 0)
-        {
-            col = -col - 1;
-            resultRow ^= *(X.row_.vec_ + col);
-            *AX_row_iter = resultRow;
-            ++AX_row_iter;
-            resultRow = 0UL;
-        }
-        else
-        {
-            resultRow ^= *(X.row_.vec_ + col);
-        }
+        sparse_matrix3_multiply_rows_parallel<unsigned long long int>(
+            A.sparse_count_,
+            A.sparse_->set_points_,
+            A.sparse_row_offsets_,
+            A.medium_count_,
+            A.medium_row_offsets_,
+            A.medium_row_entries_,
+            X.row_.vec_,
+            AX.row_.vec_);
+        return;
     }
-
-    BitMatrix64RowIterator AX_row_iter_1 = AX_row_iter;
-    // 2. Multiply the medium rows which are striped
-    for (size_t i = 0; i < A.medium_.size(); ++i)
-    {
-        AX_row_iter = AX_row_iter_1;
-        SparseMatrix4* sm4 = A.medium_[i];
-        SparseMatrix4::Point* p = sm4->set_points_;
-        while (p != sm4->last_point_)
-        {
-            long int col = *p;
-            size_t col_count = -(col + 1);
-            ++p;
-            unsigned long long int resultRow = 0UL;
-            for (size_t k = 0; k < col_count; ++k, ++p)
-            {
-                long int col = *p;
-                resultRow ^= *(X.row_.vec_ + col);
-            }
-            *AX_row_iter ^= resultRow;
-            ++AX_row_iter;
-        }
-    }
+#endif
+    sparse_matrix3_multiply_rows_serial<unsigned long long int>(
+        A.sparse_count_,
+        A.sparse_->set_points_,
+        A.sparse_row_offsets_,
+        A.medium_count_,
+        A.medium_row_offsets_,
+        A.medium_row_entries_,
+        X.row_.vec_,
+        AX.row_.vec_);
 }
 
 void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX)
@@ -3099,56 +3401,31 @@ void multiplyt(const SparseMatrix3& A, const BitMatrix& X, BitMatrix& AtX)
     AtX.row_.clear();
     AtX.row_.resize(A.cols());
     AtX.cols_ = X.cols_;
-
-    // 1. Multiply the sparse rows
-    BitMatrixRowIterator X_row_iter = X.row_.begin();
-    for (SparseMatrix2::Point* p = A.sparse_->set_points_;
-            p != A.sparse_->last_point_;
-            ++p)
+#ifdef _OPENMP
+    if (omp_get_max_threads() > 1 && A.rows() >= 256)
     {
-        long int col = *p;
-        if (col < 0)
-        {
-            col = -col - 1;
-            AtX.row_[col] ^= *X_row_iter;
-            ++X_row_iter;
-        }
-        else
-        {
-            AtX.row_[col] ^= *X_row_iter;
-        }
+        sparse_matrix3_multiplyt_parallel<uint32_t>(
+            A.cols(),
+            A.sparse_count_,
+            A.sparse_->set_points_,
+            A.sparse_row_offsets_,
+            A.medium_count_,
+            A.medium_row_offsets_,
+            A.medium_row_entries_,
+            X.row_.vec_,
+            AtX.row_.vec_);
+        return;
     }
-
-    // 2. Multiply the medium rows which are striped
-    BitMatrixRowIterator X_row_iter_1 = X_row_iter;
-    for (size_t i = 0; i < A.medium_.size(); ++i)
-    {
-        X_row_iter = X_row_iter_1;
-        SparseMatrix4* sm4 = A.medium_[i];
-        SparseMatrix4::Point* p = sm4->set_points_;
-        while (p != sm4->last_point_)
-        {
-            long int num_cols = - *p - 1;
-            ++p;
-#if 1
-            uint32_t X_row = *X_row_iter;
-            SparseMatrix4::Point* last_point = p + num_cols;
-            while (p != last_point)
-            {
-                long int col = *p;
-                AtX.row_[col] ^= X_row;
-                ++p;
-            }
-#else
-            for (size_t j = 0; j < num_cols; ++j, ++p)
-            {
-                long int col = *p;
-                AtX.row_[col] ^= *X_row_iter;
-            }
 #endif
-            ++X_row_iter;
-        }
-    }
+    sparse_matrix3_multiplyt_serial<uint32_t>(
+        A.sparse_count_,
+        A.sparse_->set_points_,
+        A.sparse_row_offsets_,
+        A.medium_count_,
+        A.medium_row_offsets_,
+        A.medium_row_entries_,
+        X.row_.vec_,
+        AtX.row_.vec_);
 }
 
 void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX)
@@ -3157,45 +3434,31 @@ void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX)
     AtX.row_.clear();
     AtX.row_.resize(A.cols());
     AtX.cols_ = X.cols_;
-
-    // 1. Multiply the sparse rows
-    BitMatrix64RowIterator X_row_iter = X.row_.begin();
-    for (SparseMatrix2::Point* p = A.sparse_->set_points_;
-            p != A.sparse_->last_point_;
-            ++p)
+#ifdef _OPENMP
+    if (omp_get_max_threads() > 1 && A.rows() >= 256)
     {
-        long int col = *p;
-        if (col < 0)
-        {
-            col = -col - 1;
-            AtX.row_[col] ^= *X_row_iter;
-            ++X_row_iter;
-        }
-        else
-        {
-            AtX.row_[col] ^= *X_row_iter;
-        }
+        sparse_matrix3_multiplyt_parallel<unsigned long long int>(
+            A.cols(),
+            A.sparse_count_,
+            A.sparse_->set_points_,
+            A.sparse_row_offsets_,
+            A.medium_count_,
+            A.medium_row_offsets_,
+            A.medium_row_entries_,
+            X.row_.vec_,
+            AtX.row_.vec_);
+        return;
     }
-
-    // 2. Multiply the medium rows which are striped
-    BitMatrix64RowIterator X_row_iter_1 = X_row_iter;
-    for (size_t i = 0; i < A.medium_.size(); ++i)
-    {
-        X_row_iter = X_row_iter_1;
-        SparseMatrix4* sm4 = A.medium_[i];
-        SparseMatrix4::Point* p = sm4->set_points_;
-        while (p != sm4->last_point_)
-        {
-            long int num_cols = - *p - 1;
-            ++p;
-            for (long int j = 0; j < num_cols; ++j, ++p)
-            {
-                long int col = *p;
-                AtX.row_[col] ^= *X_row_iter;
-            }
-            ++X_row_iter;
-        }
-    }
+#endif
+    sparse_matrix3_multiplyt_serial<unsigned long long int>(
+        A.sparse_count_,
+        A.sparse_->set_points_,
+        A.sparse_row_offsets_,
+        A.medium_count_,
+        A.medium_row_offsets_,
+        A.medium_row_entries_,
+        X.row_.vec_,
+        AtX.row_.vec_);
 }
 
 void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX)
@@ -3208,6 +3471,11 @@ void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX)
 void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX)
 {
     BitMatrix64 BX;
+    sym_multiply(B, X, AX, BX);
+}
+
+void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX, BitMatrix64& BX)
+{
     multiply(B, X, BX);
     multiplyt(B, BX, AX);
 }
@@ -3217,32 +3485,20 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm)
     os << static_cast<unsigned int>(sm.rows()) << std::endl;
     os << *sm.sparse_;
 
-    if (!sm.medium_.empty())
+    if (sm.medium_count_)
     {
-        // For each row
-        //std::cerr << "sm.medium_.size() = " << sm.medium_.size() << std::endl;
-
-        std::vector<SparseMatrix4::Point*> p(sm.medium_.size());
-        for (size_t j = 0; j < sm.medium_.size(); ++j)
-        {
-            p[j] = sm.medium_[j]->set_points_;
-        }
-        for (size_t i = 0; i < sm.medium_[0]->rows(); ++i)
+        for (size_t row = 0; row < sm.medium_count_; ++row)
         {
             long int cols = 0;
             std::stringstream ss;
-            for (size_t j = 0; j < sm.medium_.size(); ++j)
+            for (size_t entry = sm.medium_row_offsets_[row]; entry < sm.medium_row_offsets_[row + 1]; ++entry)
             {
-                long int col_count = *(p[j]);
-                if (col_count >= 0)
+                const SparseMatrix4::Point* row_start = sm.medium_row_entries_[entry];
+                for (const SparseMatrix4::Point* p = sparse_matrix4_row_data_begin(row_start);
+                        p != sparse_matrix4_row_data_end(row_start);
+                        ++p)
                 {
-                    std::cerr << "Problem: col_count = " << col_count << std::endl;
-                }
-                ++(p[j]);
-                for (size_t k = 0; k < static_cast<size_t>(-(col_count + 1)); ++k, ++(p[j]))
-                {
-                    long int col = *(p[j]);
-                    ss << " " << col;
+                    ss << " " << *p;
                     ++cols;
                 }
             }
@@ -3252,24 +3508,43 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix3& sm)
 
     if (sm.very_dense_count_)
     {
-        MemoryMappedFile mmf("dense_rows.txt");
-        std::string str;
-        while (getline(mmf, str))
+        std::vector<long int>::const_iterator it = sm.very_dense_rows_.begin();
+        while (it != sm.very_dense_rows_.end())
         {
-            os << str << std::endl;
+            size_t cols = static_cast<size_t>(*it);
+            ++it;
+            os << cols;
+            for (size_t i = 0; i < cols; ++i, ++it)
+            {
+                os << " " << static_cast<unsigned int>(*it);
+            }
+            os << std::endl;
         }
     }
 
     return os;
 }
 
-void SparseMatrix3::write_very_dense_row(const std::string& str)
+void SparseMatrix3::write_very_dense_row(long int num_cols)
 {
-    if (!very_dense_file_)
+    const size_t row_offset = very_dense_rows_.size();
+    very_dense_rows_.push_back(0);
+    size_t cols_in_row = 0;
+    while (char* s = strtok(0, " "))
     {
-        very_dense_file_ = new std::fstream("dense_rows.txt", std::ios::out);
+        long int col = std::atol(s);
+        very_dense_rows_.push_back(col);
+        ++cols_in_row;
+        if (static_cast<size_t>(col) > cols_)
+        {
+            cols_ = static_cast<size_t>(col);
+        }
     }
-    *very_dense_file_ << str << std::endl;
+    if (cols_in_row != static_cast<size_t>(num_cols))
+    {
+        very_dense_rows_.resize(row_offset + cols_in_row + 1);
+    }
+    very_dense_rows_[row_offset] = static_cast<long int>(cols_in_row);
     ++very_dense_count_;
 }
 
@@ -3285,23 +3560,19 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, const 
     BR.row_.resize(very_dense_count_);
     BR.cols_ = R.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrixRowIterator BL_row_iter = BL.row_.begin();
     BitMatrixRowIterator BR_row_iter = BR.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         uint32_t resultRowL = 0UL;
         uint32_t resultRowR = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRowL ^= *(L.row_.vec_ + n);
-            resultRowR ^= *(R.row_.vec_ + n);
+            resultRowL ^= *(L.row_.vec_ + *it);
+            resultRowR ^= *(R.row_.vec_ + *it);
         }
         *BL_row_iter = resultRowL;
         *BR_row_iter = resultRowR;
@@ -3322,23 +3593,19 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, cons
     BR.row_.resize(very_dense_count_);
     BR.cols_ = R.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrix64RowIterator BL_row_iter = BL.row_.begin();
     BitMatrix64RowIterator BR_row_iter = BR.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         unsigned long long int resultRowL = 0UL;
         unsigned long long int resultRowR = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRowL ^= *(L.row_.vec_ + n);
-            resultRowR ^= *(R.row_.vec_ + n);
+            resultRowL ^= *(L.row_.vec_ + *it);
+            resultRowR ^= *(R.row_.vec_ + *it);
         }
         *BL_row_iter = resultRowL;
         *BR_row_iter = resultRowR;
@@ -3356,19 +3623,16 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
     BL.row_.resize(very_dense_count_);
     BL.cols_ = L.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrixRowIterator BL_row_iter = BL.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         uint32_t resultRow = 0UL;
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRow ^= *(L.row_.vec_ + n);
+            resultRow ^= *(L.row_.vec_ + *it);
         }
         *BL_row_iter = resultRow;
         ++BL_row_iter;
@@ -3384,20 +3648,16 @@ void SparseMatrix3::multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitM
     BL.row_.resize(very_dense_count_);
     BL.cols_ = L.cols();
 
-    MemoryMappedFile mmf("dense_rows.txt");
-    std::string str;
-
     BitMatrix64RowIterator BL_row_iter = BL.row_.begin();
-
-    while (getline(mmf, str))
+    std::vector<long int>::const_iterator it = very_dense_rows_.begin();
+    while (it != very_dense_rows_.end())
     {
-        SparseRow::begin_parse__(str);
         unsigned long long int resultRow = 0UL;
-
-        while (char* s = strtok(0, " "))
+        size_t cols = static_cast<size_t>(*it);
+        ++it;
+        for (size_t i = 0; i < cols; ++i, ++it)
         {
-            long int n = std::atol(s);
-            resultRow ^= *(L.row_.vec_ + n);
+            resultRow ^= *(L.row_.vec_ + *it);
         }
         *BL_row_iter = resultRow;
         ++BL_row_iter;
@@ -3839,4 +4099,3 @@ void SparseMatrix4::multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMat
         ++BL_row_iter;
     }
 }
-

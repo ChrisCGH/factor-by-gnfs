@@ -21,6 +21,7 @@ class BlockLanczosTest : public CppUnit::TestFixture
     CPPUNIT_TEST_SUITE(BlockLanczosTest);
     CPPUNIT_TEST(testKernelNonTrivial);
     CPPUNIT_TEST(testKernelFullRank);
+    CPPUNIT_TEST(testSplitKernelNonTrivial);
     CPPUNIT_TEST_SUITE_END();
 
     static const char* const MATRIX_FILE;
@@ -74,6 +75,31 @@ public:
         return oss.str();
     }
 
+    static std::string splitNonTrivialMatrixContent()
+    {
+        std::ostringstream oss;
+        oss << "100\n";
+        oss << "2 0 96\n";
+        oss << "2 1 96\n";
+        oss << "2 2 97\n";
+        oss << "2 3 97\n";
+        oss << "2 4 98\n";
+        oss << "2 5 98\n";
+        oss << "2 6 99\n";
+        oss << "2 7 99\n";
+        for (int i = 8; i <= 95; ++i)
+        {
+            oss << "1 " << i << "\n";
+        }
+        oss << "96";
+        for (int i = 0; i <= 95; ++i)
+        {
+            oss << " " << i;
+        }
+        oss << "\n0\n0\n0\n";
+        return oss.str();
+    }
+
     // The Block Lanczos algorithm finds vectors x such that B*x = 0 over GF(2).
     // For this matrix the null space has dimension 4.
     void testKernelNonTrivial()
@@ -111,6 +137,22 @@ public:
         bl.kernel(kerL, kerR);
 
         // Verify B * kerL = 0 (trivially true when kerL is zero / has no columns).
+        SparseMatrix3 B(MATRIX_FILE);
+        BITMATRIX BkerL;
+        multiply(B, kerL, BkerL);
+        CPPUNIT_ASSERT(BkerL.isZero());
+    }
+
+    void testSplitKernelNonTrivial()
+    {
+        writeMatrixFile(MATRIX_FILE, splitNonTrivialMatrixContent());
+
+        BlockLanczos bl(MATRIX_FILE, "", 0, 0, true);
+        BITMATRIX kerL, kerR;
+        bl.kernel(kerL, kerR);
+
+        CPPUNIT_ASSERT(!kerL.isZero());
+
         SparseMatrix3 B(MATRIX_FILE);
         BITMATRIX BkerL;
         multiply(B, kerL, BkerL);

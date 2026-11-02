@@ -41,16 +41,21 @@ else
 # assume Linux, use clang
 OUTPUTDIR = gbin
 GMPLIBDIR = /usr/local/lib
+FILE_BASED_SPARSE_MATRIX ?= no
+ifeq ($(FILE_BASED_SPARSE_MATRIX),yes)
+SPARSE_MATRIX_FLAGS = -DFILE_BASED_SPARSE_MATRIX
+UUID_LIBS = -luuid
+endif
 ifeq ($(RUN_GCOV),yes)
-LIBS = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm -luuid -lgmp -lstdc++
-TEST_LIBS = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm -luuid -lgmp -lcppunit -ldl -lstdc++
-TEST_LIBS_NOGMP = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm -luuid -lcppunit -ldl -lstdc++
-LIBSNOGMP = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm -luuid -lstdc++
+LIBS = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm $(UUID_LIBS) -lgmp -lstdc++
+TEST_LIBS = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm $(UUID_LIBS) -lgmp -lcppunit -ldl -lstdc++
+TEST_LIBS_NOGMP = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm $(UUID_LIBS) -lcppunit -ldl -lstdc++
+LIBSNOGMP = -L/usr/lib64 -L/usr/local/lib $(COVERAGE_LIBS) -lm $(UUID_LIBS) -lstdc++
 else
-LIBS = -L/usr/lib64 -L/usr/local/lib -lm -luuid -lgmp -lstdc++
-TEST_LIBS = -L/usr/lib64 -L/usr/local/lib -lm -luuid -lgmp -lcppunit -ldl -lstdc++
-TEST_LIBS_NOGMP = -L/usr/lib64 -L/usr/local/lib -lm -luuid -lcppunit -ldl -lstdc++
-LIBSNOGMP = -L/usr/lib64 -L/usr/local/lib -lm -luuid -lstdc++
+LIBS = -L/usr/lib64 -L/usr/local/lib -lm $(UUID_LIBS) -lgmp -lstdc++
+TEST_LIBS = -L/usr/lib64 -L/usr/local/lib -lm $(UUID_LIBS) -lgmp -lcppunit -ldl -lstdc++
+TEST_LIBS_NOGMP = -L/usr/lib64 -L/usr/local/lib -lm $(UUID_LIBS) -lcppunit -ldl -lstdc++
+LIBSNOGMP = -L/usr/lib64 -L/usr/local/lib -lm $(UUID_LIBS) -lstdc++
 endif
 COVERAGE_LIBS = -lgcov
 INCLUDES = -I/usr/local/include
@@ -60,11 +65,15 @@ COVERAGE = -fprofile-arcs -ftest-coverage
 COVERAGE_OPT = 
 #ARCH = -march=athlon64
 USING_CPPUNIT = -DUSING_CPPUNIT 
+OPENMP ?= no
+ifeq ($(OPENMP),yes)
+OPENMP_FLAGS = -fopenmp
+endif
 ifeq ($(RUN_GCOV),yes)
-CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT)
+CCFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -DUSING_GCC $(USING_CPPUNIT) $(SPARSE_MATRIX_FLAGS)
 CFLAGS = -Wall -g $(COVERAGE_OPT) $(COVERAGE) $(PROFILE) $(ARCH)
 else
-CCFLAGS = -Wall -g -std=c++2a $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC $(USING_CPPUNIT) -fopenmp
+CCFLAGS = -Wall -g -std=c++2a $(OPT) $(PROFILE) $(ARCH) -fno-operator-names -Wno-uninitialized -Dlinux -DUSING_GCC $(USING_CPPUNIT) $(SPARSE_MATRIX_FLAGS) $(OPENMP_FLAGS)
 CFLAGS = -Wall -g $(OPT) $(PROFILE) $(ARCH)
 endif
 CC = clang
@@ -125,7 +134,7 @@ coverage :
 	@echo "Coverage report written to coverage.html, coverage.xml and coverage.txt"
 
 $(OUTPUTDIR) :
-	mkdir $(OUTPUTDIR)
+	mkdir -p $(OUTPUTDIR)
 
 ALL_HEADERS = Combinations.h Config.h ContinuedFraction.h ExceptionalPrimes.h FactorBase.h Ideal.h LatticeSiever.h LongModular.h MPFloat.h Matrix.h NumberField.h AlgebraicNumber.h AlgebraicNumber_in_O_pO.h Polynomial.h QuadraticCharacters.h Quotient.h RootConfig.h SieveConfig.h VeryLong.h VeryLongModular.h SparseMatrix.h crt.h dickman.h blockLanczos.h lip.h lippar.h lll.h mod.h mt19937int.h pow.h pselect.h root.h timings.h Siever.h squfof.h PointerHashTable.h graph.h RelationManager.h discriminant.h gcd.h convert.h qs.h PolynomialOptimizer.h SieveUtils.h pollard_rho.h
 ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberField.cpp AlgebraicNumber.cpp AlgebraicNumber_in_O_pO.cpp Polynomial.cpp SparseMatrix.cpp QuadraticCharacters.cpp VeryLong.cpp VeryLongModular.cpp bl.cpp blockLanczos.cpp calcroot.cpp dickman.cpp discriminant.cpp lll.cpp lsieve.cpp pselect.cpp root.cpp skewed.cpp timings.cpp sieve.cpp Siever.cpp filter.cpp squfof.cpp RelationManager.cpp buildMatrix.cpp stest.cpp testhnf.cpp testan.cpp MatrixUnitTest.cpp convert.cpp convertmain.cpp testMatrix.cpp testfactor.cpp qs.cpp processDependencies.cpp AlgebraicNumberUnitTest.cpp BitOperationsUnitTest.cpp LongModularUnitTest.cpp VeryLongUnitTest.cpp VeryLongModularUnitTest.cpp CombinationsUnitTest.cpp HashTableUnitTest.cpp QuotientUnitTest.cpp LatticeSieverUnitTest.cpp PolynomialOptimizer.cpp SieveUtils.cpp ef.cpp MemoryMappedFileUnitTest.cpp SparseMatrixUnitTest.cpp RelationManagerUnitTest.cpp BlockLanczosUnitTest.cpp Logger.cpp pollard_rho.cpp
@@ -133,6 +142,18 @@ ALL_CPPS = FactorBase.cpp Ideal.cpp LatticeSiever.cpp LongModular.cpp NumberFiel
 ALL_CS = lip.c mt19937int.c 
 ALL_SRCS = $(ALL_CPPS) $(ALL_CS) $(ALL_HEADERS)
 ALL_OBJS = $(ALL_CPPS:.cpp=$(OBJEXT)) $(C_SRCS:.c=$(OBJEXT))
+
+BUILD_CONFIG = .build-config
+
+.PHONY: FORCE
+FORCE:
+
+$(BUILD_CONFIG): FORCE
+	@printf '%s\n' '$(strip $(CC) $(CCFLAGS))' > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
+$(ALL_CPPS:.cpp=$(OBJEXT)): $(BUILD_CONFIG)
 
 QS_CPP_SRCS = qs.cpp SparseMatrix.cpp timings.cpp VeryLongModular.cpp VeryLong.cpp squfof.cpp blockLanczos.cpp pollard_rho.cpp
 
@@ -710,5 +731,4 @@ cleanstest:
 	rm -rf $(OUTPUTDIR)/stest $(STEST_OBJS)
 
 clean:
-	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt
-
+	rm -rf $(OUTPUTDIR)/* *$(OBJEXT) *.d $(BUILD_CONFIG) *.gcno *.gcda coverage.html coverage.*.html coverage.xml coverage.css coverage.txt

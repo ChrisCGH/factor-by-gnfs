@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory.h>
 #include <stdint.h>
-#ifndef WIN32
+#if defined(FILE_BASED_SPARSE_MATRIX) && !defined(WIN32)
 #include <unistd.h>
 #include <uuid/uuid.h>
 #endif
@@ -1375,6 +1375,7 @@ public:
     friend void multiplyt(const SparseMatrix3& A, const BitMatrix64& X, BitMatrix64& AtX);
     friend void sym_multiply(const SparseMatrix3& B, const BitMatrix& X, BitMatrix& AX);
     friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX);
+    friend void sym_multiply(const SparseMatrix3& B, const BitMatrix64& X, BitMatrix64& AX, BitMatrix64& BX);
     void multiply_dense_part_by_bit_matrix(const BitMatrix& L, BitMatrix& BL) const;
     void multiply_dense_part_by_bit_matrix(const BitMatrix& L, const BitMatrix& R, BitMatrix& BL, BitMatrix& BR) const;
     void multiply_dense_part_by_bit_matrix(const BitMatrix64& L, BitMatrix64& BL) const;
@@ -1389,21 +1390,28 @@ private:
     SparseMatrix2* sparse_;
     size_t sparse_count_;
     size_t sparse_allocated_points_;
+    std::vector<size_t> sparse_row_offsets_;
 
     // Rows which are fairly sparse, divided into a number of stripes
     std::vector<SparseMatrix4* > medium_;
     size_t medium_count_;
     size_t number_of_stripes_;
     std::unordered_map<size_t, size_t> stripe_allocated_points_;
+    std::vector<size_t> medium_row_offsets_;
+    std::vector<size_t> medium_row_stripes_;
+    std::vector<size_t> medium_row_indices_;
+    std::vector<SparseMatrix4::Point*> medium_row_entries_;
 
     // Very dense rows which are to be processed later
-    std::fstream* very_dense_file_;
+    std::vector<long int> very_dense_rows_;
     size_t very_dense_count_;
+    size_t very_dense_allocated_points_;
 
 private:
+    void build_medium_row_entries();
     bool parse(const std::string& str, size_t row);
     bool parse_for_sizing(const std::string& str, long int row);
-    void write_very_dense_row(const std::string& str);
+    void write_very_dense_row(long int num_cols);
     void add_to_medium_dense_rows(long int num_cols);
     void add_to_size_of_medium_dense_rows(long int num_cols);
     void extend_dense(size_t stripe);
