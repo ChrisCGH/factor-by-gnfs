@@ -99,6 +99,11 @@ public:
         return (factor_base_overflow_.find(p) != factor_base_overflow_.end());
     }
 
+    bool matches(const Polynomial<VeryLong>& f, long int bound) const
+    {
+        return f_ == f && B_ == bound;
+    }
+
     std::vector<int32_t>::const_iterator begin_inert()
     {
         return inert_primes_.begin();

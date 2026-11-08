@@ -710,6 +710,8 @@ public:
     static std::vector<long int> small_primes_1_;
     static std::vector<long int> small_primes_2_;
     static bool small_primes_initialized_;
+    static long int small_prime_bound1_;
+    static long int small_prime_bound2_;
     static void initialize_small_primes(long int bound1, long int bound2);
 
     static const int LOGQ_BASE = 10;

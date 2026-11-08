@@ -111,7 +111,7 @@ bool checkForRelation(const VeryLong& a, const VeryLong& b,
         }
         if (factors1[i] > B && factors1[i] <= L) large_primes++;
     }
-    //if (large_primes <= LP)
+    if (large_primes <= LP)
     {
         std::cerr << "smooth : " << std::endl;
         //cout << "smooth : " << std::endl;

@@ -144,15 +144,24 @@ double LatticeSiever::total_sieving_time_ = 0;
 std::vector<long int> LatticeSiever::small_primes_1_;
 std::vector<long int> LatticeSiever::small_primes_2_;
 bool LatticeSiever::small_primes_initialized_ = false;
+long int LatticeSiever::small_prime_bound1_ = 0;
+long int LatticeSiever::small_prime_bound2_ = 0;
 
 void LatticeSiever::initialize_small_primes(long int bound1, long int bound2)
 {
-    if (small_primes_initialized_) return;
-    
+    const long int B1 = std::max(bound1, 1000L);
+    const long int B2 = std::max(bound2, 1000L);
+    if (small_primes_initialized_ &&
+        B1 <= small_prime_bound1_ &&
+        B2 <= small_prime_bound2_)
+    {
+        return;
+    }
+
     VeryLong::generate_prime_table();
-    long int B1 = std::max(bound1, 1000L);
-    long int B2 = std::max(bound2, 1000L);
-    
+    small_primes_1_.clear();
+    small_primes_2_.clear();
+
     // Build prime list for bound1
     long int p = VeryLong::firstPrime();
     while (p < B1)
@@ -170,6 +179,8 @@ void LatticeSiever::initialize_small_primes(long int bound1, long int bound2)
     }
     
     small_primes_initialized_ = true;
+    small_prime_bound1_ = B1;
+    small_prime_bound2_ = B2;
 }
 
 namespace
@@ -316,6 +327,12 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     try
     {
         alg_factor_base_ = new FactorBase(alg_base_file);
+        if (!alg_factor_base_->matches(f1_, B1_))
+        {
+            delete alg_factor_base_;
+            alg_factor_base_ = 0;
+            throw std::string("Algebraic factor base does not match sieve configuration");
+        }
     }
     catch (...)
     {
@@ -326,6 +343,12 @@ LatticeSiever::LatticeSiever(const std::string& config_file)
     try
     {
         rat_factor_base_ = new FactorBase(rat_base_file);
+        if (!rat_factor_base_->matches(f2_, B2_))
+        {
+            delete rat_factor_base_;
+            rat_factor_base_ = 0;
+            throw std::string("Rational factor base does not match sieve configuration");
+        }
     }
     catch (...)
     {
@@ -956,22 +979,29 @@ bool LatticeSiever::is_actually_smooth(FastVeryLong& remaining_quotient,
         {
             std::cerr << "1. done" << std::endl;
         }
-        for (auto& f: fac)
+        long int residual = rq_l;
+        for (auto f: fac)
+        {
+            residual /= f;
+        }
+        if (residual != 1L)
+        {
+            fac.push_back(residual);
+        }
+
+        int large_primes = 0;
+        for (auto f: fac)
+        {
+            if (f > L) return false;
+            if (f > B && ++large_primes > LP) return false;
+        }
+        for (auto f: fac)
         {
             if (debug)
             {
                 std::cerr << "2. factor.push_back(f=" << f << ")" << std::endl;
             }
             factor.push_back(f);
-            rq_l /= f;
-        }
-        if (rq_l != 1L)
-        {
-            if (debug)
-            {
-                std::cerr << "3. factor.push_back(rq_ll=" << rq_l << ")" << std::endl;
-            }
-            factor.push_back((long int)rq_l);
         }
         return true;
     }
@@ -986,7 +1016,8 @@ bool LatticeSiever::is_actually_smooth(FastVeryLong& remaining_quotient,
     }
     if (!remaining_quotient.factorise_no_trial(&fac)) return false;
 
-    for (auto& f: fac)
+    int large_primes = 0;
+    for (auto f: fac)
     {
         if (f > L)
         {
@@ -997,6 +1028,10 @@ bool LatticeSiever::is_actually_smooth(FastVeryLong& remaining_quotient,
             }
             return false;
         }
+        if (f > B && ++large_primes > LP) return false;
+    }
+    for (auto f: fac)
+    {
         if (debug)
         {
             std::cerr << "4. factor.push_back(f=" << f << ")" << std::endl;
@@ -1613,7 +1648,8 @@ bool LatticeSiever::sieve(long int q)
     }
     catch (...)
     {
-        std::cerr << "Unknown exception";
+        std::cerr << "Lattice sieving failed for q = " << q << std::endl;
+        throw;
     }
     if (total_relations_ > max_total_relations)
     {
