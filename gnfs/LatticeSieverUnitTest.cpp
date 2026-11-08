@@ -24,6 +24,8 @@ class LatticeSieverTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE(LatticeSieverTest);
     CPPUNIT_TEST(test_parallelogram);
+    CPPUNIT_TEST(test_small_prime_cache_grows_for_later_configuration);
+    CPPUNIT_TEST(test_smoothness_respects_large_prime_limit);
     CPPUNIT_TEST(test_fixed_sieve_region);
     CPPUNIT_TEST_SUITE_END();
 
@@ -269,6 +271,30 @@ public:
                 }
             }
         }
+    }
+
+    void test_small_prime_cache_grows_for_later_configuration()
+    {
+        LatticeSiever::initialize_small_primes(1000L, 1000L);
+        LatticeSiever::initialize_small_primes(2000L, 2000L);
+
+        CPPUNIT_ASSERT(!LatticeSiever::small_primes_1_.empty());
+        CPPUNIT_ASSERT(!LatticeSiever::small_primes_2_.empty());
+        CPPUNIT_ASSERT(LatticeSiever::small_primes_1_.back() >= 1999L);
+        CPPUNIT_ASSERT(LatticeSiever::small_primes_2_.back() >= 1999L);
+    }
+
+    void test_smoothness_respects_large_prime_limit()
+    {
+        LatticeSiever::FactorList factors;
+
+        FastVeryLong one_large_prime(VeryLong(101L));
+        CPPUNIT_ASSERT(!LatticeSiever::is_actually_smooth(
+            one_large_prime, factors, 10L, 200L, 0L, false));
+
+        FastVeryLong two_large_primes(VeryLong(10403L));
+        CPPUNIT_ASSERT(!LatticeSiever::is_actually_smooth(
+            two_large_primes, factors, 10L, 200L, 1L, false));
     }
 
     void test_fixed_sieve_region()
