@@ -55,10 +55,18 @@ VeryLong b2_vl (const Polynomial<VeryLong>& f, const VeryLong& a, const VeryLong
 }
 
 std::vector<std::pair<long int, long int>> F_sample;
+long int F_sample_bound = 0;
 
-void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
+void sample_F_values(const Polynomial<VeryLong>&, long int BOUND)
 {
+    if (F_sample_bound == BOUND &&
+        F_sample.size() == static_cast<size_t>(BOUND) * static_cast<size_t>(BOUND))
+    {
+        return;
+    }
+
     F_sample.clear();
+    F_sample.reserve(static_cast<size_t>(BOUND) * static_cast<size_t>(BOUND));
     const unsigned long int UPPER_LIMIT = 1000000L;
     unsigned long int a = 2;
     unsigned long int b = 2;
@@ -77,6 +85,7 @@ void sample_F_values(const Polynomial<VeryLong>& poly, long int BOUND)
             F_sample.push_back({(long int)a, (long int)b});
         }
     }
+    F_sample_bound = BOUND;
 }
 
 double cont_F(const Polynomial<VeryLong>& poly, long int p, long int BOUND, bool well_behaved, bool estimate)
