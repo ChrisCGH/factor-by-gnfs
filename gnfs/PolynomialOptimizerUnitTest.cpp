@@ -25,6 +25,7 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
     CPPUNIT_TEST_SUITE(PolynomialOptimizerTest);
     CPPUNIT_TEST(test1);
     CPPUNIT_TEST(test_degree6);
+    CPPUNIT_TEST(test_alpha_sampling_is_reused);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -275,6 +276,17 @@ public:
         }
         // alpha should be a finite number
         CPPUNIT_ASSERT(alpha == alpha); // not NaN
+    }
+
+    void test_alpha_sampling_is_reused()
+    {
+        Polynomial<VeryLong> f = Polynomial<VeryLong>::read_polynomial(
+            "1 + 1 X + 1 X^2 + 1 X^3");
+
+        const double first = PolynomialOptimizer::alpha_F_murphy(f, 100L, 20L);
+        const double second = PolynomialOptimizer::alpha_F_murphy(f, 100L, 20L);
+
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(first, second, 0.0);
     }
 };
 
