@@ -15,6 +15,7 @@
 #include "lip.h"
 #include "pselect.h"
 #include "gcd.h"
+#include <algorithm>
 #include <cmath>
 
 #define CHECK 1
@@ -131,27 +132,24 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
     }
     std::cout << "alpha cutoff = " << alpha_cutoff << std::endl;
 
+    const size_t cont_array_data_size =
+        static_cast<size_t>(2 * MAX_J1 + 1) * static_cast<size_t>(2 * MAX_J0 + 1);
     static std::vector<short> cont_array_data;
-    static long int cont_array_data_size = 0;
-    if (cont_array_data.empty())
+    if (cont_array_data.size() != cont_array_data_size)
     {
-        cont_array_data_size = (2 * MAX_J1 + 1) * (2 * MAX_J0 + 1) ;
         cont_array_data.resize(cont_array_data_size);
     }
-
-    static std::vector<short*> cont_array;
-    if (cont_array.empty())
+    std::vector<short*> cont_array(2 * MAX_J1 + 1);
+    for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
     {
-        cont_array.resize(2 * MAX_J1 + 1);
-        for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
-        {
-            cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
-        }
+        cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
     }
+
     static std::vector<short> j0_array;
-    if (j0_array.empty())
+    const size_t j0_array_size = static_cast<size_t>(std::max(MAX_J0, MAX_SMALL_PRIME));
+    if (j0_array.size() < j0_array_size)
     {
-        j0_array.resize(MAX_J0);
+        j0_array.resize(j0_array_size);
     }
     unsigned long int p_k;
 
@@ -285,7 +283,7 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
                         if (p_q == p_k_left) addonj += addon/(p - 1.0);
                         if (addonj > 0.0)
                         {
-                            short addonj_s = (short)floor(addon * 1000.0 + 0.5);
+                            short addonj_s = (short)floor(addonj * 1000.0 + 0.5);
                             unsigned long int j0 = j0_start.get_long() % p_q;
                             while (j0 < p_k)
                             {
@@ -1787,7 +1785,7 @@ bool PolynomialPairCalculator::generate(long int degree)
         {
             std::vector<LongModular> roots;
             find_roots_mod_p<VeryLong, long int, LongModular>(poly_, p, roots);
-            std::cout << "p = " << p << ", roots.size() = " << roots.size() << std::endl;
+            debug_output(debug_, "p = ", p, ", roots.size() = ", roots.size());
             if (static_cast<long int>(roots.size()) == d_)
             {
                 primes_.push_back(p);
@@ -1820,7 +1818,7 @@ bool PolynomialPairCalculator::generate(long int degree)
     // The linear polynomial will be
     // a X - b Y
     //
-    //if (debug_)
+    if (debug_)
     {
         std::cout << "primes : " << primes_.size() << std::endl;
         for (size_t i = 0; i < primes_.size(); i++) std::cout << primes_[i] << " ";
@@ -2147,7 +2145,8 @@ void step3_optimize_root_properties(Polynomial<VeryLong>& min_poly,
         Polynomial<VeryLong> better_poly;
         std::vector<PolynomialOptimizer::Poly_info> poly_list;
 
-        better_poly = adjust_root_properties_orig(min_poly, new_m, s_vl, average_log_size, poly_list);
+        better_poly = PolynomialOptimizer::adjust_root_properties(
+            Skewed_config, min_poly, VeryLong(1L), new_m, s_vl, average_log_size, poly_list);
         if (!poly_list.empty())
         {
             std::cout << poly_list.size() << " polynomials to examine ..." << std::endl;
