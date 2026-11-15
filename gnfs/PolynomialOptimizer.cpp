@@ -340,9 +340,14 @@ Polynomial<VeryLong> translate(const Polynomial<VeryLong>& p, const VeryLong& a,
     return translated_poly;
 }
 
+double average_log_size(const Polynomial<double>& p, long int s)
+{
+    return log(sqrt(PolynomialOptimizer::J(p, static_cast<double>(s)) / 4.0));
+}
+
 double average_log_size(const Polynomial<VeryLong>& p, long int s)
 {
-    return log(sqrt(PolynomialOptimizer::J(Polynomial<VeryLong>::convert_to_double<double>(p),(double)s)/4.0));
+    return average_log_size(Polynomial<VeryLong>::convert_to_double<double>(p), s);
 }
 
 double alpha_F(const Polynomial<VeryLong>& poly, long int B, long int BOUND)
@@ -695,8 +700,9 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                 Polynomial<VeryLong> F = min_poly + Polynomial<VeryLong>(c);
 
                 //double I_F_S_0 = PolynomialOptimizer::average_log_size(F, 1000L);
-                s = PolynomialOptimizer::minimize_I_over_s(Polynomial<VeryLong>::convert_to_double<double>(F), s.get_double());
-                double I_F_S = PolynomialOptimizer::average_log_size(F, s);
+                Polynomial<double> double_F = Polynomial<VeryLong>::convert_to_double<double>(F);
+                s = PolynomialOptimizer::minimize_I_over_s(double_F, s.get_double());
+                double I_F_S = PolynomialOptimizer::average_log_size(double_F, s.get_long());
                 if (I_F_S + cont < printing_bound)
                 {
                     poly_list.push_back(Poly_info(F, s, I_F_S, cont));
