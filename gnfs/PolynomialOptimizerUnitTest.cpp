@@ -24,6 +24,7 @@ bool verbose()
 class PolynomialOptimizerTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE(PolynomialOptimizerTest);
+    CPPUNIT_TEST(test_double_average_log_size_matches_very_long);
     CPPUNIT_TEST(test_root_sieve_resizes_for_config);
     CPPUNIT_TEST(test1);
     CPPUNIT_TEST(test_degree6);
@@ -34,6 +35,19 @@ public:
     void setUp() {}
     void tearDown() {}
 
+    void test_double_average_log_size_matches_very_long()
+    {
+        Polynomial<VeryLong> f = Polynomial<VeryLong>::read_polynomial(
+            "12345678901234567890 - 987654321 X + 42 X^2 - 7 X^3");
+        const long int s = 1000L;
+        const double expected = PolynomialOptimizer::average_log_size(f, s);
+        const Polynomial<double> double_f =
+            Polynomial<VeryLong>::convert_to_double<double>(f);
+
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(
+            expected,
+            PolynomialOptimizer::average_log_size(double_f, s),
+            1.0e-12);
     void test_root_sieve_resizes_for_config()
     {
         const char* config_path = "ut_small_j0.cfg";

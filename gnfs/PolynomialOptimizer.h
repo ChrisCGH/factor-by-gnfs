@@ -1099,6 +1099,7 @@ DOUBLE minimize_I_over_t_and_s(const Polynomial<DOUBLE>& f, DOUBLE a, DOUBLE b, 
 }
 
 Polynomial<VeryLong> translate(const Polynomial<VeryLong>& p, const VeryLong& a, const VeryLong& b, const VeryLong& s, VeryLong& better_b, VeryLong& better_s);
+double average_log_size(const Polynomial<double>& p, long int s);
 double average_log_size(const Polynomial<VeryLong>& p, long int s);
 double alpha_F(const Polynomial<VeryLong>& poly, long int B, long int BOUND);
 double alpha_F_murphy(const Polynomial<VeryLong>& poly, long int B, long int BOUND);

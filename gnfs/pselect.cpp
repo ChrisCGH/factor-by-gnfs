@@ -360,8 +360,9 @@ Polynomial<VeryLong> adjust_root_properties_orig(const Polynomial<VeryLong>& min
                 c[2] = j1;
                 Polynomial<VeryLong> F = min_poly + Polynomial<VeryLong>(c);
 
-                s = PolynomialOptimizer::minimize_I_over_s(Polynomial<VeryLong>::convert_to_double<double>(F), 10000000.0);
-                double I_F_S = PolynomialOptimizer::average_log_size(F, s);
+                Polynomial<double> double_F = Polynomial<VeryLong>::convert_to_double<double>(F);
+                s = PolynomialOptimizer::minimize_I_over_s(double_F, 10000000.0);
+                double I_F_S = PolynomialOptimizer::average_log_size(double_F, s.get_long());
                 if (I_F_S + cont < printing_bound)
                 {
                     poly_list.push_back(PolynomialOptimizer::Poly_info(F, s, I_F_S, cont));
