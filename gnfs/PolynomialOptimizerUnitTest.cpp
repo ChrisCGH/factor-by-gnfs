@@ -5,6 +5,7 @@
 #include "pselect.h"
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/ui/text/TestRunner.h>
+#include <cstdio>
 #include <iomanip>
 #include <cstdlib>
 
@@ -23,6 +24,7 @@ bool verbose()
 class PolynomialOptimizerTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE(PolynomialOptimizerTest);
+    CPPUNIT_TEST(test_root_sieve_resizes_for_config);
     CPPUNIT_TEST(test1);
     CPPUNIT_TEST(test_degree6);
     CPPUNIT_TEST(test_alpha_sampling_is_reused);
@@ -31,6 +33,30 @@ class PolynomialOptimizerTest : public CppUnit::TestFixture
 public:
     void setUp() {}
     void tearDown() {}
+
+    void test_root_sieve_resizes_for_config()
+    {
+        const char* config_path = "ut_small_j0.cfg";
+        {
+            std::fstream config_file(config_path, std::ios::out);
+            config_file << "MAX_J0 = 1" << std::endl;
+            config_file << "MAX_J1 = 0" << std::endl;
+            config_file << "MAX_SMALL_PRIME = 5" << std::endl;
+            config_file << "PRINTING_BOUND = 100.0" << std::endl;
+        }
+
+        Skewed_selection_config config(config_path);
+        Polynomial<VeryLong> f = Polynomial<VeryLong>::read_polynomial(
+            "1 + 1 X + 1 X^2 + 1 X^3");
+        VeryLong s(1L);
+        std::vector<PolynomialOptimizer::Poly_info> poly_list;
+        Polynomial<VeryLong> adjusted = PolynomialOptimizer::adjust_root_properties(
+            config, f, VeryLong(1L), VeryLong(1L), s,
+            PolynomialOptimizer::average_log_size(f, s), poly_list);
+
+        std::remove(config_path);
+        CPPUNIT_ASSERT(adjusted.deg() == f.deg());
+    }
 
     void test1()
     {
