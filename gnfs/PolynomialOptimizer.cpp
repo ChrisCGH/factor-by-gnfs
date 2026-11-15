@@ -1,6 +1,7 @@
 #include "PolynomialOptimizer.h"
 #include "LongModular.h"
 #include "discriminant.h"
+#include <algorithm>
 #include <time.h>
 
 namespace
@@ -424,27 +425,24 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
     }
 
 
+    const size_t cont_array_data_size =
+        static_cast<size_t>(2 * MAX_J1 + 1) * static_cast<size_t>(2 * MAX_J0 + 1);
     static std::vector<short> cont_array_data;
-    static long int cont_array_data_size = 0;
-    if (cont_array_data.empty())
+    if (cont_array_data.size() != cont_array_data_size)
     {
-        cont_array_data_size = (2 * MAX_J1 + 1) * (2 * MAX_J0 + 1) ;
         cont_array_data.resize(cont_array_data_size);
     }
-
-    static std::vector<short*> cont_array;
-    if (cont_array.empty())
+    std::vector<short*> cont_array(2 * MAX_J1 + 1);
+    for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
     {
-        cont_array.resize(2 * MAX_J1 + 1);
-        for (long int j1 = 0; j1 < 2 * MAX_J1 + 1; j1++)
-        {
-            cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
-        }
+        cont_array[j1] = cont_array_data.data() + j1 * (2 * MAX_J0 + 1);
     }
+
     static std::vector<short> j0_array;
-    if (j0_array.empty())
+    const size_t j0_array_size = static_cast<size_t>(std::max(MAX_J0, MAX_SMALL_PRIME));
+    if (j0_array.size() < j0_array_size)
     {
-        j0_array.resize(MAX_J0);
+        j0_array.resize(j0_array_size);
     }
     unsigned long int p_k;  // p^k
     //long int k = 0;
@@ -512,8 +510,8 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
 
             for (long int j1 = -MAX_J1; j1 <= MAX_J1; j1++)
             {
-                memset((char*)j0_array.data(), 0, sizeof(short)*MAX_J0);
-                for (unsigned long int jj0 = 0; jj0 < p_k; jj0++) j0_array[jj0] = -initial_evaluation_s;
+                std::fill_n(j0_array.begin(), p_k, 0);
+                short uniform_addon = -initial_evaluation_s;
                 // use finite differences to calculate f(l) for consecutive values of l
                 // Reset difference table for this j1 iteration by copying precomputed initial_diffs
                 std::vector<LongModular> diffs = initial_diffs;
@@ -572,10 +570,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                         con1left /= con10gcd;
                         p_k_left /= con10gcd;
                         short addon = (short)floor(log((double)con10gcd) * prob_here * 1000.0 + 0.5);
-                        for (unsigned long int j0 = 0; j0 < p_k; j0++)
-                        {
-                            j0_array[j0] += addon;
-                        }
+                        uniform_addon += addon;
                     }
                     if (p_k_left > 1 && con1gcd == con10gcd)
                     {
@@ -590,7 +585,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                             if (p_q == p_k_left) addonj += addon/(p - 1.0);
                             if (addonj > 0.0)
                             {
-                                short addonj_s = (short)floor(addon * 1000.0 + 0.5);
+                                short addonj_s = (short)floor(addonj * 1000.0 + 0.5);
                                 unsigned long int j0 = j0_start.get_long() % p_q;
                                 //if (j0 < 0) j0 += p_q;
                                 while (j0 < p_k)
@@ -608,7 +603,8 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                 // Tiled loops replace the original pointer-chasing loops with
                 // conditional wraps, allowing the compiler to auto-vectorize.
 
-                // Forward: cont_array[j1][MAX_J0+k] -= j0_array[k % p_k]
+                // Forward: cont_array[j1][MAX_J0+k] -=
+                //     uniform_addon + j0_array[k % p_k]
                 // for k = 0 .. MAX_J0
                 {
                     short* dst = &cont_array[MAX_J1 + j1][MAX_J0];
@@ -617,12 +613,13 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                     long int k = 0;
                     while (k + pki <= fwd_total)
                     {
-                        for (long int i = 0; i < pki; i++) dst[k + i] -= j0_array[i];
+                        for (long int i = 0; i < pki; i++) dst[k + i] -= uniform_addon + j0_array[i];
                         k += pki;
                     }
-                    for (long int i = 0; i < fwd_total - k; i++) dst[k + i] -= j0_array[i];
+                    for (long int i = 0; i < fwd_total - k; i++) dst[k + i] -= uniform_addon + j0_array[i];
                 }
-                // Backward: cont_array[j1][MAX_J0-k] -= j0_array[(p_k - k%p_k) % p_k]
+                // Backward: cont_array[j1][MAX_J0-k] -=
+                //     uniform_addon + j0_array[(p_k - k%p_k) % p_k]
                 // for k = 1 .. MAX_J0  (equivalent to reverse-replicating j0_array)
                 {
                     const long int pki = (long int)p_k;
@@ -631,7 +628,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                     while (k + pki <= bwd_total)
                     {
                         short* dst = &cont_array[MAX_J1 + j1][MAX_J0 - k - pki];
-                        for (long int i = 0; i < pki; i++) dst[i] -= j0_array[i];
+                        for (long int i = 0; i < pki; i++) dst[i] -= uniform_addon + j0_array[i];
                         k += pki;
                     }
                     const long int rem = bwd_total - k;
@@ -639,7 +636,7 @@ Polynomial<VeryLong> adjust_root_properties(const Skewed_selection_config& Skewe
                     {
                         short* dst = &cont_array[MAX_J1 + j1][0];
                         const short* src = &j0_array[pki - rem];
-                        for (long int i = 0; i < rem; i++) dst[i] -= src[i];
+                        for (long int i = 0; i < rem; i++) dst[i] -= uniform_addon + src[i];
                     }
                 }
             }
