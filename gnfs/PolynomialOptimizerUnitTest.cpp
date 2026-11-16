@@ -48,6 +48,8 @@ public:
             expected,
             PolynomialOptimizer::average_log_size(double_f, s),
             1.0e-12);
+    }
+
     void test_root_sieve_resizes_for_config()
     {
         const char* config_path = "ut_small_j0.cfg";
